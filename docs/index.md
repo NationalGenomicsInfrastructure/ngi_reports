@@ -11,7 +11,7 @@ reports with in-depth analysis.
 
 The `ngi_reports` package is a common framework for generating reports
 with consistent styling.  It's designed to work for both NGI Stockholm and
-Uppsala nodes. To facilitate this, code is divided into three sections:
+Uppsala nodes. To facilitate this, code is divided into three modules:
 `common`, `stockholm` and `uppsala`.
 
 Where possible, report scripts should be as stupid as possible. All analysis
