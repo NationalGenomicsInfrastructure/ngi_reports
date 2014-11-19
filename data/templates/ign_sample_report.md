@@ -138,7 +138,7 @@ Library preparation and sequencing alignment can be affected by differences in
 GC content. Here, we plot the proportions of the library reads at each GC
 content. The red dotted line shows the profile for the reference genome. 
 This data was calculated using [QualiMap](http://qualimap.bioinfo.cipf.es/)
-and plotted with an[NGI script](https://github.com/SciLifeLab/visualizations).
+and plotted with an [NGI script](https://github.com/SciLifeLab/visualizations).
 
 ![GC Content Distribution](plots/gc_distribution.png)
 
