@@ -1,4 +1,4 @@
-# NGI Reports documentation
+# NGI Reports Documentation
 
 This documentation describes the code in the
 [ngi_reports](https://github.com/SciLifeLab/ngi_reports)
@@ -14,7 +14,7 @@ with consistent styling.  It's designed to work for both NGI Stockholm and
 Uppsala nodes. To facilitate this, code is divided into three modules:
 `common`, `stockholm` and `uppsala`.
 
-Where possible, report scripts should be as stupid as possible. All analysis
+Where possible, report scripts should be as minimal as possible. All analysis
 and plotting should be done before this script is called. Here, we just want to
 scoop up results and plots from the file structure and assemble them into a
 report. Any scripts to generate plots should be added to the
