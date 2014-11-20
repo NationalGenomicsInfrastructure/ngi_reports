@@ -2,9 +2,7 @@
 title: Sample Report
 subtitle: M.Kaller_14_05 - P1170_101
 date: 2014-11-19
-header: National Genomics Infrastructure - Sample Report
 support_email: genomics_support@scilifelab.se
-footer_text: M.Kaller_14_05 - P1170_101
 ---
 
 # Sample Information

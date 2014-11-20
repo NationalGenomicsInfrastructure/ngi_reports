@@ -2,9 +2,7 @@
 title: Sample Report
 subtitle: {{ project.id }} - {{ sample.id }}
 date: {{ report.date }}
-header: National Genomics Infrastructure - Sample Report
 support_email: genomics_support@scilifelab.se
-footer_text: {{ project.id }} - {{ sample.id }}
 ---
 
 # Sample Information
