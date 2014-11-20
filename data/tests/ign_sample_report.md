@@ -1,71 +1,72 @@
 ---
 title: Sample Report
-subtitle: {{ project.id }} - {{ sample.id }}
-date: {{ report.date }}
+subtitle: M.Kaller_14_05 - P1170_101
+date: 2014-11-19
 header: National Genomics Infrastructure - Sample Report
 support_email: genomics_support@scilifelab.se
-footer_text: {{ project.id }} - {{ sample.id }}
+footer_text: M.Kaller_14_05 - P1170_101
 ---
 
 # Sample Information
 
 Report Date
-:  {{ report.date }}
+:   2014-11-13
 
 Recipient
-:   {{ report.recipient }}
+:   phil.ewels@scilifelab.se
 
 Project Name
-:   {{ project.id }}
+:   M.Kaller_14_05
 
 User Sample Name
-:   {{ sample.user_id }}
+:   Test Sample #1290
 
 NGI Sample Name
-:   {{ sample.id }}
+:   P1170_101
 
 Library Preparation Method
-:   {% for prep in sample.preps %}**{{ prep.label }}:** {{ prep.description }}
-    
-    {% endblock %}
+:   **A:** All samples were sequenced on HiSeq2500 (HiSeq Control Software
+    2.0.12.0/RTA 1.17.21.3) with a 2x101 setup.The Bcl to Fastq conversion was
+    performed using bcl2Fastq v1.8.3 from the CASAVA software suite. The
+    quality scale used is Sanger / phred33 / Illumina 1.8+.
 
 Sequencing Centre
-:   {{ project.sequencing_centre }}
+:   NGI Stockholm
 
 Sequencing Platform
-:   {{ sample.sequencing_platform }}
+:   Illumina
 
 Reference Genome
-:   ` {{ sample.ref_genome }}`
+:   `gatk_bundle/2.8/b37/human_g1k_v37.fasta`
 
 Flow Cells
-:   {% for fc in sample.flowcells %}`{{ fc.id }}`
-    
-    {% endblock %}
+:   `140815_SN1025_0222_BC4HAPACXX`
+
+    `140815_SN1025_0223_BC4HAPACXX`
 
 
 # Library Statistics
 
 Total Reads
-:   {{ sample.total_reads }}
+:   908,585,160
 
 Aligned Reads
-:  {{ sample.percent_aligned }} -  {{ sample.aligned_reads }}
+:   99.47% -  903,806,933
 
 Duplication Rate
-:   {{ sample.duplication_rate }}
+:   1.9%
 
 Median Insert Size
-:   {{ sample.median_insert_size }}
+:   369 bp
 
 Av. Autosomal Coverage
-:  {{ sample.automsomal_coverage }}
+:   28.92
 
 Reference with at least 30X Coverage
-:   {{ sample.ref_above_30X }}
+:   51.72%
 
 GC Content
-:   {{ sample.percent_gc }}
+:   39.87%
 
 See below for more information about coverage and insert size. The
 `qualimapReport.html` report in your delivery folder contains additional library
@@ -122,34 +123,34 @@ and plotted with an [NGI script](https://github.com/SciLifeLab/visualizations).
 # Variants
 
 Change Rate
-:   {{ sample.snpeff.change_rate }}
+:   1 change per 774 bp
 
 Total SNPs
-:    {{ sample.snpeff.total_snps }}
+:   4,004,647
 
 Homotypic SNPs
-:    {{ sample.snpeff.homotypic_snps }}
+:   1,491,592
 
 Heterotypic SNPs
-:    {{ sample.snpeff.heterotypic_snps }}
+:   2,513,055
 
 Transitions / Transversions Ratio
-:    {{ sample.snpeff.TsTv_ratio }}
+:   1.9895
 
 Synonymous / Non-Synonymous
-:    {{ sample.snpeff.synonymous_SNPs }} / {{ sample.snpeff.nonsynonymous_SNPs }} 
+:   35,078 / 30,232
 
 Stop Gained / Lost
-:   {{ sample.snpeff.stops_gained }} / {{ sample.snpeff.stops_lost }}
+:   273 / 58
 
 Missense SNPs
-:    {{ sample.snpeff.percent_missense_SNPs }}  -   {{ sample.snpeff.missense_SNPs }}
+:   46.2%  -  30,366
 
 Nonsense SNPs
-:    {{ sample.snpeff.percent_nonsense_SNPs }}  -   {{ sample.snpeff.nonsense_SNPs }}
+:   0.4%  -  273
 
 Silent SNPs
-:    {{ sample.snpeff.percent_silent_SNPs }}  -   {{ sample.snpeff.silent_SNPs }}
+:   53.4%  -  35,078
 
 Different effects can be attributed to each SNP depending on where it occurs.
 Here we have used the [snpEff](http://snpeff.sourceforge.net/) tool to
