@@ -23,7 +23,11 @@ footer_right: M.Kaller_14_05 - P1170_101
         <td>M.Kaller_14_05</td>
     </tr>
     <tr>
-        <th>Sample Name</th>
+        <th>User Sample Name</th>
+        <td>Test Sample #1290</td>
+    </tr>
+    <tr>
+        <th>NGI Sample Name</th>
         <td>P1170_101</td>
     </tr>
     <tr>
