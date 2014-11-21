@@ -10,17 +10,23 @@ support_email: genomics_support@scilifelab.se
 Report Date
 :  {{ report.date }}
 
-Recipient
+User Contact
 :   {{ report.recipient }}
 
 Project Name
-:   {{ project.id }}
+:   {{ project.id }} ({{ project.group }})
 
 User Sample Name
 :   {{ sample.user_id }}
 
 NGI Sample Name
 :   {{ sample.id }}
+
+UPPMAX Project ID
+:   `{{ project.UPPMAXid }}`
+
+Sequencing Platform
+:   {{ sample.sequencing_platform }}
 
 Library Prep Method
 :   {% for prep in sample.preps %}**{{ prep.label }}:** {{ prep.description }}
@@ -29,9 +35,6 @@ Library Prep Method
 
 Sequencing Centre
 :   {{ project.sequencing_centre }}
-
-Sequencing Platform
-:   {{ sample.sequencing_platform }}
 
 Reference Genome
 :   ` {{ sample.ref_genome }}`

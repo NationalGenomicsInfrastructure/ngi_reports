@@ -11,11 +11,11 @@ support_email: genomics_support@scilifelab.se
 Report Date
 :   2014-11-13
 
-Recipient
+User Contact
 :   phil.ewels@scilifelab.se
 
 Project Name
-:   M.Kaller_14_05
+:   M.Kaller_14_05 (Swedish Genomes Pilot v3 )
 
 User Sample Name
 :   Test Sample #1290
@@ -23,7 +23,13 @@ User Sample Name
 NGI Sample Name
 :   P1170_101
 
-Library Prep Method
+UPPMAX Project ID
+:   `b2014832`
+
+Sequencing Platform
+:   Illumina
+
+Library Preparation Method
 :   **A:** All samples were sequenced on HiSeq2500 (HiSeq Control Software
     2.0.12.0/RTA 1.17.21.3) with a 2x101 setup.The Bcl to Fastq conversion was
     performed using bcl2Fastq v1.8.3 from the CASAVA software suite. The
@@ -31,9 +37,6 @@ Library Prep Method
 
 Sequencing Centre
 :   NGI Stockholm
-
-Sequencing Platform
-:   Illumina
 
 Reference Genome
 :   `gatk_bundle/2.8/b37/human_g1k_v37.fasta`
