@@ -22,7 +22,7 @@ User Sample Name
 NGI Sample Name
 :   {{ sample.id }}
 
-Library Preparation Method
+Library Prep Method
 :   {% for prep in sample.preps %}**{{ prep.label }}:** {{ prep.description }}
     
     {% endblock %}
@@ -57,10 +57,10 @@ Median Insert Size
 :   {{ sample.median_insert_size }}
 
 Av. Autosomal Coverage
-:  {{ sample.automsomal_coverage }}
+:  {{ sample.automsomal_coverage }}X
 
-Reference with at least 30X Coverage
-:   {{ sample.ref_above_30X }}
+&ge; 30X Coverage
+:   {{ sample.ref_above_30X }} of reference
 
 GC Content
 :   {{ sample.percent_gc }}
@@ -123,31 +123,34 @@ Change Rate
 :   {{ sample.snpeff.change_rate }}
 
 Total SNPs
-:    {{ sample.snpeff.total_snps }}
+:   {{ sample.snpeff.total_snps }}
 
 Homotypic SNPs
-:    {{ sample.snpeff.homotypic_snps }}
+:   {{ sample.snpeff.homotypic_snps }}
 
 Heterotypic SNPs
-:    {{ sample.snpeff.heterotypic_snps }}
+:   {{ sample.snpeff.heterotypic_snps }}
 
-Transitions / Transversions Ratio
-:    {{ sample.snpeff.TsTv_ratio }}
+Ts/Tv Ratio
+:   {{ sample.snpeff.TsTv_ratio }}
 
-Synonymous / Non-Synonymous
-:    {{ sample.snpeff.synonymous_SNPs }} / {{ sample.snpeff.nonsynonymous_SNPs }} 
+Synonymous SNPs / Non-Synonymous
+:   {{ sample.snpeff.synonymous_SNPs }}
+
+Non-Synonymous SNPs
+:   {{ sample.snpeff.nonsynonymous_SNPs }}
 
 Stop Gained / Lost
 :   {{ sample.snpeff.stops_gained }} / {{ sample.snpeff.stops_lost }}
 
 Missense SNPs
-:    {{ sample.snpeff.percent_missense_SNPs }}  -   {{ sample.snpeff.missense_SNPs }}
+:   {{ sample.snpeff.percent_missense_SNPs }}  -   {{ sample.snpeff.missense_SNPs }}
 
 Nonsense SNPs
-:    {{ sample.snpeff.percent_nonsense_SNPs }}  -   {{ sample.snpeff.nonsense_SNPs }}
+:   {{ sample.snpeff.percent_nonsense_SNPs }}  -   {{ sample.snpeff.nonsense_SNPs }}
 
 Silent SNPs
-:    {{ sample.snpeff.percent_silent_SNPs }}  -   {{ sample.snpeff.silent_SNPs }}
+:   {{ sample.snpeff.percent_silent_SNPs }}  -   {{ sample.snpeff.silent_SNPs }}
 
 Different effects can be attributed to each SNP depending on where it occurs.
 Here we have used the [snpEff](http://snpeff.sourceforge.net/) tool to

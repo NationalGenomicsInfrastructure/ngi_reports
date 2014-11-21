@@ -1,22 +1,11 @@
-\documentclass[$if(fontsize)$$fontsize$,$endif$$if(lang)$$lang$,$endif$$if(papersize)$$papersize$,$endif$$for(classoption)$$classoption$$sep$,$endfor$]{$documentclass$}
-$if(fontfamily)$
-\usepackage{$fontfamily$}
-$else$
+\documentclass[12pt]{article}
 \usepackage{lmodern}
-$endif$
-$if(linestretch)$
-\usepackage{setspace}
-\setstretch{$linestretch$}
-$endif$
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
 \usepackage{fixltx2e} % provides \textsubscript
 \ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
   \usepackage[T1]{fontenc}
   \usepackage[utf8]{inputenc}
-$if(euro)$
-  \usepackage{eurosym}
-$endif$
 \else % if luatex or xelatex
   \ifxetex
     \usepackage{mathspec}
@@ -26,21 +15,9 @@ $endif$
   \fi
   \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
   \newcommand{\euro}{€}
-$if(mainfont)$
-    \setmainfont{$mainfont$}
-$else$
-    \setmainfont{Helvetica}
-$endif$
-    \setmainfont{Helvetica}
-$if(sansfont)$
-    \setsansfont{$sansfont$}
-$endif$
-$if(monofont)$
-    \setmonofont[Mapping=tex-ansi]{$monofont$}
-$endif$
-$if(mathfont)$
-    \setmathfont(Digits,Latin,Greek){$mathfont$}
-$endif$
+  \setmainfont{Helvetica Neue}
+  \setsansfont{Helvetica Neue}
+  \setmonofont[Mapping=tex-ansi]{Consolas}
 \fi
 % use upquote if available, for straight quotes in verbatim environments
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
@@ -49,9 +26,6 @@ $endif$
 \usepackage{microtype}
 \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
 }{}
-$if(geometry)$
-\usepackage[$for(geometry)$$geometry$$sep$,$endfor$]{geometry}
-$endif$
 $if(natbib)$
 \usepackage{natbib}
 \bibliographystyle{$if(biblio-style)$$biblio-style$$else$plainnat$endif$}
@@ -95,14 +69,17 @@ $endif$
 \else
   \usepackage[unicode=true]{hyperref}
 \fi
+\usepackage[usenames, dvipsnames]{color}
+\definecolor{grey}{gray}{0.5}
+\definecolor{lightgrey}{gray}{0.8}
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={$author-meta$},
             pdftitle={$title-meta$},
             colorlinks=true,
-            citecolor=$if(citecolor)$$citecolor$$else$blue$endif$,
+            citecolor=$if(citecolor)$$citecolor$$else$black$endif$,
             urlcolor=$if(urlcolor)$$urlcolor$$else$blue$endif$,
-            linkcolor=$if(linkcolor)$$linkcolor$$else$magenta$endif$,
+            linkcolor=$if(linkcolor)$$linkcolor$$else$black$endif$,
             pdfborder={0 0 0}}
 \urlstyle{same}  % don't use monospace font for urls
 $if(links-as-notes)$
@@ -134,41 +111,81 @@ $if(lang)$
 \fi
 $endif$
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% CUSTOM LATEX STYLING HERE
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Use a sans-serif font
-% \renewcommand{\familydefault}{\sfdefault}
+%%%%%%%%%% HERE COMES THE CUSTOM STUFF %%%%%%%%%%%%%%
 
+% Set the header and footer up
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[top=2.5cm, bottom=4.5cm, left=2cm, right=2cm, heightrounded]{geometry}
+\pagestyle{fancy}
+\lhead{\includegraphics[width=5cm]{../assets/SLL_logo.png}\vspace{0.3cm}}
+\rhead{\includegraphics[width=5cm]{../assets/NGI_logo.png}\vspace{0.45cm}}
+\chead{\color{grey}National Genomics Infrastructure$if(title)$ - $title$$endif$}
+$if(support_email)$
+	\lfoot{
+		\vspace{0cm} % not sure why i need this. Something to do with the href?
+		\href{mailto:$support_email$}{
+			\color{grey}{$support_email$}
+		}
+	}
+$endif$
+\cfoot{\color{grey}Page \thepage\ of {\hypersetup{linkcolor=grey}\pageref{LastPage}}}
+$if(subtitle)$\rfoot{\color{grey}$subtitle$}$endif$
 
+% Make the header and footer rules thin and grey
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{grey}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{grey}\leaders\hrule height \headrulewidth\hfill}}
 
-
-
-
-
-
-
-
+% Build the Main Title
 $if(title)$
-\title{$title$$if(subtitle)$\\\vspace{0.5em}{\large $subtitle$}$endif$}
+\title{
+	\vspace{0.5cm}
+	{\fontsize{32}{36}\selectfont $title$}
+	$if(subtitle)$
+		\\\vspace{0.5em}
+		{\fontsize{24}{28}\selectfont $subtitle$}
+	$endif$
+	\\\headrule
+	\vspace{-2cm}
+}
 $endif$
-$if(author)$
-\author{$for(author)$$author$$sep$ \and $endfor$}
-$endif$
-\date{$date$}
+\date{}
+\author{}
+
+% Section header font sizes
+\usepackage{titlesec}
+\titleformat{\section}{\fontsize{18}{22}\bfseries}{\thesection}{1em}{}
+
+%%% Style the description items (definition lists)
+\usepackage{enumitem}
+\setlist[description]{style=multiline, leftmargin=5.5cm, itemsep=0cm}
+\renewcommand{\descriptionlabel}[1]{
+	\hspace{\labelsep}
+	\colorbox{lightgrey}{
+		\strut
+		\parbox{4.8cm}{
+			\textbf{#1}
+		}\par
+	}
+}
+
+% Hide the figure captions
+\usepackage{caption}
+\captionsetup{labelformat=empty,textformat=empty, skip=-1.5cm}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 $for(header-includes)$
 $header-includes$
 $endfor$
 
 \begin{document}
-$if(title)$
-\maketitle
-$endif$
-$if(abstract)$
-\begin{abstract}
-$abstract$
-\end{abstract}
-$endif$
+
+$if(title)$\maketitle$endif$
+\thispagestyle{fancyplain}
 
 $for(include-before)$
 $include-before$
@@ -187,6 +204,7 @@ $endif$
 $if(lof)$
 \listoffigures
 $endif$
+
 $body$
 
 $if(natbib)$

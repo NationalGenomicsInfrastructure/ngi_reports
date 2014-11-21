@@ -7,6 +7,7 @@ support_email: genomics_support@scilifelab.se
 
 # Sample Information
 
+
 Report Date
 :   2014-11-13
 
@@ -22,7 +23,7 @@ User Sample Name
 NGI Sample Name
 :   P1170_101
 
-Library Preparation Method
+Library Prep Method
 :   **A:** All samples were sequenced on HiSeq2500 (HiSeq Control Software
     2.0.12.0/RTA 1.17.21.3) with a 2x101 setup.The Bcl to Fastq conversion was
     performed using bcl2Fastq v1.8.3 from the CASAVA software suite. The
@@ -58,10 +59,10 @@ Median Insert Size
 :   369 bp
 
 Av. Autosomal Coverage
-:   28.92
+:   28.92X
 
-Reference with at least 30X Coverage
-:   51.72%
+&ge; 30X Coverage
+:   51.72% of reference
 
 GC Content
 :   39.87%
@@ -132,11 +133,14 @@ Homotypic SNPs
 Heterotypic SNPs
 :   2,513,055
 
-Transitions / Transversions Ratio
+Ts/Tv Ratio
 :   1.9895
 
-Synonymous / Non-Synonymous
-:   35,078 / 30,232
+Synonymous SNPs
+:   35,078
+
+Non-Synonymous SNPs
+:   30,232
 
 Stop Gained / Lost
 :   273 / 58
