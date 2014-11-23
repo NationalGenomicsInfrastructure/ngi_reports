@@ -7,6 +7,17 @@ support_email: genomics_support@scilifelab.se
 
 # Sample Information
 
+Report Date
+:   2014-11-13
+
+User Contact
+:   phil.ewels@scilifelab.se
+
+Project Name
+:   M.Kaller_14_05 (Swedish Genomes Pilot v3 )
+
+
+lwkrwekjbwer 
 
 Report Date
 :   2014-11-13

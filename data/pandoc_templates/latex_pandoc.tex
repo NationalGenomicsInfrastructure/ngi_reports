@@ -157,23 +157,68 @@ $endif$
 % Section header font sizes
 \usepackage{titlesec}
 \titleformat{\section}{\fontsize{18}{22}\bfseries}{\thesection}{1em}{}
+%
+% %%% Style the description items (definition lists)
+% \usepackage{enumitem}
+% \setlist[description]{style=multiline, leftmargin=5.5cm, itemsep=0cm}
+% \renewcommand{\descriptionlabel}[1]{
+% 	\hspace{\labelsep}
+% 	\colorbox{lightgrey}{
+% 		\strut
+% 		\parbox{4.8cm}{
+% 			\textbf{#1}
+% 		}\par
+% 	}
+% }
+%
+% % Hide the figure captions
+% \usepackage{caption}
+% \captionsetup{labelformat=empty,textformat=empty, skip=-1.5cm}
 
-%%% Style the description items (definition lists)
+
+
+
+
 \usepackage{enumitem}
-\setlist[description]{style=multiline, leftmargin=5.5cm, itemsep=0cm}
-\renewcommand{\descriptionlabel}[1]{
-	\hspace{\labelsep}
-	\colorbox{lightgrey}{
-		\strut
-		\parbox{4.8cm}{
-			\textbf{#1}
-		}\par
-	}
+\usepackage{etoolbox}
+\usepackage{tikzpagenodes}
+\usetikzlibrary{tikzmark,calc}
+
+\newcounter{colordesc}
+\newlength\longestlabel
+\setlength\longestlabel{5.5cm}
+
+\setlist[description]{style=multiline, leftmargin=\longestlabel, itemsep=0cm}
+
+\AtBeginEnvironment{description}{%
+  \stepcounter{colordesc}%
+  \begin{tikzpicture}[overlay,remember picture]
+  \fill[gray!60] 
+    ( $$ (pic cs:start-\thecolordesc) + (-25pt,-1.2\topsep) $$ ) 
+      rectangle 
+    ( $$ ({pic cs:start-\thecolordesc}|-{pic cs:end-\thecolordesc}) + (\longestlabel-25pt,-.5\topsep) $$ );
+  \draw[gray!60] 
+    ( $$ (current page text area.east|-{pic cs:start-\thecolordesc}) + (0,-1.2\topsep) $$ )
+      -- 
+    ( $$ (current page text area.east|-{pic cs:end-\thecolordesc})  + (0,-0.45\topsep) $$ );
+  \end{tikzpicture}%
+  \tikzmark{start-\thecolordesc}%
+}
+\AtEndEnvironment{description}{%
+  \tikzmark{end-\thecolordesc}%
+}
+\AtEndEnvironment{description}{%
+  \tikz[overlay,remember picture]\draw[gray!60]
+    ( $$ (current page text area.west|-{pic cs:end-\thecolordesc}) + (0,-.45\topsep) $$ ) 
+    -- ++(\textwidth,0);%
 }
 
-% Hide the figure captions
-\usepackage{caption}
-\captionsetup{labelformat=empty,textformat=empty, skip=-1.5cm}
+\renewcommand*\descriptionlabel[1]{%
+  \tikz\draw[overlay,gray!60]
+    (0,.8\baselineskip) -- 
+    (\textwidth,.8\baselineskip);%
+    \hspace\labelsep\normalfont\bfseries #1%
+}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
