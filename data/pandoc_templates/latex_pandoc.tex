@@ -72,14 +72,15 @@ $endif$
 \usepackage[usenames, dvipsnames]{color}
 \definecolor{grey}{gray}{0.5}
 \definecolor{lightgrey}{gray}{0.8}
+\definecolor{linkblue}{rgb}{0,0,0.6}
 \hypersetup{breaklinks=true,
             bookmarks=true,
             pdfauthor={$author-meta$},
             pdftitle={$title-meta$},
             colorlinks=true,
-            citecolor=$if(citecolor)$$citecolor$$else$black$endif$,
-            urlcolor=$if(urlcolor)$$urlcolor$$else$blue$endif$,
-            linkcolor=$if(linkcolor)$$linkcolor$$else$black$endif$,
+            citecolor=black,
+            urlcolor=linkblue,
+            linkcolor=black,
             pdfborder={0 0 0}}
 \urlstyle{same}  % don't use monospace font for urls
 $if(links-as-notes)$
@@ -157,28 +158,20 @@ $endif$
 % Section header font sizes
 \usepackage{titlesec}
 \titleformat{\section}{\fontsize{18}{22}\bfseries}{\thesection}{1em}{}
-%
-% %%% Style the description items (definition lists)
-% \usepackage{enumitem}
-% \setlist[description]{style=multiline, leftmargin=5.5cm, itemsep=0cm}
-% \renewcommand{\descriptionlabel}[1]{
-% 	\hspace{\labelsep}
-% 	\colorbox{lightgrey}{
-% 		\strut
-% 		\parbox{4.8cm}{
-% 			\textbf{#1}
-% 		}\par
-% 	}
-% }
-%
-% % Hide the figure captions
-% \usepackage{caption}
-% \captionsetup{labelformat=empty,textformat=empty, skip=-1.5cm}
+
+% Make code \texttt smaller have grey highlighting
+% http://tex.stackexchange.com/questions/42961/adding-a-highlight-to-texttt-blocks
+\usepackage{soul}
+\definecolor{vlightgrey}{gray}{.95}
+\sethlcolor{vlightgrey}
+\let\OldTexttt\texttt
+\renewcommand{\texttt}[1]{\OldTexttt{\small\hl{#1}}}
 
 
-
-
-
+% Styling the definition lists to look like the other report
+% Solution kindly provided by Gonzalo Medina
+% http://tex.stackexchange.com/questions/213236/customising-description-lists
+% Double dollar signs are for pandoc
 \usepackage{enumitem}
 \usepackage{etoolbox}
 \usepackage{tikzpagenodes}
@@ -193,30 +186,39 @@ $endif$
 \AtBeginEnvironment{description}{%
   \stepcounter{colordesc}%
   \begin{tikzpicture}[overlay,remember picture]
-  \fill[gray!60] 
-    ( $$ (pic cs:start-\thecolordesc) + (-25pt,-1.2\topsep) $$ ) 
+  
+  % Filled grey box over headers
+  \fill[gray!30] 
+    ( $$ (pic cs:start-\thecolordesc) + (-5pt,-1.85\topsep) $$ ) 
       rectangle 
-    ( $$ ({pic cs:start-\thecolordesc}|-{pic cs:end-\thecolordesc}) + (\longestlabel-25pt,-.5\topsep) $$ );
-  \draw[gray!60] 
-    ( $$ (current page text area.east|-{pic cs:start-\thecolordesc}) + (0,-1.2\topsep) $$ )
+    ( $$ ({pic cs:start-\thecolordesc}|-{pic cs:end-\thecolordesc}) + (\longestlabel-5pt,-.5\topsep) $$ );
+  
+  
+  % Border along the right hand side of the definition list
+  \draw[gray!30] 
+    ( $$ (current page text area.east|-{pic cs:start-\thecolordesc}) + (5pt,-1.85\topsep) $$ )
       -- 
-    ( $$ (current page text area.east|-{pic cs:end-\thecolordesc})  + (0,-0.45\topsep) $$ );
+    ( $$ (current page text area.east|-{pic cs:end-\thecolordesc})  + (5pt,-0.45\topsep) $$ );
+  
   \end{tikzpicture}%
   \tikzmark{start-\thecolordesc}%
 }
 \AtEndEnvironment{description}{%
   \tikzmark{end-\thecolordesc}%
 }
+
+% Border along the bottom of the definition list
 \AtEndEnvironment{description}{%
-  \tikz[overlay,remember picture]\draw[gray!60]
+  \tikz[overlay,remember picture]\draw[gray!30]
     ( $$ (current page text area.west|-{pic cs:end-\thecolordesc}) + (0,-.45\topsep) $$ ) 
-    -- ++(\textwidth,0);%
+    -- ++(1.01\textwidth,0);%
 }
 
+% Top borders of list items
 \renewcommand*\descriptionlabel[1]{%
-  \tikz\draw[overlay,gray!60]
-    (0,.8\baselineskip) -- 
-    (\textwidth,.8\baselineskip);%
+  \tikz\draw[overlay,gray!30]
+    (-5pt,.8\baselineskip) -- 
+    (1.01\textwidth,.8\baselineskip);%
     \hspace\labelsep\normalfont\bfseries #1%
 }
 

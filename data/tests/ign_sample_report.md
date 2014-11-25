@@ -17,7 +17,7 @@ Project Name
 :   M.Kaller_14_05 (Swedish Genomes Pilot v3 )
 
 
-lwkrwekjbwer 
+Some spacer text here. 
 
 Report Date
 :   2014-11-13
