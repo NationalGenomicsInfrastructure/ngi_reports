@@ -17,7 +17,7 @@ Project Name
 :   {{ project.id }} ({{ project.group }})
 
 User Sample Name
-:   {{ sample.user_id }}
+:   {{ sample.user_sample_id }}
 
 NGI Sample Name
 :   {{ sample.id }}
@@ -31,18 +31,18 @@ Sequencing Platform
 Library Prep Method
 :   {% for prep in sample.preps %}**{{ prep.label }}:** {{ prep.description }}
     
-    {% endblock %}
+    {% endfor %}
 
 Sequencing Centre
 :   {{ project.sequencing_centre }}
 
 Reference Genome
-:   ` {{ sample.ref_genome }}`
+:   `{{ sample.ref_genome }}`
 
 Flow Cells
 :   {% for fc in sample.flowcells %}`{{ fc.id }}`
     
-    {% endblock %}
+    {% endfor %}
 
 
 # Library Statistics

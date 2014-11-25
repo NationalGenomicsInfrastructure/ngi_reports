@@ -2,3 +2,90 @@
 
 """ This is the entry point for ngi_reports.
 """
+
+
+
+from ngi_reports.log import loggers
+
+import argparse
+from jinja2 import Environment, FileSystemLoader
+import os
+
+
+def make_report (report_type):
+
+    LOG = loggers.minimal_logger('NGI Reports')
+
+    template_fn = '{}.md'.format(report_type)
+
+    LOG.info('Creating report type: {}'.format(report_type))
+
+    # Set up the jinja environment
+    templates_dir = os.path.realpath('../data/report_templates/')
+    env = Environment(loader=FileSystemLoader(templates_dir))
+
+    # Load our template
+    template = env.get_template(template_fn)
+    
+    # Create empty dicts to hold the dynamic data
+    report = project = sample = {}
+    
+    # Holding test to test the template
+    report['date'] = 'FUBAR'
+    report['recipient'] = 'FUBAR'
+    project['id'] = 'FUBAR'
+    project['group'] = 'FUBAR'
+    project['id'] = 'FUBAR'
+    project['UPPMAXid'] = 'FUBAR'
+    project['sequencing_centre'] = 'FUBAR'
+    sample['id'] = 'FUBAR'
+    sample['sequencing_platform'] = 'FUBAR'
+    sample['user_sample_id'] = 'FUBAR'
+    sample['ref_genome'] = 'FUBAR'
+    sample['total_reads'] = 'FUBAR'
+    sample['percent_aligned'] = 'FUBAR'
+    sample['aligned_reads'] = 'FUBAR'
+    sample['duplication_rate'] = 'FUBAR'
+    sample['median_insert_size'] = 'FUBAR'
+    sample['automsomal_coverage'] = 'FUBAR'
+    sample['ref_above_30X'] = 'FUBAR'
+    sample['percent_gc'] = 'FUBAR'
+    sample['snpeff'] = {}
+    sample['snpeff']['change_rate'] = 'FUBAR'
+    sample['snpeff']['total_snps'] = 'FUBAR'
+    sample['snpeff']['homotypic_snps'] = 'FUBAR'
+    sample['snpeff']['heterotypic_snps'] = 'FUBAR'
+    sample['snpeff']['TsTv_ratio'] = 'FUBAR'
+    sample['snpeff']['synonymous_SNPs'] = 'FUBAR'
+    sample['snpeff']['nonsynonymous_SNPs'] = 'FUBAR'
+    sample['snpeff']['stops_gained'] = 'FUBAR'
+    sample['snpeff']['stops_lost'] = 'FUBAR'
+    sample['snpeff']['percent_missense_SNPs'] = 'FUBAR'
+    sample['snpeff']['missense_SNPs'] = 'FUBAR'
+    sample['snpeff']['percent_nonsense_SNPs'] = 'FUBAR'
+    sample['snpeff']['nonsense_SNPs'] = 'FUBAR'
+    sample['snpeff']['percent_silent_SNPs'] = 'FUBAR'
+    sample['snpeff']['silent_SNPs'] = 'FUBAR'
+    sample['preps'] = [{'label': 'FUBAR', 'description': 'FUBAR'}]
+    sample['flowcells'] = [{'id': 'FUBAR'}]
+
+
+    # Print the output
+    print template.render(report = report, project = project, sample = sample)
+
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("Make an NGI Report")
+    parser.add_argument('report_type',  metavar='<report type>',
+                        help="Type of report to generate")
+
+    kwargs = vars(parser.parse_args())
+    
+    make_report(**kwargs)
