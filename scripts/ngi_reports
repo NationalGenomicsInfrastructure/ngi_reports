@@ -3,34 +3,29 @@
 """ This is the entry point for ngi_reports.
 """
 
-
-
-from ngi_reports.log import loggers
+import ngi_reports
 
 import argparse
-from jinja2 import Environment, FileSystemLoader
+import jinja2
 import os
 
+LOG = ngi_reports.log.loggers.minimal_logger('NGI Reports')
 
-def make_report (report_type):
-
-    LOG = loggers.minimal_logger('NGI Reports')
-
+def make_report (report_type, dir=os.getcwd()):
+    
+    # Setup
     template_fn = '{}.md'.format(report_type)
-
     LOG.info('Creating report type: {}'.format(report_type))
-
-    # Set up the jinja environment
-    templates_dir = os.path.realpath('../data/report_templates/')
-    env = Environment(loader=FileSystemLoader(templates_dir))
-
-    # Load our template
-    template = env.get_template(template_fn)
+    config = ngi_reports.common.config.load_config()
+    
+    print(config)
     
     # Create empty dicts to hold the dynamic data
     report = project = sample = {}
     
     # Holding test to test the template
+    report['support_email'] = 'genomics_support@scilifelab.se' 
+        # ngi_reports.common.config['support_email'] ???
     report['date'] = 'FUBAR'
     report['recipient'] = 'FUBAR'
     project['id'] = 'FUBAR'
@@ -69,7 +64,13 @@ def make_report (report_type):
     sample['preps'] = [{'label': 'FUBAR', 'description': 'FUBAR'}]
     sample['flowcells'] = [{'id': 'FUBAR'}]
 
+    # Set up the jinja environment
+    templates_dir = os.path.realpath('../data/report_templates/')
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
 
+    # Load our template
+    template = env.get_template(template_fn)
+    
     # Print the output
     print template.render(report = report, project = project, sample = sample)
 
@@ -83,8 +84,10 @@ def make_report (report_type):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Make an NGI Report")
+    parser.add_argument("-d", "--dir", dest="dir",
+        help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument('report_type',  metavar='<report type>',
-                        help="Type of report to generate")
+        help="Type of report to generate")
 
     kwargs = vars(parser.parse_args())
     

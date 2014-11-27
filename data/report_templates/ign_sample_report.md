@@ -2,7 +2,7 @@
 title: Sample Report
 subtitle: {{ project.id }} - {{ sample.id }}
 date: {{ report.date }}
-support_email: genomics_support@scilifelab.se
+support_email: {{ report.support_email }}
 ---
 
 # Sample Information
