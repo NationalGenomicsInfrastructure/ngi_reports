@@ -3,11 +3,11 @@
 """ This is the entry point for ngi_reports.
 """
 
+from __future__ import print_function
+
 import argparse
 import jinja2
 import os
-
-from datetime import datetime
 
 from ngi_reports.log import loggers
 from ngi_reports.common import config as report_config
@@ -29,17 +29,17 @@ def make_report (report_type, working_dir=os.getcwd()):
     template = env.get_template(template_fn)
     
     # Import the module for this report type
-    report_mod = __import__('ngi_reports.common.{}'.format(report_type), fromlist=['ngi_reports.common'])
+    ngi_node = config.get('ngi_reports', 'ngi_node')
+    report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
+    report = report_mod.Report(config, LOG, working_dir)
     
-    # Get fields from module
-    fields = report_mod.get_fields(config, working_dir)
-    
-    # Basic Fields
-    fields['report']['support_email'] = config.get('ngi_reports', 'support_email')
-    fields['report']['date'] = datetime.today().strftime('%Y-%m-%d')
-
     # Print the output
-    print template.render(report=fields['report'], project=fields['project'], sample=fields['sample'])
+    output_fn = os.path.realpath(os.path.join(working_dir, report.report_fn))
+    try:
+        with open(output_fn, 'w') as fh:
+            print(template.render(report=report.info, project=report.project, sample=report.sample), file=fh)
+    except IOError as e:
+        raise IOError(e)
 
 
 
@@ -51,7 +51,7 @@ def make_report (report_type, working_dir=os.getcwd()):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Make an NGI Report")
-    parser.add_argument("-d", "--dir", dest="working_dir",
+    parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument('report_type',  metavar='<report type>',
         help="Type of report to generate")

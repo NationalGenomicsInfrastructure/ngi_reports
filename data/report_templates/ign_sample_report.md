@@ -51,16 +51,16 @@ Total Reads
 :   {{ sample.total_reads }}
 
 Aligned Reads
-:  {{ sample.percent_aligned }} -  {{ sample.aligned_reads }}
+:   {{ sample.percent_aligned }} - {{ sample.aligned_reads }}
 
 Duplication Rate
 :   {{ sample.duplication_rate }}
 
 Median Insert Size
-:   {{ sample.median_insert_size }}
+:   {{ sample.median_insert_size }} bp
 
 Av. Autosomal Coverage
-:  {{ sample.automsomal_coverage }}X
+:   {{ sample.automsomal_coverage }}X
 
 &ge; 30X Coverage
 :   {{ sample.ref_above_30X }} of reference

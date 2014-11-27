@@ -4,11 +4,20 @@
 """
 
 import os
+from ngi_reports.common import ign_sample_report
 
-def get_fields(config, working_dir=os.getcwd()):
+class Report(ign_sample_report.CommonReport):
     
-    # Initialise empty dict
-    fields = {}
-    
-    # Retun everything
-    return fields
+    # Initialise the report
+    def __init__(self, config, LOG, working_dir):
+        
+        # Initialise the parent class
+        super(Report, self).__init__(config, LOG, working_dir)
+        
+        # Check that we have everything
+        if self.check_fields():
+            LOG.info("It's all good!")
+        else:
+            LOG.info("Missing something")
+        
+
