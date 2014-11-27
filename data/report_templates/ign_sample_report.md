@@ -2,7 +2,7 @@
 title: Sample Report
 subtitle: {{ project.id }} - {{ sample.id }}
 date: {{ report.date }}
-support_email: genomics_support@scilifelab.se
+support_email: {{ report.support_email }}
 ---
 
 # Sample Information
@@ -10,36 +10,39 @@ support_email: genomics_support@scilifelab.se
 Report Date
 :  {{ report.date }}
 
-Recipient
+User Contact
 :   {{ report.recipient }}
 
 Project Name
-:   {{ project.id }}
+:   {{ project.id }} ({{ project.group }})
 
 User Sample Name
-:   {{ sample.user_id }}
+:   {{ sample.user_sample_id }}
 
 NGI Sample Name
 :   {{ sample.id }}
 
-Library Preparation Method
-:   {% for prep in sample.preps %}**{{ prep.label }}:** {{ prep.description }}
-    
-    {% endblock %}
-
-Sequencing Centre
-:   {{ project.sequencing_centre }}
+UPPMAX Project ID
+:   `{{ project.UPPMAXid }}`
 
 Sequencing Platform
 :   {{ sample.sequencing_platform }}
 
+Library Prep Method
+:   {% for prep in sample.preps %}**{{ prep.label }}:** {{ prep.description }}
+    
+    {% endfor %}
+
+Sequencing Centre
+:   {{ project.sequencing_centre }}
+
 Reference Genome
-:   ` {{ sample.ref_genome }}`
+:   `{{ sample.ref_genome }}`
 
 Flow Cells
 :   {% for fc in sample.flowcells %}`{{ fc.id }}`
     
-    {% endblock %}
+    {% endfor %}
 
 
 # Library Statistics
@@ -48,19 +51,19 @@ Total Reads
 :   {{ sample.total_reads }}
 
 Aligned Reads
-:  {{ sample.percent_aligned }} -  {{ sample.aligned_reads }}
+:   {{ sample.percent_aligned }} - {{ sample.aligned_reads }}
 
 Duplication Rate
 :   {{ sample.duplication_rate }}
 
 Median Insert Size
-:   {{ sample.median_insert_size }}
+:   {{ sample.median_insert_size }} bp
 
 Av. Autosomal Coverage
-:  {{ sample.automsomal_coverage }}
+:   {{ sample.automsomal_coverage }}X
 
-Reference with at least 30X Coverage
-:   {{ sample.ref_above_30X }}
+&ge; 30X Coverage
+:   {{ sample.ref_above_30X }} of reference
 
 GC Content
 :   {{ sample.percent_gc }}
@@ -123,31 +126,34 @@ Change Rate
 :   {{ sample.snpeff.change_rate }}
 
 Total SNPs
-:    {{ sample.snpeff.total_snps }}
+:   {{ sample.snpeff.total_snps }}
 
 Homotypic SNPs
-:    {{ sample.snpeff.homotypic_snps }}
+:   {{ sample.snpeff.homotypic_snps }}
 
 Heterotypic SNPs
-:    {{ sample.snpeff.heterotypic_snps }}
+:   {{ sample.snpeff.heterotypic_snps }}
 
-Transitions / Transversions Ratio
-:    {{ sample.snpeff.TsTv_ratio }}
+Ts/Tv Ratio
+:   {{ sample.snpeff.TsTv_ratio }}
 
-Synonymous / Non-Synonymous
-:    {{ sample.snpeff.synonymous_SNPs }} / {{ sample.snpeff.nonsynonymous_SNPs }} 
+Synonymous SNPs / Non-Synonymous
+:   {{ sample.snpeff.synonymous_SNPs }}
+
+Non-Synonymous SNPs
+:   {{ sample.snpeff.nonsynonymous_SNPs }}
 
 Stop Gained / Lost
 :   {{ sample.snpeff.stops_gained }} / {{ sample.snpeff.stops_lost }}
 
 Missense SNPs
-:    {{ sample.snpeff.percent_missense_SNPs }}  -   {{ sample.snpeff.missense_SNPs }}
+:   {{ sample.snpeff.percent_missense_SNPs }}  -   {{ sample.snpeff.missense_SNPs }}
 
 Nonsense SNPs
-:    {{ sample.snpeff.percent_nonsense_SNPs }}  -   {{ sample.snpeff.nonsense_SNPs }}
+:   {{ sample.snpeff.percent_nonsense_SNPs }}  -   {{ sample.snpeff.nonsense_SNPs }}
 
 Silent SNPs
-:    {{ sample.snpeff.percent_silent_SNPs }}  -   {{ sample.snpeff.silent_SNPs }}
+:   {{ sample.snpeff.percent_silent_SNPs }}  -   {{ sample.snpeff.silent_SNPs }}
 
 Different effects can be attributed to each SNP depending on where it occurs.
 Here we have used the [snpEff](http://snpeff.sourceforge.net/) tool to

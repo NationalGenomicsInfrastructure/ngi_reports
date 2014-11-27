@@ -10,17 +10,35 @@ support_email: genomics_support@scilifelab.se
 Report Date
 :   2014-11-13
 
-Recipient
+User Contact
 :   phil.ewels@scilifelab.se
 
 Project Name
-:   M.Kaller_14_05
+:   M.Kaller_14_05 (Swedish Genomes Pilot v3 )
+
+
+Some spacer text here. 
+
+Report Date
+:   2014-11-13
+
+User Contact
+:   phil.ewels@scilifelab.se
+
+Project Name
+:   M.Kaller_14_05 (Swedish Genomes Pilot v3 )
 
 User Sample Name
 :   Test Sample #1290
 
 NGI Sample Name
 :   P1170_101
+
+UPPMAX Project ID
+:   `b2014832`
+
+Sequencing Platform
+:   Illumina
 
 Library Preparation Method
 :   **A:** All samples were sequenced on HiSeq2500 (HiSeq Control Software
@@ -30,9 +48,6 @@ Library Preparation Method
 
 Sequencing Centre
 :   NGI Stockholm
-
-Sequencing Platform
-:   Illumina
 
 Reference Genome
 :   `gatk_bundle/2.8/b37/human_g1k_v37.fasta`
@@ -58,10 +73,10 @@ Median Insert Size
 :   369 bp
 
 Av. Autosomal Coverage
-:   28.92
+:   28.92X
 
-Reference with at least 30X Coverage
-:   51.72%
+&ge; 30X Coverage
+:   51.72% of reference
 
 GC Content
 :   39.87%
@@ -132,11 +147,14 @@ Homotypic SNPs
 Heterotypic SNPs
 :   2,513,055
 
-Transitions / Transversions Ratio
+Ts/Tv Ratio
 :   1.9895
 
-Synonymous / Non-Synonymous
-:   35,078 / 30,232
+Synonymous SNPs
+:   35,078
+
+Non-Synonymous SNPs
+:   30,232
 
 Stop Gained / Lost
 :   273 / 58

@@ -2,3 +2,60 @@
 
 """ This is the entry point for ngi_reports.
 """
+
+from __future__ import print_function
+
+import argparse
+import jinja2
+import os
+
+from ngi_reports.log import loggers
+from ngi_reports.common import config as report_config
+
+LOG = loggers.minimal_logger('NGI Reports')
+config = report_config.load_config()
+
+def make_report (report_type, working_dir=os.getcwd()):
+    
+    # Setup
+    template_fn = '{}.md'.format(report_type)
+    LOG.info('Creating report type: {}'.format(report_type))
+    
+    # Set up the jinja environment
+    templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data/report_templates/'))
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
+    
+    # Load our template
+    template = env.get_template(template_fn)
+    
+    # Import the module for this report type
+    ngi_node = config.get('ngi_reports', 'ngi_node')
+    report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
+    report = report_mod.Report(config, LOG, working_dir)
+    
+    # Print the output
+    output_fn = os.path.realpath(os.path.join(working_dir, report.report_fn))
+    try:
+        with open(output_fn, 'w') as fh:
+            print(template.render(report=report.info, project=report.project, sample=report.sample), file=fh)
+    except IOError as e:
+        raise IOError(e)
+
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("Make an NGI Report")
+    parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
+        help="Working Directory. Default: cwd when script is executed.")
+    parser.add_argument('report_type',  metavar='<report type>',
+        help="Type of report to generate")
+
+    kwargs = vars(parser.parse_args())
+    
+    make_report(**kwargs)

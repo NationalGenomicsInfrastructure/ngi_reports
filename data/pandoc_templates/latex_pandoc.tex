@@ -1,0 +1,278 @@
+\documentclass[12pt]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+  \setmainfont{Helvetica Neue}
+  \setsansfont{Helvetica Neue}
+  \setmonofont[Mapping=tex-ansi]{Consolas}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+$if(natbib)$
+\usepackage{natbib}
+\bibliographystyle{$if(biblio-style)$$biblio-style$$else$plainnat$endif$}
+$endif$
+$if(biblatex)$
+\usepackage{biblatex}
+$if(biblio-files)$
+\bibliography{$biblio-files$}
+$endif$
+$endif$
+$if(listings)$
+\usepackage{listings}
+$endif$
+$if(lhs)$
+\lstnewenvironment{code}{\lstset{language=Haskell,basicstyle=\small\ttfamily}}{}
+$endif$
+$if(highlighting-macros)$
+$highlighting-macros$
+$endif$
+$if(verbatim-in-note)$
+\usepackage{fancyvrb}
+$endif$
+$if(tables)$
+\usepackage{longtable,booktabs}
+$endif$
+$if(graphics)$
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+$endif$
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\usepackage[usenames, dvipsnames]{color}
+\definecolor{grey}{gray}{0.5}
+\definecolor{lightgrey}{gray}{0.8}
+\definecolor{linkblue}{rgb}{0,0,0.6}
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={$author-meta$},
+            pdftitle={$title-meta$},
+            colorlinks=true,
+            citecolor=black,
+            urlcolor=linkblue,
+            linkcolor=black,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+$if(links-as-notes)$
+% Make links footnotes instead of hotlinks:
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+$endif$
+$if(strikeout)$
+\usepackage[normalem]{ulem}
+% avoid problems with \sout in headers with hyperref:
+\pdfstringdefDisableCommands{\renewcommand{\sout}{}}
+$endif$
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+$if(numbersections)$
+\setcounter{secnumdepth}{5}
+$else$
+\setcounter{secnumdepth}{0}
+$endif$
+$if(verbatim-in-note)$
+\VerbatimFootnotes % allows verbatim text in footnotes
+$endif$
+$if(lang)$
+\ifxetex
+  \usepackage{polyglossia}
+  \setmainlanguage{$mainlang$}
+\else
+  \usepackage[$lang$]{babel}
+\fi
+$endif$
+
+%%%%%%%%%% HERE COMES THE CUSTOM STUFF %%%%%%%%%%%%%%
+
+% Set the header and footer up
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[top=2.5cm, bottom=4.5cm, left=2cm, right=2cm, heightrounded]{geometry}
+\pagestyle{fancy}
+\lhead{\includegraphics[width=5cm]{../assets/SLL_logo.png}\vspace{0.3cm}}
+\rhead{\includegraphics[width=5cm]{../assets/NGI_logo.png}\vspace{0.45cm}}
+\chead{\color{grey}National Genomics Infrastructure$if(title)$ - $title$$endif$}
+$if(support_email)$
+	\lfoot{
+		\vspace{0cm} % not sure why i need this. Something to do with the href?
+		\href{mailto:$support_email$}{
+			\color{grey}{$support_email$}
+		}
+	}
+$endif$
+\cfoot{\color{grey}Page \thepage\ of {\hypersetup{linkcolor=grey}\pageref{LastPage}}}
+$if(subtitle)$\rfoot{\color{grey}$subtitle$}$endif$
+
+% Make the header and footer rules thin and grey
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{grey}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{grey}\leaders\hrule height \headrulewidth\hfill}}
+
+% Build the Main Title
+$if(title)$
+\title{
+	\vspace{0.5cm}
+	{\fontsize{32}{36}\selectfont $title$}
+	$if(subtitle)$
+		\\\vspace{0.5em}
+		{\fontsize{24}{28}\selectfont $subtitle$}
+	$endif$
+	\\\headrule
+	\vspace{-2cm}
+}
+$endif$
+\date{}
+\author{}
+
+% Section header font sizes
+\usepackage{titlesec}
+\titleformat{\section}{\fontsize{18}{22}\bfseries}{\thesection}{1em}{}
+
+% Make code \texttt smaller have grey highlighting
+% http://tex.stackexchange.com/questions/42961/adding-a-highlight-to-texttt-blocks
+\usepackage{soul}
+\definecolor{vlightgrey}{gray}{.95}
+\sethlcolor{vlightgrey}
+\let\OldTexttt\texttt
+\renewcommand{\texttt}[1]{\OldTexttt{\small\hl{#1}}}
+
+
+% Styling the definition lists to look like the other report
+% Solution kindly provided by Gonzalo Medina
+% http://tex.stackexchange.com/questions/213236/customising-description-lists
+% Double dollar signs are for pandoc
+\usepackage{enumitem}
+\usepackage{etoolbox}
+\usepackage{tikzpagenodes}
+\usetikzlibrary{tikzmark,calc}
+
+\newcounter{colordesc}
+\newlength\longestlabel
+\setlength\longestlabel{5.5cm}
+
+\setlist[description]{style=multiline, leftmargin=\longestlabel, itemsep=0cm}
+
+\AtBeginEnvironment{description}{%
+  \stepcounter{colordesc}%
+  \begin{tikzpicture}[overlay,remember picture]
+  
+  % Filled grey box over headers
+  \fill[gray!30] 
+    ( $$ (pic cs:start-\thecolordesc) + (-5pt,-1.85\topsep) $$ ) 
+      rectangle 
+    ( $$ ({pic cs:start-\thecolordesc}|-{pic cs:end-\thecolordesc}) + (\longestlabel-5pt,-.5\topsep) $$ );
+  
+  
+  % Border along the right hand side of the definition list
+  \draw[gray!30] 
+    ( $$ (current page text area.east|-{pic cs:start-\thecolordesc}) + (5pt,-1.85\topsep) $$ )
+      -- 
+    ( $$ (current page text area.east|-{pic cs:end-\thecolordesc})  + (5pt,-0.45\topsep) $$ );
+  
+  \end{tikzpicture}%
+  \tikzmark{start-\thecolordesc}%
+}
+\AtEndEnvironment{description}{%
+  \tikzmark{end-\thecolordesc}%
+}
+
+% Border along the bottom of the definition list
+\AtEndEnvironment{description}{%
+  \tikz[overlay,remember picture]\draw[gray!30]
+    ( $$ (current page text area.west|-{pic cs:end-\thecolordesc}) + (0,-.45\topsep) $$ ) 
+    -- ++(1.01\textwidth,0);%
+}
+
+% Top borders of list items
+\renewcommand*\descriptionlabel[1]{%
+  \tikz\draw[overlay,gray!30]
+    (-5pt,.8\baselineskip) -- 
+    (1.01\textwidth,.8\baselineskip);%
+    \hspace\labelsep\normalfont\bfseries #1%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+$for(header-includes)$
+$header-includes$
+$endfor$
+
+\begin{document}
+
+$if(title)$\maketitle$endif$
+\thispagestyle{fancyplain}
+
+$for(include-before)$
+$include-before$
+
+$endfor$
+$if(toc)$
+{
+\hypersetup{linkcolor=black}
+\setcounter{tocdepth}{$toc-depth$}
+\tableofcontents
+}
+$endif$
+$if(lot)$
+\listoftables
+$endif$
+$if(lof)$
+\listoffigures
+$endif$
+
+$body$
+
+$if(natbib)$
+$if(biblio-files)$
+$if(biblio-title)$
+$if(book-class)$
+\renewcommand\bibname{$biblio-title$}
+$else$
+\renewcommand\refname{$biblio-title$}
+$endif$
+$endif$
+\bibliography{$biblio-files$}
+
+$endif$
+$endif$
+$if(biblatex)$
+\printbibliography$if(biblio-title)$[title=$biblio-title$]$endif$
+
+$endif$
+$for(include-after)$
+$include-after$
+
+$endfor$
+\end{document}
