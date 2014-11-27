@@ -3,76 +3,43 @@
 """ This is the entry point for ngi_reports.
 """
 
-import ngi_reports
-
 import argparse
 import jinja2
 import os
 
-LOG = ngi_reports.log.loggers.minimal_logger('NGI Reports')
+from datetime import datetime
 
-def make_report (report_type, dir=os.getcwd()):
+from ngi_reports.log import loggers
+from ngi_reports.common import config as report_config
+
+LOG = loggers.minimal_logger('NGI Reports')
+config = report_config.load_config()
+
+def make_report (report_type, working_dir=os.getcwd()):
     
     # Setup
     template_fn = '{}.md'.format(report_type)
     LOG.info('Creating report type: {}'.format(report_type))
-    config = ngi_reports.common.config.load_config()
     
-    print(config)
-    
-    # Create empty dicts to hold the dynamic data
-    report = project = sample = {}
-    
-    # Holding test to test the template
-    report['support_email'] = 'genomics_support@scilifelab.se' 
-        # ngi_reports.common.config['support_email'] ???
-    report['date'] = 'FUBAR'
-    report['recipient'] = 'FUBAR'
-    project['id'] = 'FUBAR'
-    project['group'] = 'FUBAR'
-    project['id'] = 'FUBAR'
-    project['UPPMAXid'] = 'FUBAR'
-    project['sequencing_centre'] = 'FUBAR'
-    sample['id'] = 'FUBAR'
-    sample['sequencing_platform'] = 'FUBAR'
-    sample['user_sample_id'] = 'FUBAR'
-    sample['ref_genome'] = 'FUBAR'
-    sample['total_reads'] = 'FUBAR'
-    sample['percent_aligned'] = 'FUBAR'
-    sample['aligned_reads'] = 'FUBAR'
-    sample['duplication_rate'] = 'FUBAR'
-    sample['median_insert_size'] = 'FUBAR'
-    sample['automsomal_coverage'] = 'FUBAR'
-    sample['ref_above_30X'] = 'FUBAR'
-    sample['percent_gc'] = 'FUBAR'
-    sample['snpeff'] = {}
-    sample['snpeff']['change_rate'] = 'FUBAR'
-    sample['snpeff']['total_snps'] = 'FUBAR'
-    sample['snpeff']['homotypic_snps'] = 'FUBAR'
-    sample['snpeff']['heterotypic_snps'] = 'FUBAR'
-    sample['snpeff']['TsTv_ratio'] = 'FUBAR'
-    sample['snpeff']['synonymous_SNPs'] = 'FUBAR'
-    sample['snpeff']['nonsynonymous_SNPs'] = 'FUBAR'
-    sample['snpeff']['stops_gained'] = 'FUBAR'
-    sample['snpeff']['stops_lost'] = 'FUBAR'
-    sample['snpeff']['percent_missense_SNPs'] = 'FUBAR'
-    sample['snpeff']['missense_SNPs'] = 'FUBAR'
-    sample['snpeff']['percent_nonsense_SNPs'] = 'FUBAR'
-    sample['snpeff']['nonsense_SNPs'] = 'FUBAR'
-    sample['snpeff']['percent_silent_SNPs'] = 'FUBAR'
-    sample['snpeff']['silent_SNPs'] = 'FUBAR'
-    sample['preps'] = [{'label': 'FUBAR', 'description': 'FUBAR'}]
-    sample['flowcells'] = [{'id': 'FUBAR'}]
-
     # Set up the jinja environment
-    templates_dir = os.path.realpath('../data/report_templates/')
+    templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data/report_templates/'))
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
-
+    
     # Load our template
     template = env.get_template(template_fn)
     
+    # Import the module for this report type
+    report_mod = __import__('ngi_reports.common.{}'.format(report_type), fromlist=['ngi_reports.common'])
+    
+    # Get fields from module
+    fields = report_mod.get_fields(config, working_dir)
+    
+    # Basic Fields
+    fields['report']['support_email'] = config.get('ngi_reports', 'support_email')
+    fields['report']['date'] = datetime.today().strftime('%Y-%m-%d')
+
     # Print the output
-    print template.render(report = report, project = project, sample = sample)
+    print template.render(report=fields['report'], project=fields['project'], sample=fields['sample'])
 
 
 
@@ -84,7 +51,7 @@ def make_report (report_type, dir=os.getcwd()):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Make an NGI Report")
-    parser.add_argument("-d", "--dir", dest="dir",
+    parser.add_argument("-d", "--dir", dest="working_dir",
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument('report_type',  metavar='<report type>',
         help="Type of report to generate")
