@@ -5,6 +5,7 @@
 
 import os
 import re
+import xmltodict
 from datetime import datetime
 
 class CommonReport(object):
@@ -25,28 +26,21 @@ class CommonReport(object):
         self.sample = {}
     
         # Project Fields
-        self.project['id'] = 'M.Kaller_14_05'
         self.project['group'] = 'FUBAR'
         self.project['user_sample_id'] = 'FUBAR'
-        self.project['UPPMAXid'] = 'FUBAR'
         self.project['sequencing_centre'] = 'NGI {}'.format(ngi_node.title())
         
         self.sample['duplication_rate'] = 'FUBAR'        
         
         # Sample Fields
-        self.sample['id'] = 'P1170_101'
-        self.sample['sequencing_platform'] = 'FUBAR'
         self.sample['user_sample_id'] = 'FUBAR'
-        self.sample['ref_genome'] = 'FUBAR'
-
-        self.sample['preps'] = [{'label': 'FUBAR', 'description': 'FUBAR'}]
+        self.sample['preps'] = [{'label': 'A', 'description': 'FUBAR'}]
         self.sample['flowcells'] = [{'id': 'FUBAR'}]
         
         # Scrape information from the filesystem
+        self.parse_setup_xml()
         self.parse_qualimap()
         self.parse_snpeff()
-        
-        
         
         # Report Fields
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
@@ -55,6 +49,28 @@ class CommonReport(object):
         self.report_fn = self.sample['id'] + '_ign_sample_report.md'
 
 
+    def parse_setup_xml(self):
+        """ Parses the XML setup file that Piper uses
+        """
+        xml_fn = os.path.join(self.working_dir, 'project_setup_output_file.xml')
+        try:
+            with open(os.path.realpath(xml_fn)) as fh:
+                run = xmltodict.parse(fh)
+        except IOError as e:
+            raise IOError("Could not open configuration file \"{}\".".format(config_file_path))
+        
+        run = run['project']        
+        try:
+            self.project['id'] = run['metadata']['name']
+            self.project['UPPMAXid'] = run['metadata']['uppmaxprojectid']
+            self.sample['sequencing_platform'] = run['metadata']['platform']
+            self.sample['ref_genome'] = run['metadata']['reference']
+            self.sample['id'] = run['inputs']['sample']['samplename']
+        except KeyError:
+            self.LOG.warning('Could not find key in sample XML file')
+            pass
+        
+    
     def parse_qualimap(self):
         """ Looks for qualimap results files and adds to class
         """
