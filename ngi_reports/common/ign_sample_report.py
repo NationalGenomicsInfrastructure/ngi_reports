@@ -39,27 +39,12 @@ class CommonReport(object):
         self.sample['user_sample_id'] = 'FUBAR'
         self.sample['ref_genome'] = 'FUBAR'
 
-        self.sample['snpeff'] = {}
-        self.sample['snpeff']['change_rate'] = 'FUBAR'
-        self.sample['snpeff']['total_snps'] = 'FUBAR'
-        self.sample['snpeff']['homotypic_snps'] = 'FUBAR'
-        self.sample['snpeff']['heterotypic_snps'] = 'FUBAR'
-        self.sample['snpeff']['TsTv_ratio'] = 'FUBAR'
-        self.sample['snpeff']['synonymous_SNPs'] = 'FUBAR'
-        self.sample['snpeff']['nonsynonymous_SNPs'] = 'FUBAR'
-        self.sample['snpeff']['stops_gained'] = 'FUBAR'
-        self.sample['snpeff']['stops_lost'] = 'FUBAR'
-        self.sample['snpeff']['percent_missense_SNPs'] = 'FUBAR'
-        self.sample['snpeff']['missense_SNPs'] = 'FUBAR'
-        self.sample['snpeff']['percent_nonsense_SNPs'] = 'FUBAR'
-        self.sample['snpeff']['nonsense_SNPs'] = 'FUBAR'
-        self.sample['snpeff']['percent_silent_SNPs'] = 'FUBAR'
-        self.sample['snpeff']['silent_SNPs'] = 'FUBAR'
         self.sample['preps'] = [{'label': 'FUBAR', 'description': 'FUBAR'}]
         self.sample['flowcells'] = [{'id': 'FUBAR'}]
         
         # Scrape information from the filesystem
         self.parse_qualimap()
+        self.parse_snpeff()
         
         
         
@@ -75,7 +60,7 @@ class CommonReport(object):
         """
         # Build the expected filenames
         qualimap_dirname = self.sample['id']+'.clean.dedup.recal.qc'
-        data_dir = os.path.join(self.working_dir, 'quality_control', qualimap_dirname)
+        data_dir = os.path.join(self.working_dir, 'delivery', 'quality_control', qualimap_dirname)
         genome_results = os.path.join(data_dir, 'genome_results.txt')
         qualimap_report = os.path.join(data_dir, 'qualimapReport.html')
         try:
@@ -138,6 +123,89 @@ class CommonReport(object):
         except:
             self.LOG.error("Something went wrong with parsing the Qualimap results")
             raise
+            
+    
+    def parse_snpeff(self):
+        """ Parse the snpEff output to get information about SNPs
+        """
+        snpEff = {}
+        # Build the expected filenames
+        snpEff_csv = os.path.join(self.working_dir, 'snpEff_output', 'snpEff_summary.csv')
+        try:
+            synonymous_SNPs = 0
+            nonsynonymous_SNPs = 0
+            
+            with open(os.path.realpath(snpEff_csv), 'r') as fh:
+                for line in fh:
+                    line = line.strip()
+                    
+                    # Number_of_variants_before_filter, 4004647
+                    if line[:33] == 'Number_of_variants_before_filter,':
+                        snpEff['total_snps'] = '{:,}'.format(int(line[34:]))
+                    
+                    # Number_of_variants_before_filter, 4004647
+                    if line[:13] == 'Change_rate ,':
+                        snpEff['change_rate'] = '1 change per {:,} bp'.format(int(line[14:]))
+                    
+                    # Type, Total, Homo, Hetero
+                    # SNP , 4004647 , 1491592 , 2513055
+                    if line[:5] == 'SNP ,':
+                        sections = line.split(',')
+                        snpEff['homotypic_snps'] = '{:,}'.format(int(sections[2].strip()))
+                        snpEff['heterotypic_snps'] = '{:,}'.format(int(sections[3].strip()))
+                    
+                    # Type , Count , Percent 
+                    if line[:10] == 'MISSENSE ,':
+                        sections = line.split(',')
+                        pc = sections[2].strip()
+                        pc = float(pc[:-1])
+                        snpEff['percent_missense_SNPs'] = '{:.1f}%'.format(pc)
+                        snpEff['missense_SNPs'] = '{:,}'.format(int(sections[1].strip()))
+                    
+                    if line[:10] == 'NONSENSE ,':
+                        sections = line.split(',')
+                        pc = sections[2].strip()
+                        pc = float(pc[:-1])
+                        snpEff['percent_nonsense_SNPs'] = '{:.1f}%'.format(pc)
+                        snpEff['nonsense_SNPs'] = '{:,}'.format(int(sections[1].strip()))
+                    
+                    if line[:8] == 'SILENT ,':
+                        sections = line.split(',')
+                        pc = sections[2].strip()
+                        pc = float(pc[:-1])
+                        snpEff['percent_silent_SNPs'] = '{:.1f}%'.format(pc)
+                        snpEff['silent_SNPs'] = '{:,}'.format(int(sections[1].strip()))
+                    
+                    if line[:10] == 'SYNONYMOUS':
+                        sections = line.split(',')
+                        synonymous_SNPs += int(sections[1].strip())
+                    
+                    if line[:14] == 'NON_SYNONYMOUS':
+                        sections = line.split(',')
+                        nonsynonymous_SNPs += int(sections[1].strip())
+                    
+                    if line[:13] == 'STOP_GAINED ,':
+                        sections = line.split(',')
+                        snpEff['stops_gained'] = '{:,}'.format(int(sections[1].strip()))
+                    
+                    if line[:11] == 'STOP_LOST ,':
+                        sections = line.split(',')
+                        snpEff['stops_lost'] = '{:,}'.format(int(sections[1].strip()))
+                    
+                    # Ts_Tv_ratio , 1.989511
+                    if line[:13] == 'Ts_Tv_ratio ,':
+                        snpEff['TsTv_ratio'] = '{:.3f}'.format(float(line[14:]))
+
+        except:
+            self.LOG.error("Something went wrong with parsing the snpEff results")
+            raise
+        
+        if synonymous_SNPs > 0:
+            snpEff['synonymous_SNPs'] = '{:,}'.format(synonymous_SNPs)
+        if nonsynonymous_SNPs > 0:
+            snpEff['nonsynonymous_SNPs'] = '{:,}'.format(nonsynonymous_SNPs)
+
+        self.sample['snpeff'] = snpEff
 
 
     def check_fields(self):
