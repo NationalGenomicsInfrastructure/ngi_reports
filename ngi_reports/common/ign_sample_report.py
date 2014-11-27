@@ -65,4 +65,38 @@ def get_fields(config, working_dir=os.getcwd()):
     fields = dict(fields.items() + node_mod.get_fields(working_dir, config).items())
     
     # Retun everything
+    if check_fields(fields):
+        return fields
+    else:
+        raise Exception
+
+
+
+def check_fields(fields):
+    """ Take a dictionary input and check that we have all required fields.
+    """
+    report_fields = ['recipient']
+    project_fields = ['id', 'UPPMAXid', 'sequencing_centre']
+    sample_fields = ['id', 'sequencing_platform', 'user_sample_id', 
+        'ref_genome', 'total_reads', 'percent_aligned', 'aligned_reads', 
+        'duplication_rate', 'median_insert_size', 'automsomal_coverage',
+        'ref_above_30X', 'percent_gc']
+    
+    for f in report_fields:
+        if f not in fields['report'].keys():
+            return False
+    
+    for f in project_fields:
+        if f not in fields['project'].keys():
+            return False
+    
+    for f in sample_fields:
+        if f not in fields['sample'].keys():
+            return False
+    
+    return True
+
+
+def parse_qualimap(fn):
+    fields = {}
     return fields
