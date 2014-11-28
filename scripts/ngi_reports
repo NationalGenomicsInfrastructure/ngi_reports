@@ -6,8 +6,8 @@
 from __future__ import print_function
 
 import argparse
-import jinja2
 import os
+import shlex
 
 from ngi_reports.log import loggers
 from ngi_reports.common import config as report_config
@@ -21,25 +21,30 @@ def make_report (report_type, working_dir=os.getcwd()):
     template_fn = '{}.md'.format(report_type)
     LOG.info('Creating report type: {}'.format(report_type))
     
-    # Set up the jinja environment
-    templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data/report_templates/'))
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
-    
-    # Load our template
-    template = env.get_template(template_fn)
-    
     # Import the module for this report type
     ngi_node = config.get('ngi_reports', 'ngi_node')
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
     report = report_mod.Report(config, LOG, working_dir)
     
     # Print the output
-    output_fn = os.path.realpath(os.path.join(working_dir, report.report_fn))
+    output_md = report.parse_template()
+    output_fn = os.path.realpath(os.path.join(working_dir, report.report_fn + '.md'))
     try:
         with open(output_fn, 'w') as fh:
-            print(template.render(report=report.info, project=report.project, sample=report.sample), file=fh)
+            print(output_md, file=fh)
     except IOError as e:
         raise IOError(e)
+    
+    # Convert markdown to HTML and PDF using pandoc
+    try:
+        templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data/pandoc_templates/'))
+        html_cmd = shlex.split('pandoc {0}.md -o {0}.html --template={1}/html_pandoc.html'.format(report.report_fn, templates_dir))
+        pdf_cmd = shlex.split('pandoc {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex'.format(report.report_fn, templates_dir))
+        subprocess.Popen(html_cmd, stdout=f)
+        subprocess.Popen(pdf_cmd, stdout=f)
+    except:
+        LOG.error('Could not convert markdown to HTML or PDF')
+        raise
 
 
 

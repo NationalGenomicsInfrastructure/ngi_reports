@@ -3,6 +3,7 @@
 """ Main module for dealing with fields for the IGN Sample Report
 """
 
+import jinja2
 import os
 import re
 import xmltodict
@@ -46,7 +47,7 @@ class CommonReport(object):
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
         self.info['date'] = datetime.today().strftime('%Y-%m-%d')
         self.info['recipient'] = 'FUBAR'
-        self.report_fn = self.sample['id'] + '_ign_sample_report.md'
+        self.report_fn = self.sample['id'] + '_ign_sample_report'
 
 
     def parse_setup_xml(self):
@@ -248,3 +249,24 @@ class CommonReport(object):
 
         return True
 
+    def parse_template(self):
+        
+        if not self.check_fields():
+            self.LOG.error('Some mandatory fields were missing')
+            raise
+        
+        # Load the Jinja2 template
+        try:
+            templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '../../data/report_templates/'))
+            env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
+            template = env.get_template('ign_sample_report')
+        except:
+            self.LOG.error('Could not load the Jinja report template')
+            raise
+        
+        # Parse the template
+        try:
+            return template.render(report=self.info, project=self.project, sample=self.sample)
+        except:
+            self.LOG.error('Could not parse the ign_sample_report template')
+            raise
