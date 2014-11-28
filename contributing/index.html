@@ -53,8 +53,32 @@
                 <ul class="nav navbar-nav">
                 
                 
+                    <li >
+                        <a href="../installation">Installation</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../usage">Usage</a>
+                    </li>
+                
+                
+                
                     <li class="active">
                         <a href=".">Contributing</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../report_project_report">Project Reports</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../report_ign_sample_report">IGN Sample Reports</a>
                     </li>
                 
                 
@@ -67,12 +91,12 @@
                 
                 
                 <li >
-                    <a rel="next" href="..">
+                    <a rel="next" href="../usage">
                         <i class="fa fa-arrow-left"></i> Previous
                     </a>
                 </li>
-                <li class="disabled">
-                    <a rel="prev" >
+                <li >
+                    <a rel="prev" href="../report_project_report">
                         Next <i class="fa fa-arrow-right"></i>
                     </a>
                 </li>
@@ -100,7 +124,13 @@
     
         <li class="main active"><a href="#contributing">Contributing</a></li>
         
+            <li><a href="#different-functions-different-repositories">Different functions, different repositories..</a></li>
+        
+            <li><a href="#documentation">Documentation</a></li>
+        
             <li><a href="#file-formats">File Formats</a></li>
+        
+            <li><a href="#information-flow">Information Flow</a></li>
         
     
     </ul>
@@ -108,14 +138,80 @@
                 <div class="col-md-9" role="main">
 
 <h1 id="contributing">Contributing</h1>
+<h2 id="different-functions-different-repositories">Different functions, different repositories..</h2>
+<p>Where possible, report scripts should be as minimal as possible. Try to keep
+functionality limited to things which can only be useful in the context of making
+reports (eg. parsing text files to extract specific information).</p>
+<p>All analysis and plotting should be handled by code in different repositories.
+Specifically, any scripts to generate plots should be added to the
+<a href="https://github.com/SciLifeLab/visualizations">visualizations</a> repository and
+then imported as a python package. Code involved in retrieving information
+from Stockholm's StatusDB should use the
+<a href="https://github.com/SciLifeLab/statusdb">statusdb</a> repository.</p>
+<p>Keeping the code separate in this way should enable us to reuse scripts
+in different scenarios (eg. the <code>statusdb</code> wrapper) and make the
+organisation logical for easier maintenance.</p>
+<h2 id="documentation">Documentation</h2>
+<p>As each report script will be quite diverse (expecting different input files
+and so on), good documentation is critical. You must state all file
+dependencies and how these files should be formatted / generated.</p>
+<p>Documentation should be written in MarkDown <code>.md</code> files and placed
+in the <code>/docs</code> folder.</p>
 <h2 id="file-formats">File Formats</h2>
 <p>All reports should be generated as Markdown <code>.md</code> files. We can then
 use <a href="http://johnmacfarlane.net/pandoc/">Pandoc</a> to convert these into 
 whatever file format we like (PDF initially, probably HTML later).</p>
 <p>To make report generation as simple as possible, all images should be
-can be generated in both PDF and HTML-friendly formats (almost always
+generated in both PDF and HTML-friendly formats (almost always
 <code>.png</code>). On top of this, vector format plots are very useful to users
 so PDF and SVG plots should be delivered in addition where possible.</p>
+<h2 id="information-flow">Information Flow</h2>
+<p>The general structure of the package is intended to allow easy use of
+the package by both Stockholm and Uppsala NGI nodes. There is a
+common entrance script (<code>/scripts/ngi_reports</code>) which reads
+your config file (<code>~/.ngi_reports/ngi_reports.conf</code>) to determine
+which NGI node you're at. It also takes the report type from the command
+line. Using these two pieces of information, it dynamically loads the
+appropriate module. This NGI node - specific module loads a common
+module of the same report type as a dependency. This grabs all of the
+information that is shared between both sites ans has common functions
+(eg. checking the required fields). The object is passed back and node-
+specific fields are filled in. Finally, the main script calls the
+<code>Report.parse_template()</code> function to get the Markdown output
+and writes this to <code>Report.report_fn</code>. Pandoc is then called to convert
+this file to HTML and PDF.</p>
+<h3 id="example">Example</h3>
+<p>The following describes the order of execution when creating and IGN Sample
+Report at the Stockholm NGI node.</p>
+<ul>
+<li>The main <code>/scripts/ngi_report</code> script is executed<ul>
+<li>Conf: NGI node = <code>stockholm</code></li>
+<li>Command line report type = <code>ign_sample_report</code></li>
+</ul>
+</li>
+<li>module <code>/ngi_reports/stockholm/ign_sample_report.py</code> loaded<ul>
+<li>This loads <code>/ngi_reports/common/ign_sample_report.py</code> as a dependency</li>
+</ul>
+</li>
+<li><code>Report</code> object created</li>
+<li><code>__init__</code> def first initialises the <code>common.ign_sample_report.Report</code> object.</li>
+<li>The common <code>__init__</code> gets all of the fields that it can using methods availble to both NGI nodes<ul>
+<li>This is mainly scraping information from the file system</li>
+</ul>
+</li>
+<li>The <code>stockholm.__init__</code> then continues and grabs and node-specific fields<ul>
+<li>This is mainly information from statusdb / the LIMS</li>
+</ul>
+</li>
+<li>The main <code>ngi_report</code> script then calls the <code>Report.parse_template()</code> function to get the markdown output<ul>
+<li>The  <code>common.check_fields()</code> method is called to make sure that we has everything</li>
+<li>A markdown template called <code>/data/report_templates/ign_sample_report.md</code> is used</li>
+<li>Jinja2 is used to replace the fields in the template with real data</li>
+</ul>
+</li>
+<li>This markdown string is written to a markdown output file by the main <code>ngi_reports</code> script</li>
+<li><code>ngi_reports</code> then calls <code>pandoc</code> to convert this file into HTML and PDF.</li>
+</ul>
 </div>
             
         </div>

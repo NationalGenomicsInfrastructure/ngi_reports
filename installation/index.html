@@ -4,17 +4,17 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="Package to generate reports for NGI Stockholm and Uppsala">
+        
         <meta name="author" content="Phil Ewels">
         
-        <link rel="shortcut icon" href="./img/favicon.ico">
+        <link rel="shortcut icon" href="../img/favicon.ico">
 
-        <title>NGI Reports</title>
+        <title>Installation - NGI Reports</title>
 
-        <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
-        <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
-        <link href="./css/base.css" rel="stylesheet">
-        <link rel="stylesheet" href="./css/highlight.css">
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
 
         <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!--[if lt IE 9]>
@@ -25,7 +25,7 @@
         
     </head>
 
-    <body class="homepage">
+    <body>
 
         <div class="navbar navbar-default navbar-fixed-top" role="navigation">
     <div class="container">
@@ -43,7 +43,7 @@
             
 
             <!-- Main title -->
-            <a class="navbar-brand" href=".">NGI Reports</a>
+            <a class="navbar-brand" href="..">NGI Reports</a>
         </div>
 
         <!-- Expanded navigation -->
@@ -53,32 +53,32 @@
                 <ul class="nav navbar-nav">
                 
                 
-                    <li >
-                        <a href="installation/">Installation</a>
+                    <li class="active">
+                        <a href=".">Installation</a>
                     </li>
                 
                 
                 
                     <li >
-                        <a href="usage/">Usage</a>
+                        <a href="../usage">Usage</a>
                     </li>
                 
                 
                 
                     <li >
-                        <a href="contributing/">Contributing</a>
+                        <a href="../contributing">Contributing</a>
                     </li>
                 
                 
                 
                     <li >
-                        <a href="report_project_report/">Project Reports</a>
+                        <a href="../report_project_report">Project Reports</a>
                     </li>
                 
                 
                 
                     <li >
-                        <a href="report_ign_sample_report/">IGN Sample Reports</a>
+                        <a href="../report_ign_sample_report">IGN Sample Reports</a>
                     </li>
                 
                 
@@ -90,13 +90,13 @@
             <ul class="nav navbar-nav navbar-right">
                 
                 
-                <li class="disabled">
-                    <a rel="next" >
+                <li >
+                    <a rel="next" href="..">
                         <i class="fa fa-arrow-left"></i> Previous
                     </a>
                 </li>
                 <li >
-                    <a rel="prev" href="installation/">
+                    <a rel="prev" href="../usage">
                         Next <i class="fa fa-arrow-right"></i>
                     </a>
                 </li>
@@ -122,34 +122,49 @@
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="main active"><a href="#ngi-reports-documentation">NGI Reports Documentation</a></li>
+        <li class="main active"><a href="#installation">Installation</a></li>
         
-            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#python-package">Python Package</a></li>
+        
+            <li><a href="#pandoc-conversion">Pandoc Conversion</a></li>
         
     
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
 
-<h1 id="ngi-reports-documentation">NGI Reports Documentation</h1>
-<p>This documentation describes the code in the
-<a href="https://github.com/SciLifeLab/ngi_reports">ngi_reports</a>
-github repository.</p>
-<h2 id="introduction">Introduction</h2>
-<p>A common task within NGI is to create user reports. These can range from
-delivery reports containing basic sample information through to Best Practice
-reports with in-depth analysis.</p>
-<p>The <code>ngi_reports</code> package is a common framework for generating reports
-with consistent styling.  It's designed to work for both NGI Stockholm and
-Uppsala nodes. To facilitate this, code is divided into three modules:
-<code>common</code>, <code>stockholm</code> and <code>uppsala</code>.</p>
-<p>This documentation contains information about:</p>
-<ul>
-<li><a href="installation/">Installation</a></li>
-<li><a href="usage/">Usage</a></li>
-<li><a href="contributing/">General notes on contributing</a></li>
-<li>Specific information about each report type</li>
-</ul>
+<h1 id="installation">Installation</h1>
+<h2 id="python-package">Python Package</h2>
+<p>To create reports you need to install the <code>ngi_reports</code> package.
+First, either download or clone the <a href="https://github.com/SciLifeLab/ngi_reports">repository</a>.
+Install the package by running:</p>
+<pre><code>python setup.py install
+</code></pre>
+
+<p>This should install all dependencies so that the python code is ready to run.
+If you're intending to make changes to the code, use <code>develop</code> instead of <code>install</code>
+so that you don't need to run the setup script each time you make a change.</p>
+<p>Next, you need a config file in your home directory called
+<code>~/.ngi_reports/ngi_reports.conf</code>. This should look like this:</p>
+<pre><code class="bash">[ngi_reports]
+support_email: genomics_support@scilifelab.se
+ngi_node: stockholm
+</code></pre>
+
+<p>Obviously, if you're working at the Uppsala NGI node, use <code>uppsala</code> instead
+of <code>stockholm</code>.</p>
+<h2 id="pandoc-conversion">Pandoc Conversion</h2>
+<p>NGI reports use <a href="http://johnmacfarlane.net/pandoc/">Pandoc</a>
+to convert the autogenerated Markdown files into HTML and PDF reports.
+Head to the <a href="http://johnmacfarlane.net/pandoc/installing.html">pandoc installation page</a>
+and download the appropriate version for your system. Make sure that you also
+download and install LaTeX and all of the LaTeX packages that you can get your
+hands on.</p>
+<h3 id="fonts">Fonts</h3>
+<p>The LaTeX to PDF conversion uses two fonts - <strong>Helvetica Neue</strong> for headings
+and body text, and <strong>Consolas</strong> for code. If you're using Mac OSX you can get
+Consolas by following the instructions in
+<a href="http://zjhzxhz.com/2014/01/install-microsofts-consolas-font-on-mac-os-x/">this blog post</a>.</p>
 </div>
             
         </div>
@@ -163,9 +178,9 @@ Uppsala nodes. To facilitate this, code is divided into three modules:
         
 
         <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
-        <script src="./js/bootstrap-3.0.3.min.js"></script>
-        <script src="./js/prettify-1.0.min.js"></script>
-        <script src="./js/highlight.pack.js"></script>
-        <script src="./js/base.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/prettify-1.0.min.js"></script>
+        <script src="../js/highlight.pack.js"></script>
+        <script src="../js/base.js"></script>
     </body>
 </html>
