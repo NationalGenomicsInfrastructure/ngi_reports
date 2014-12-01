@@ -6,8 +6,10 @@
 from __future__ import print_function
 
 import argparse
-import jinja2
 import os
+import shlex
+import shutil
+import subprocess
 
 from ngi_reports.log import loggers
 from ngi_reports.common import config as report_config
@@ -19,27 +21,49 @@ def make_report (report_type, working_dir=os.getcwd()):
     
     # Setup
     template_fn = '{}.md'.format(report_type)
-    LOG.info('Creating report type: {}'.format(report_type))
-    
-    # Set up the jinja environment
-    templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '../data/report_templates/'))
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
-    
-    # Load our template
-    template = env.get_template(template_fn)
+    LOG.info('Report type: {}'.format(report_type))
     
     # Import the module for this report type
     ngi_node = config.get('ngi_reports', 'ngi_node')
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
     report = report_mod.Report(config, LOG, working_dir)
     
-    # Print the output
-    output_fn = os.path.realpath(os.path.join(working_dir, report.report_fn))
+    # Work out all of the directory and file names
+    output_dir = os.path.realpath(os.path.join(working_dir, report.report_dir))
+    output_bn = os.path.realpath(os.path.join(output_dir, report.report_fn))
+    output_fn = output_bn + '.md'
+    assets_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'assets'))
+    pandoc_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'pandoc_templates'))
+    
+    # Create the directory if we don't already have it (from plots)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    # Print the markdown output file
+    output_md = report.parse_template()
     try:
         with open(output_fn, 'w') as fh:
-            print(template.render(report=report.info, project=report.project, sample=report.sample), file=fh)
+            print(output_md, file=fh)
     except IOError as e:
         raise IOError(e)
+    
+    # Convert markdown to HTML using pandoc
+    try:
+        LOG.info('Creating the HTML report')
+        html_cmd = shlex.split('pandoc -s --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html'.format(output_bn, pandoc_dir))
+        subprocess.call(html_cmd)
+    except:
+        LOG.error('Could not convert markdown to HTML')
+        raise
+    
+    # Convert markdown to PDF using pandoc
+    try:    
+        LOG.info('Creating the PDF report')
+        pdf_cmd = shlex.split('pandoc -s {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex -V template_dir={1}'.format(output_bn, pandoc_dir))
+        subprocess.call(pdf_cmd)
+    except:
+        LOG.error('Could not convert markdown to PDF')
+        raise
 
 
 

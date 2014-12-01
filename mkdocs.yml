@@ -4,4 +4,8 @@ site_description: Package to generate reports for NGI Stockholm and Uppsala
 site_author: Phil Ewels
 pages:
 - ['index.md', 'Introduction'] 
+- ['installation.md', 'Installation'] 
+- ['usage.md', 'Usage'] 
 - ['contributing.md', 'Contributing']
+- ['report_project_report.md', 'Project Reports']
+- ['report_ign_sample_report.md', 'IGN Sample Reports']
