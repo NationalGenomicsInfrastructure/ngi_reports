@@ -28,19 +28,19 @@ def make_report (report_type, working_dir=os.getcwd()):
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
     report = report_mod.Report(config, LOG, working_dir)
     
-    # Get the markdown output and directory / file names
-    output_md = report.parse_template()
+    # Work out all of the directory and file names
     output_dir = os.path.realpath(os.path.join(working_dir, report.report_dir))
     output_bn = os.path.realpath(os.path.join(output_dir, report.report_fn))
     output_fn = output_bn + '.md'
     assets_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'assets'))
     pandoc_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'pandoc_templates'))
     
-    # Create the directory
+    # Create the directory if we don't already have it (from plots)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
     # Print the markdown output file
+    output_md = report.parse_template()
     try:
         with open(output_fn, 'w') as fh:
             print(output_md, file=fh)

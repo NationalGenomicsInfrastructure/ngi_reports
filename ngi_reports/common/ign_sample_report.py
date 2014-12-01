@@ -9,6 +9,12 @@ import re
 import xmltodict
 from datetime import datetime
 
+from ngi_visualizations.qualimap import coverage_histogram
+from ngi_visualizations.qualimap import genome_fraction_coverage
+from ngi_visualizations.qualimap import insert_size
+from ngi_visualizations.qualimap import gc_distribution
+from ngi_visualizations.snpEff import snpEff_plots
+
 class CommonReport(object):
     
     def __init__(self, config, LOG, working_dir):
@@ -25,15 +31,18 @@ class CommonReport(object):
         self.info = {}
         self.project = {}
         self.sample = {}
-    
-        # Project Fields
+        self.plots = {}
+        
+        # Self-sufficient Fields
+        self.report_dir = os.path.join('delivery', 'reports')
+        
+        self.info['support_email'] = config.get('ngi_reports', 'support_email')
+        self.info['date'] = datetime.today().strftime('%Y-%m-%d')
+        self.info['recipient'] = 'FUBAR'
         self.project['group'] = 'FUBAR'
         self.project['user_sample_id'] = 'FUBAR'
         self.project['sequencing_centre'] = 'NGI {}'.format(ngi_node.title())
-        
         self.sample['duplication_rate'] = 'FUBAR'        
-        
-        # Sample Fields
         self.sample['user_sample_id'] = 'FUBAR'
         self.sample['preps'] = [{'label': 'A', 'description': 'FUBAR'}]
         self.sample['flowcells'] = [{'id': 'FUBAR'}]
@@ -43,12 +52,14 @@ class CommonReport(object):
         self.parse_qualimap()
         self.parse_snpeff()
         
-        # Report Fields
-        self.info['support_email'] = config.get('ngi_reports', 'support_email')
-        self.info['date'] = datetime.today().strftime('%Y-%m-%d')
-        self.info['recipient'] = 'FUBAR'
-        self.report_dir = os.path.join('delivery', 'reports')
+        # Report Fields which depend on what we just parsed
         self.report_fn = self.sample['id'] + '_ign_sample_report'
+        
+        # Plot graphs
+        self.make_plots()
+
+
+
 
 
     def parse_setup_xml(self):
@@ -73,14 +84,17 @@ class CommonReport(object):
             pass
         
     
+    
+    
+    
     def parse_qualimap(self):
         """ Looks for qualimap results files and adds to class
         """
         # Build the expected filenames
         qualimap_dirname = self.sample['id']+'.clean.dedup.recal.qc'
-        data_dir = os.path.join(self.working_dir, 'delivery', 'quality_control', qualimap_dirname)
-        genome_results = os.path.join(data_dir, 'genome_results.txt')
-        qualimap_report = os.path.join(data_dir, 'qualimapReport.html')
+        self.qualimap_data_dir = os.path.join(self.working_dir, 'delivery', 'quality_control', qualimap_dirname)
+        genome_results = os.path.join(self.qualimap_data_dir, 'genome_results.txt')
+        qualimap_report = os.path.join(self.qualimap_data_dir, 'qualimapReport.html')
         try:
             cov_per_contig = False
             autosomal_cov_length = 0
@@ -143,12 +157,16 @@ class CommonReport(object):
             raise
             
     
+    
+    
+    
     def parse_snpeff(self):
         """ Parse the snpEff output to get information about SNPs
         """
         snpEff = {}
         # Build the expected filenames
-        snpEff_csv = os.path.join(self.working_dir, 'snpEff_output', 'snpEff_summary.csv')
+        self.snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, 'snpEff_output'))
+        snpEff_csv = os.path.join(self.snpeff_data_dir, 'snpEff_summary.csv')
         try:
             synonymous_SNPs = 0
             nonsynonymous_SNPs = 0
@@ -226,6 +244,57 @@ class CommonReport(object):
         self.sample['snpeff'] = snpEff
 
 
+
+
+
+
+    def make_plots(self):
+        """ Plot the visualizations for the IGN sample report
+        """
+        # Create the plots subdirectory
+        self.plots_dir = os.path.realpath(os.path.join(self.working_dir, self.report_dir, 'plots'))
+        if not os.path.exists(self.plots_dir):
+            os.makedirs(self.plots_dir)
+        
+        # Work out source directories
+        qualimap_raw_dir = os.path.join(self.qualimap_data_dir, 'raw_data_qualimapReport')
+        
+        # Qualimap coverage plot
+        cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
+        cov_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_coverage'))
+        coverage_histogram.plot_coverage_histogram(cov_fn, cov_output)
+        self.plots['coverage_plot'] = '{}.png'.format(cov_output)
+        
+        # Qualimap genome fraction coverage plot
+        cov_frac_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'genome_fraction_coverage.txt'))
+        cov_frac_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_genome_fraction'))
+        genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output)
+        self.plots['cov_frac_plot'] = '{}.png'.format(cov_frac_output)
+        
+        # Qualimap insert size plot
+        insert_size_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'insert_size_histogram.txt'))
+        insert_size_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_insert_size'))
+        insert_size.plot_insert_size_histogram(insert_size_fn, insert_size_output)
+        self.plots['insert_size_plot'] = '{}.png'.format(insert_size_output)
+        
+        # Qualimap GC distribution plot
+        gc_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'mapped_reads_gc-content_distribution.txt'))
+        gc_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_gc_distribution'))
+        gc_distribution.plot_genome_fraction_coverage(gc_fn, gc_output)
+        self.plots['gc_dist_plot'] = '{}.png'.format(gc_output)
+        
+        # snpEff plot
+        snpEFf_fn = os.path.realpath(os.path.join(self.snpeff_data_dir, 'snpEff_summary.csv'))
+        snpEFf_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_snpEff_effect'))
+        snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
+        self.plots['snpEFf_plot'] = '{}_types.png'.format(snpEFf_output)
+    
+    
+    
+    
+    
+    
+    
     def check_fields(self):
         """ Check that the object has all required fields. Returns True / False.
         """
@@ -239,16 +308,16 @@ class CommonReport(object):
         for f in report_fields:
             if f not in self.info.keys():
                 return False
-
         for f in project_fields:
             if f not in self.project.keys():
                 return False
-
         for f in sample_fields:
             if f not in self.sample.keys():
                 return False
-
         return True
+
+
+
 
     def parse_template(self):
         
@@ -268,7 +337,7 @@ class CommonReport(object):
         
         # Parse the template
         try:
-            return template.render(report=self.info, project=self.project, sample=self.sample)
+            return template.render(report=self.info, project=self.project, sample=self.sample, plots=self.plots)
         except:
             self.LOG.error('Could not parse the ign_sample_report template')
             raise

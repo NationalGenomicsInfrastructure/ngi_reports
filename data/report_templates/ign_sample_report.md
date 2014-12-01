@@ -89,7 +89,7 @@ count the frequencies of the different coverages observed. This was done using
 the [QualiMap](http://qualimap.bioinfo.cipf.es/) tool and plotted with an
 [NGI script](https://github.com/SciLifeLab/visualizations).
 
-![Sequencing Coverage](plots/qualimap_coverage.png)
+![Sequencing Coverage]({{ plots.coverage_plot }})
 
 ## Proportion of library with increasing coverage depths
 Another way to assess coverage is to look at the proportion of the reference
@@ -98,7 +98,7 @@ reference genome is covered with increasing coverage thresholds. As above, this
 data was calculated using [QualiMap](http://qualimap.bioinfo.cipf.es/) and plotted
 with an [NGI script](https://github.com/SciLifeLab/visualizations).
 
-![Genome Fractional Coverage](plots/genome_fraction.png)
+![Genome Fractional Coverage]({{ plots.cov_frac_plot }})
 
 ## Library fragment insert sizes
 By inspecting where each read pair maps to in the reference genome, we can
@@ -109,7 +109,7 @@ this in the histogram below. This was done using the
 [QualiMap](http://qualimap.bioinfo.cipf.es/) tool and plotted with an
 [NGI script](https://github.com/SciLifeLab/visualizations).
 
-![Insert Sizes](plots/qualimap_insertsize.png)
+![Insert Sizes]({{ plots.insert_size_plot }})
 
 ## Distribution of reads by GC content
 Library preparation and sequencing alignment can be affected by differences in
@@ -118,7 +118,7 @@ content. The red dotted line shows the profile for the reference genome.
 This data was calculated using [QualiMap](http://qualimap.bioinfo.cipf.es/)
 and plotted with an [NGI script](https://github.com/SciLifeLab/visualizations).
 
-![GC Content Distribution](plots/gc_distribution.png)
+![GC Content Distribution]({{ plots.gc_dist_plot }})
 
 # Variants
 
@@ -160,7 +160,7 @@ Here we have used the [snpEff](http://snpeff.sourceforge.net/) tool to
 categorise and count different effects. The results were plotted with an
 [NGI script](https://github.com/SciLifeLab/visualizations).
 
-![Insert Sizes](plots/snpEff_effect_regions.png)
+![Insert Sizes]({{ plots.snpEFf_plot }})
 
 See the `snpEff_summary.html` report in your delivery folder for more details.
 
