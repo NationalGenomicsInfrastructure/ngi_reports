@@ -13,11 +13,6 @@ class Report(ign_sample_report.CommonReport):
         
         # Initialise the parent class
         super(Report, self).__init__(config, LOG, working_dir)
-        
-        # Check that we have everything
-        if self.check_fields():
-            LOG.info("It's all good!")
-        else:
-            LOG.info("Missing something")
+
         
 

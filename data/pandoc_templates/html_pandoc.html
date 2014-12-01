@@ -78,7 +78,7 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
   }
   dl dt {
     display: block;
-    width: 150px;
+    width: 200px;
     overflow:hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -88,7 +88,7 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
   }
   dl dd {
     display: block;
-    margin-left:168px;
+    margin-left:228px;
     background-color:#FFFFFF;
   }
   dl p {
@@ -144,6 +144,15 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
     text-decoration:none;
   }
   
+  /***** Specific Report Types ******/
+  #library-statistics dl dt, #variants dl dt {
+    width: 200px;
+  }
+  #library-statistics dl dd, #variants dl dd {
+    text-align:right;
+    margin-left:228px;
+  }
+  
   </style>
   <!--[if lt IE 9]>
     <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -179,3 +188,4 @@ $body$
 </footer>
 </body>
 </html>
+

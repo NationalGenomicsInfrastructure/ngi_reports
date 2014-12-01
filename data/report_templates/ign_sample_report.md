@@ -8,7 +8,7 @@ support_email: {{ report.support_email }}
 # Sample Information
 
 Report Date
-:  {{ report.date }}
+:   {{ report.date }}
 
 User Contact
 :   {{ report.recipient }}
@@ -137,7 +137,7 @@ Heterotypic SNPs
 Ts/Tv Ratio
 :   {{ sample.snpeff.TsTv_ratio }}
 
-Synonymous SNPs / Non-Synonymous
+Synonymous SNPs
 :   {{ sample.snpeff.synonymous_SNPs }}
 
 Non-Synonymous SNPs

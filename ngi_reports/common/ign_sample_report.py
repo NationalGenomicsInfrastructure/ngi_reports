@@ -47,6 +47,7 @@ class CommonReport(object):
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
         self.info['date'] = datetime.today().strftime('%Y-%m-%d')
         self.info['recipient'] = 'FUBAR'
+        self.report_dir = os.path.join('delivery', 'reports')
         self.report_fn = self.sample['id'] + '_ign_sample_report'
 
 
@@ -58,14 +59,14 @@ class CommonReport(object):
             with open(os.path.realpath(xml_fn)) as fh:
                 run = xmltodict.parse(fh)
         except IOError as e:
-            raise IOError("Could not open configuration file \"{}\".".format(config_file_path))
+            raise IOError("Could not open configuration file \"{}\".".format(xml_fn))
         
         run = run['project']        
         try:
             self.project['id'] = run['metadata']['name']
             self.project['UPPMAXid'] = run['metadata']['uppmaxprojectid']
             self.sample['sequencing_platform'] = run['metadata']['platform']
-            self.sample['ref_genome'] = run['metadata']['reference']
+            self.sample['ref_genome'] = os.path.basename(run['metadata']['reference'])
             self.sample['id'] = run['inputs']['sample']['samplename']
         except KeyError:
             self.LOG.warning('Could not find key in sample XML file')
@@ -257,9 +258,10 @@ class CommonReport(object):
         
         # Load the Jinja2 template
         try:
-            templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), '../../data/report_templates/'))
+            # This is not very elegant :)
+            templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'data', 'report_templates'))
             env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
-            template = env.get_template('ign_sample_report')
+            template = env.get_template('ign_sample_report.md')
         except:
             self.LOG.error('Could not load the Jinja report template')
             raise
