@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html$if(lang)$ lang="$lang$"$endif$>
+<html>
 <head>
   <meta charset="utf-8">
   <meta name="generator" content="pandoc">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <link rel="shortcut icon" href="https://portal.scilifelab.se/genomics/sites/default/files/favicon_0.ico" type="image/vnd.microsoft.icon">
-$for(author-meta)$<meta name="author" content="$author-meta$">$endfor$
-$if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
-  <title>$if(subtitle)$$subtitle$ - $endif$$if(title)$$title$$endif$</title>
+
+<meta name="dcterms.date" content="2014-12-02">
+  <title>J.Lundeberg_14_01 - Project Overview</title>
   <style type="text/css">
   body {
     font-family: 'Helvetica Neue', Helvetica, Arial, Verdana, sans-serif;
@@ -193,40 +193,278 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
   <!--[if lt IE 9]>
     <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
-$if(highlighting-css)$<style type="text/css">$highlighting-css$</style>$endif$
-$for(css)$<link rel="stylesheet" href="$css$">$endfor$
-$if(math)$$math$$endif$
-$for(header-includes)$$header-includes$$endfor$
+
+
+
+
 </head>
 <body>
 <div class="page_header">
   <a class="floatleft" href="http://www.scilifelab.se" target="_blank"><img title="Science for Life Laboratory" src="data:image/png;base64,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"></a>
   <a class="floatright" href="https://portal.scilifelab.se/genomics/" target="_blank"><img title="National Genomics Infrastructure" src="data:image/png;base64,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"></a>
   <div class="clearfix"></div>
-  National Genomics Infrastructure - $title$
+  National Genomics Infrastructure - Project Overview
 </div>
 
 <header>
-$if(subtitle)$<h1 class="title">$title$</h1>$endif$
-$if(subtitle)$<h1 class="subtitle">$subtitle$</h1>$endif$
-$if(date)$<h3 class="date">$date$</h3>$endif$
+<h1 class="title">Project Overview</h1>
+<h1 class="subtitle">J.Lundeberg_14_01</h1>
+<h3 class="date">2014-12-02</h3>
 </header>
 
-$if(toc)$<nav id="$idprefix$TOC">$toc$</nav>$endif$
 
-$body$
 
-$if(swedac)$
+<div id="project-information" class="section level1">
+<h1>Project Information</h1>
+<dl>
+<dt>User Project Name</dt>
+<dd>140117_Rapid_Ventana_TdT
+</dd>
+<dt>NGI Project Name</dt>
+<dd>J.Lundeberg_14_01
+</dd>
+<dt>NGI Project ID</dt>
+<dd>P955
+</dd>
+<dt>User Contact</dt>
+<dd><script type="text/javascript">
+<!--
+h='&#x6b;&#x69;&#46;&#x73;&#x65;';a='&#64;';n='&#106;&#108;&#x75;&#110;&#100;&#98;&#x65;&#114;&#x67;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#106;&#108;&#x75;&#110;&#100;&#98;&#x65;&#114;&#x67;&#32;&#x61;&#116;&#32;&#x6b;&#x69;&#32;&#100;&#x6f;&#116;&#32;&#x73;&#x65;</noscript>
+</dd>
+<dt>NGI Application Type</dt>
+<dd>Finished Library (No best practice analysis)
+</dd>
+<dt>Samples &amp; Lanes</dt>
+<dd>1 sample, 2 lanes
+</dd>
+<dt>Project Status</dt>
+<dd>Sequencing Finished
+</dd>
+<dt>Order Dates</dt>
+<dd><em>Order received:</em> 2014-01-10, <em>Contract received:</em> 2014-01-15, <em>Samples received:</em> 2014-01-20, <em>Queue date:</em> 2014-01-23, <em>All data delivered:</em> 2014-04-02, <em>Report Date:</em> 2014-12-02
+</dd>
+<dt>UPPMAX Project ID</dt>
+<dd><code>b2011007</code>
+</dd>
+<dt>UPPNEX project path</dt>
+<dd><code>/proj/b2011007/INBOX/J.Lundberg_14</code>
+</dd>
+<dt>Reference Genome</dt>
+<dd>Human, hg19
+</dd>
+<dt>Minimum ordered reads</dt>
+<dd>200 million
+</dd>
+</dl>
+</div>
+<div id="methods" class="section level1">
+<h1>Methods</h1>
+<div id="library-construction" class="section level3">
+<h3>Library construction</h3>
+<ol style="list-style-type: upper-alpha">
+<li>Library was prepared using the &quot;650 bp insert standard DNA (Illumina TruSeq DNA)&quot; protocol and clustering was done by cBot.</li>
+</ol>
+</div>
+<div id="sequencing" class="section level3">
+<h3>Sequencing</h3>
+<ol style="list-style-type: upper-alpha">
+<li>All samples were sequenced on HiSeq2500 (HiSeq Control Software 2.0.12.0/RTA 1.17.21.3) with a 2x101 setup.The Bcl to Fastq conversion was performed using bcl2Fastq v1.8.3 from the CASAVA software suite. The quality scale used is Sanger / phred33 / Illumina 1.8+.</li>
+</ol>
+</div>
+<div id="data-flow" class="section level3">
+<h3>Data Flow</h3>
+<p>All data (demultiplexed) from the instrument are collected and transfered securely to a storage server with well established pipeline.</p>
+</div>
+<div id="data-processing" class="section level3">
+<h3>Data Processing:</h3>
+<p>A set of standard quality checks were performed to assure that all sequenced data meet NGI guaranteed quality / quantity. All analysis are carried out in UPPMAX servers before delivering the raw data.</p>
+</div>
+<div id="swedac-accreditation" class="section level3">
+<h3>Swedac Accreditation</h3>
+<p>Many of the services that the National Genomics Infrastructure provide are accredited by <a href="http://www.swedac.se">Swedac</a>. These services are subject to highly stringent quality control procedures, so that you can be sure that your data is of excellent quality.</p>
+<dl>
+<dt>Swedac Accredited</dt>
+<dd>Sequencing data, Data flow, Data processing
+</dd>
+<dt>Not Swedac Accredited</dt>
+<dd>Library preparation
+</dd>
+</dl>
+</div>
+</div>
+<div id="sample-info" class="section level1">
+<h1>Sample Info</h1>
+<table>
+<colgroup>
+<col width="22%" />
+<col width="33%" />
+<col width="24%" />
+<col width="19%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">NGI ID</th>
+<th align="left">User ID</th>
+<th align="left">Index</th>
+<th align="left">Lib Prep</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><p>P955_101</p></td>
+<td align="left"><p>140117_Rapid_Ventana_TdT</p></td>
+<td align="left"><p>Index 8 (<code>ACTTGA</code>)</p></td>
+<td align="left"><p>A</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="yield-overview" class="section level1">
+<h1>Yield Overview</h1>
+<table>
+<colgroup>
+<col width="18%" />
+<col width="14%" />
+<col width="19%" />
+<col width="14%" />
+<col width="18%" />
+<col width="14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Sample</th>
+<th align="left">Lib QC</th>
+<th align="left">Avg. FS</th>
+<th align="left">≥ Q30</th>
+<th align="left"># Reads</th>
+<th align="left">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><p>P955_101b</p></td>
+<td align="left"><p>Passed</p></td>
+<td align="left"><p>350 bp</p></td>
+<td align="left"><p>59.34%</p></td>
+<td align="left"><p>105.66 M</p></td>
+<td align="left"><p>Passed</p></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><em>Lib QC:</em> Reception control library quality control step</li>
+<li><em>Avg. FS:</em> Average fragment size.</li>
+<li><em>≥ Q30:</em> Percentage of bases above quality score Q30 for the sample.</li>
+<li><em># Reads:</em> Millions of reads sequenced.</li>
+</ul>
+</div>
+<div id="run-info" class="section level1">
+<h1>Run Info</h1>
+<table>
+<colgroup>
+<col width="10%" />
+<col width="16%" />
+<col width="9%" />
+<col width="13%" />
+<col width="11%" />
+<col width="11%" />
+<col width="14%" />
+<col width="11%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Date</th>
+<th align="left">FC id</th>
+<th align="left">Lane</th>
+<th align="left">Clusters</th>
+<th align="left">% PhiX</th>
+<th align="left">≥ Q30</th>
+<th align="left">% Unique</th>
+<th align="left">Method</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><p>140123</p></td>
+<td align="left"><p><code>B-H8A63ADXX</code></p></td>
+<td align="left"><p>1</p></td>
+<td align="left"><p>66.88 M</p></td>
+<td align="left"><p>0.52%</p></td>
+<td align="left"><p>58.70%</p></td>
+<td align="left"><p>80.51%</p></td>
+<td align="left"><p>A</p></td>
+</tr>
+<tr class="even">
+<td align="left"><p>140123</p></td>
+<td align="left"><p><code>B-H8A63ADXX</code></p></td>
+<td align="left"><p>2</p></td>
+<td align="left"><p>65.89 M</p></td>
+<td align="left"><p>0.56%</p></td>
+<td align="left"><p>57.15%</p></td>
+<td align="left"><p>78.32%</p></td>
+<td align="left"><p>A</p></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><em>FC id:</em> Position on flowcell - Flowcell ID.</li>
+<li><em>≥ Q30:</em> Percentage of bases above quality score Q30 on the lane.</li>
+<li><em>Unique:</em> Percentage of reads recovered after demultiplexing.</li>
+<li><em>Method:</em> Sequencing method used. See above for description.</li>
+</ul>
+</div>
+<div id="general-information" class="section level1">
+<h1>General Information</h1>
+<div id="naming-conventions" class="section level2">
+<h2>Naming conventions</h2>
+<p>The data is delivered in FastQ format using Illumina 1.8 quality scores. There will be one file for the forward reads and one file for the reverse reads (if the run was a paired-end run).</p>
+<p>The naming of the files follow the convention:</p>
+<pre><code>[LANE]_[DATE]_[POSITION][FLOWCELL]_[NGI-NAME]_[READ].fastq.gz</code></pre>
+</div>
+<div id="data-access-at-uppmax" class="section level2">
+<h2>Data access at UPPMAX</h2>
+<p>Data from the sequencing will be uploaded to the UPPNEX (UPPMAX Next Generation sequence Cluster Storage, <a href="http://www.uppmax.uu.se">uppmax.uu.se</a>), from which the user can access it. You can find the data in the INBOX folder of the UPPNEX project, which was created for you when your order was placed:</p>
+<pre><code>/proj/b2011007/INBOX/J.Lundberg_14</code></pre>
+<p>If you have problems accessing your data, please contact SciLifeLab <script type="text/javascript">
+<!--
+h='&#x73;&#x63;&#x69;&#108;&#x69;&#102;&#x65;&#108;&#x61;&#98;&#46;&#x73;&#x65;';a='&#64;';n='&#x25;&#50;&#48;&#x67;&#x65;&#110;&#x6f;&#x6d;&#x69;&#x63;&#x73;&#x5f;&#x73;&#x75;&#112;&#112;&#x6f;&#114;&#116;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+'genomics_support@scilifelab.se'+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#x67;&#x65;&#110;&#x6f;&#x6d;&#x69;&#x63;&#x73;&#x5f;&#x73;&#x75;&#112;&#112;&#x6f;&#114;&#116;&#64;&#x73;&#x63;&#x69;&#108;&#x69;&#102;&#x65;&#108;&#x61;&#98;&#46;&#x73;&#x65;&#32;&#40;&#x25;&#50;&#48;&#x67;&#x65;&#110;&#x6f;&#x6d;&#x69;&#x63;&#x73;&#x5f;&#x73;&#x75;&#112;&#112;&#x6f;&#114;&#116;&#32;&#x61;&#116;&#32;&#x73;&#x63;&#x69;&#108;&#x69;&#102;&#x65;&#108;&#x61;&#98;&#32;&#100;&#x6f;&#116;&#32;&#x73;&#x65;&#x29;</noscript>. If you have questions regarding UPPNEX, please contact <script type="text/javascript">
+<!--
+h='&#x75;&#112;&#112;&#x6d;&#x61;&#120;&#46;&#x75;&#x75;&#46;&#x73;&#x65;';a='&#64;';n='&#x73;&#x75;&#112;&#112;&#x6f;&#114;&#116;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#x73;&#x75;&#112;&#112;&#x6f;&#114;&#116;&#32;&#x61;&#116;&#32;&#x75;&#112;&#112;&#x6d;&#x61;&#120;&#32;&#100;&#x6f;&#116;&#32;&#x75;&#x75;&#32;&#100;&#x6f;&#116;&#32;&#x73;&#x65;</noscript>.</p>
+</div>
+<div id="acknowledgements" class="section level2">
+<h2>Acknowledgements</h2>
+<p>In publications based on data from the work covered by this contract, the authors must acknowledge SciLifeLab, NGI and Uppmax:</p>
+<blockquote>
+<p>The authors would like to acknowledge support from Science for Life Laboratory, the National Genomics Infrastructure, NGI, and Uppmax for providing assistance in massive parallel sequencing and computational infrastructure.</p>
+</blockquote>
+</div>
+</div>
+<div id="further-help" class="section level1">
+<h1>Further Help</h1>
+<p>If you have any queries, please get in touch at <script type="text/javascript">
+<!--
+h='&#x73;&#x63;&#x69;&#108;&#x69;&#102;&#x65;&#108;&#x61;&#98;&#46;&#x73;&#x65;';a='&#64;';n='&#x25;&#50;&#48;&#x67;&#x65;&#110;&#x6f;&#x6d;&#x69;&#x63;&#x73;&#x5f;&#x73;&#x75;&#112;&#112;&#x6f;&#114;&#116;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+'genomics_support@scilifelab.se'+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#x67;&#x65;&#110;&#x6f;&#x6d;&#x69;&#x63;&#x73;&#x5f;&#x73;&#x75;&#112;&#112;&#x6f;&#114;&#116;&#64;&#x73;&#x63;&#x69;&#108;&#x69;&#102;&#x65;&#108;&#x61;&#98;&#46;&#x73;&#x65;&#32;&#40;&#x25;&#50;&#48;&#x67;&#x65;&#110;&#x6f;&#x6d;&#x69;&#x63;&#x73;&#x5f;&#x73;&#x75;&#112;&#112;&#x6f;&#114;&#116;&#32;&#x61;&#116;&#32;&#x73;&#x63;&#x69;&#108;&#x69;&#102;&#x65;&#108;&#x61;&#98;&#32;&#100;&#x6f;&#116;&#32;&#x73;&#x65;&#x29;</noscript>.</p>
+</div>
+
 <div class="swedac center">
   <a href="http://search.swedac.se/en/accreditations/1850" target="_blank"><img title="Swedac Accredited" src="data:image/png;base64,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"></a>
 </div>
-$endif$
 
 <footer>
-  $if(support_email)$
-    <a class="floatleft" href="mailto:$support_email$">$support_email$</a>
-  $endif$
-  $if(subtitle)$$subtitle$$endif$
+      <a class="floatleft" href="mailto:genomics_support@scilifelab.se">genomics_support@scilifelab.se</a>
+    J.Lundeberg_14_01
 </footer>
 </body>
 </html>
