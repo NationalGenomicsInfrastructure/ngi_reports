@@ -13,6 +13,13 @@ class Report(ign_sample_report.CommonReport):
         
         # Initialise the parent class
         super(Report, self).__init__(config, LOG, working_dir)
+        
+        self.info['recipient'] = 'FUBAR'
+        self.project['group'] = 'FUBAR'
+        self.project['user_sample_id'] = 'FUBAR'
+        self.sample['user_sample_id'] = 'FUBAR'
+        self.sample['preps'] = [{'label': 'A', 'description': 'FUBAR'}]
+        self.sample['flowcells'] = [{'id': 'FUBAR'}]
 
         
 

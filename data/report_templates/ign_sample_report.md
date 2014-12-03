@@ -7,44 +7,45 @@ support_email: {{ report.support_email }}
 
 # Sample Information
 
-Report Date
+{% if report.date %}Report Date
 :   {{ report.date }}
-
+{% endif %}{% if report.recipient %}
 User Contact
 :   {{ report.recipient }}
-
+{% endif %}{% if report.id %}
 Project Name
-:   {{ project.id }} ({{ project.group }})
-
+:   {{ project.id }} {% if report.group %}({{ project.group }}){% endif %}
+{% endif %}{% if sample.user_sample_id %}
 User Sample Name
 :   {{ sample.user_sample_id }}
-
+{% endif %}{% if sample.id %}
 NGI Sample Name
 :   {{ sample.id }}
-
+{% endif %}{% if project.UPPMAXid %}
 UPPMAX Project ID
 :   `{{ project.UPPMAXid }}`
-
+{% endif %}{% if sample.sequencing_platform %}
 Sequencing Platform
 :   {{ sample.sequencing_platform }}
-
+{% endif %}{% if sample.preps %}
 Library Prep Method
 :   {% for prep in sample.preps %}**{{ prep.label }}:** {{ prep.description }}
     
     {% endfor %}
-
+{% endif %}{% if project.sequencing_centre %}
 Sequencing Centre
 :   {{ project.sequencing_centre }}
-
+{% endif %}{% if sample.ref_genome %}
 Reference Genome
 :   `{{ sample.ref_genome }}`
-
+{% endif %}{% if sample.flowcells %}
 Flow Cells
 :   {% for fc in sample.flowcells %}`{{ fc.id }}`
     
     {% endfor %}
+{% endif %}
 
-
+{% if sample.automsomal_coverage %}
 # Library Statistics
 
 Total Reads
@@ -52,10 +53,10 @@ Total Reads
 
 Aligned Reads
 :   {{ sample.percent_aligned }} - {{ sample.aligned_reads }}
-
+{% if sample.duplication_rate %}
 Duplication Rate
 :   {{ sample.duplication_rate }}
-
+{% endif %}
 Median Insert Size
 :   {{ sample.median_insert_size }} bp
 
@@ -119,7 +120,9 @@ This data was calculated using [QualiMap](http://qualimap.bioinfo.cipf.es/)
 and plotted with an [NGI script](https://github.com/SciLifeLab/visualizations).
 
 ![GC Content Distribution]({{ plots.gc_dist_plot }})
+{% endif %}
 
+{% if sample.snpeff %}
 # Variants
 
 Change Rate
@@ -164,7 +167,7 @@ categorise and count different effects. The results were plotted with an
 
 See the `snpEff_summary.html` report in your delivery folder for more details.
 
-
+{% endif %}
 
 
 

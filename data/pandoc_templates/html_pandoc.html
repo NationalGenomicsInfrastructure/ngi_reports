@@ -69,6 +69,20 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
   table p {
     margin:0;
   }
+  
+  /* Ticks and Crosses */
+  img[src="tick.png"] {
+    content: url(data:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAEnQAABJ0BfDRroQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADnSURBVDiNpZOvbgJBEIe/gRwCgSDUnMLVYcBUYYtA1eLoEyCoafDwBHgMD1BPcoqXwFWRENKKiuZyU7Mkk+lxHLDJiN2Z7zeZPyuqyj2ncgskIrWbBURkCnyLSCIiEapa2oAXQI09XwO3gaOBf4CHsnAEbF32V1XlFFAHHgsEFg5eGx8x8BUcK6Dq4AGQGXgHNKzAyKkvjTMG9sb3C/RcAprAwYnMwog37n3yr7yg8hS6aoMTd/8AJFcgiAyB1EEn+wRauQ129Yxz4BTon51QzsjeDZwBb4U7cmbuHWAOdC8tmdz7nf8A20hyYB2Q4kIAAAAASUVORK5CYII=);
+  }
+  img[src="cross.png"] {
+    content: url(data:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAARwAAAEcBRwD1sgAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAChSURBVDiNxZNLDsIwEEOfuTGgNhVCCMrnnFlyi2GTVkNISkQXRMrGHjvzi8yMNWezSu0NJPWSoqS+FiwppJhuBs2MVMYTsHS7CXf8wfFxxl3A3QUYsHfcMePCh0HFZAucMmx40xRSvWaCqrhokEwuLWIzq46xfTkKr59/LqEgHoBHUxOXug3cvo4RiIupwuj44iJ1ySTk4izLCOwmTH//jS92nTFgQt+ghAAAAABJRU5ErkJggg==);
+  }
+  img[src="tick.png"], img[src="cross.png"] {
+    height:16px;
+    width:16px;
+    display:inline-block;
+    padding: 0 10px 0 5px;
+  }
 
   /* Nicer code - styles stolen from GitHub */
   code {
@@ -212,9 +226,17 @@ $if(subtitle)$<h1 class="subtitle">$subtitle$</h1>$endif$
 $if(date)$<h3 class="date">$date$</h3>$endif$
 </header>
 
+$for(include-before)$
+$include-before$
+$endfor$
+
 $if(toc)$<nav id="$idprefix$TOC">$toc$</nav>$endif$
 
 $body$
+
+$for(include-after)$
+$include-after$
+$endfor$
 
 $if(swedac)$
 <div class="swedac center">

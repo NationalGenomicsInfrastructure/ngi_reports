@@ -35,22 +35,18 @@ class CommonReport(object):
         
         # Self-sufficient Fields
         self.report_dir = os.path.join('delivery', 'reports')
-        
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
         self.info['date'] = datetime.today().strftime('%Y-%m-%d')
-        self.info['recipient'] = 'FUBAR'
-        self.project['group'] = 'FUBAR'
-        self.project['user_sample_id'] = 'FUBAR'
         self.project['sequencing_centre'] = 'NGI {}'.format(ngi_node.title())
-        self.sample['duplication_rate'] = 'FUBAR'        
-        self.sample['user_sample_id'] = 'FUBAR'
-        self.sample['preps'] = [{'label': 'A', 'description': 'FUBAR'}]
-        self.sample['flowcells'] = [{'id': 'FUBAR'}]
         
         # Scrape information from the filesystem
         self.parse_setup_xml()
         self.parse_qualimap()
         self.parse_snpeff()
+        
+        # Picard duplication rate, taken from the .metrics file
+        # TODO - Pull this in when the Piper bug has been patched.
+        # self.sample['duplication_rate'] = 'FUBAR']
         
         # Report Fields which depend on what we just parsed
         self.report_fn = self.sample['id'] + '_ign_sample_report'
@@ -298,21 +294,24 @@ class CommonReport(object):
     def check_fields(self):
         """ Check that the object has all required fields. Returns True / False.
         """
-        report_fields = ['recipient']
-        project_fields = ['id', 'UPPMAXid', 'sequencing_centre']
-        sample_fields = ['id', 'sequencing_platform', 'user_sample_id', 
+        report_fields = []
+        project_fields = ['id', 'sequencing_centre']
+        sample_fields = ['id', 'sequencing_platform', 
             'ref_genome', 'total_reads', 'percent_aligned', 'aligned_reads', 
-            'duplication_rate', 'median_insert_size', 'automsomal_coverage',
+            'median_insert_size', 'automsomal_coverage',
             'ref_above_30X', 'percent_gc']
 
         for f in report_fields:
             if f not in self.info.keys():
+                self.LOG.error('Mandatory field missing: '+f)
                 return False
         for f in project_fields:
             if f not in self.project.keys():
+                self.LOG.error('Mandatory field missing: '+f)
                 return False
         for f in sample_fields:
             if f not in self.sample.keys():
+                self.LOG.error('Mandatory field missing: '+f)
                 return False
         return True
 
@@ -322,8 +321,8 @@ class CommonReport(object):
     def parse_template(self):
         
         if not self.check_fields():
-            self.LOG.error('Some mandatory fields were missing')
-            raise
+            self.LOG.error('Some mandatory fields were missing - exiting')
+            raise AttributeError
         
         # Load the Jinja2 template
         try:

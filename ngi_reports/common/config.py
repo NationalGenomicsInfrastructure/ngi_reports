@@ -6,7 +6,7 @@ import os
 def load_config(config_file=None):
     """Loads a configuration file.
 
-    By default it assumes ~/.ngi_reports/ngi_reports.conf
+    By default it assumes ~/.ngi_config/ngi_reports.conf
     """
     try:
         if not config_file:

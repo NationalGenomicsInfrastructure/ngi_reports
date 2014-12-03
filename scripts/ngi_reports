@@ -52,7 +52,7 @@ def make_report (report_type, working_dir=os.getcwd()):
     try:
       if report.swedac:
           swedac = ' -V swedac '
-    except NameError:
+    except AttributeError:
       pass
     
     # Convert markdown to HTML using pandoc

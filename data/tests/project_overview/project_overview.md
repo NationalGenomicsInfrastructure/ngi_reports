@@ -69,15 +69,21 @@ meet NGI guaranteed quality / quantity. All analysis are carried out in UPPMAX s
 before delivering the raw data.
 
 ### Swedac Accreditation
-Many of the services that the National Genomics Infrastructure provide are accredited
-by [Swedac](http://www.swedac.se). These services are subject to highly stringent
-quality control procedures, so that you can be sure that your data is of excellent quality.
+The National Genomics Infrastructure is accredited by [Swedac](http://www.swedac.se).
+This means that our services are subject to highly stringent quality control procedures,
+so that you can be sure that your data is of excellent quality.
 
-Swedac Accredited
-:   Sequencing data, Data flow, Data processing
+Library preparation
+:   ![cross] Not Swedac Accredited
 
-Not Swedac Accredited
-:   Library preparation
+Sequencing data
+:   ![tick] Swedac Accredited
+
+Data flow
+:   ![tick] Swedac Accredited
+
+Data processing
+:   ![tick] Swedac Accredited
 
 # Sample Info
 
@@ -157,3 +163,6 @@ the authors must acknowledge SciLifeLab, NGI and Uppmax:
 # Further Help
 If you have any queries, please get in touch at
 [genomics_support@scilifelab.se](mailto: genomics_support@scilifelab.se).
+
+[tick]: tick.png
+[cross]: cross.png
