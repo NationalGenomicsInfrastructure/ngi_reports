@@ -119,8 +119,8 @@ $endif$
 \usepackage{lastpage}
 \usepackage[top=2.5cm, bottom=4.5cm, left=2cm, right=2cm, heightrounded]{geometry}
 \pagestyle{fancy}
-\lhead{\includegraphics[width=5cm]{$template_dir$/assets/SLL_logo.png}\vspace{0.3cm}}
-\rhead{\includegraphics[width=5cm]{$template_dir$/assets/NGI_logo.png}\vspace{0.45cm}}
+\lhead{\includegraphics[width=5cm]{$template_dir$/assets/SLL_logo.pdf}\vspace{0.3cm}}
+\rhead{\includegraphics[width=5cm]{$template_dir$/assets/NGI_logo.pdf}\vspace{0.45cm}}
 \chead{\color{grey}National Genomics Infrastructure$if(title)$ - $title$$endif$}
 $if(support_email)$
 	\lfoot{
@@ -159,6 +159,11 @@ $endif$
 \usepackage{titlesec}
 \titleformat{\section}{\fontsize{18}{22}\bfseries}{\thesection}{1em}{}
 
+% Spacing after headers
+\titlespacing\section{0pt}{24pt plus 4pt minus 2pt}{8pt plus 4pt minus 2pt}
+\titlespacing\subsection{0pt}{18pt plus 4pt minus 2pt}{4pt plus 2pt minus 2pt}
+\titlespacing\subsubsection{0pt}{12pt plus 4pt minus 2pt}{0pt plus 0pt minus 2pt}
+
 % Make code \texttt smaller have grey highlighting
 % http://tex.stackexchange.com/questions/42961/adding-a-highlight-to-texttt-blocks
 \usepackage{soul}
@@ -166,6 +171,10 @@ $endif$
 \sethlcolor{vlightgrey}
 \let\OldTexttt\texttt
 \renewcommand{\texttt}[1]{\OldTexttt{\small\hl{#1}}}
+
+% Italic blockquote with left border
+\let\oldquote\quote
+\renewcommand\quote{\itshape\oldquote}
 
 
 % Styling the definition lists to look like the other report
@@ -254,7 +263,13 @@ $endif$
 
 $body$
 
-$if(natbib)$
+$if(swedac)$
+\vspace{1cm}
+\centering
+\includegraphics[height=2.5cm]{$template_dir$/assets/swedac.pdf}
+$endif$
+
+$if(natbib)$x
 $if(biblio-files)$
 $if(biblio-title)$
 $if(book-class)$

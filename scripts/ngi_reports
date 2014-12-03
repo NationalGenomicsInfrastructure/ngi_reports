@@ -47,10 +47,18 @@ def make_report (report_type, working_dir=os.getcwd()):
     except IOError as e:
         raise IOError(e)
     
+    # Do we need the Swedac logo?
+    swedac = ''
+    try:
+      if report.swedac:
+          swedac = ' -V swedac '
+    except AttributeError:
+      pass
+    
     # Convert markdown to HTML using pandoc
     try:
         LOG.info('Creating the HTML report')
-        html_cmd = shlex.split('pandoc -s --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html'.format(output_bn, pandoc_dir))
+        html_cmd = shlex.split('pandoc -s --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html {2}'.format(output_bn, pandoc_dir, swedac))
         subprocess.call(html_cmd)
     except:
         LOG.error('Could not convert markdown to HTML')
@@ -59,7 +67,7 @@ def make_report (report_type, working_dir=os.getcwd()):
     # Convert markdown to PDF using pandoc
     try:    
         LOG.info('Creating the PDF report')
-        pdf_cmd = shlex.split('pandoc -s {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex -V template_dir={1}'.format(output_bn, pandoc_dir))
+        pdf_cmd = shlex.split('pandoc -s {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex -V template_dir={1} {2}'.format(output_bn, pandoc_dir, swedac))
         subprocess.call(pdf_cmd)
     except:
         LOG.error('Could not convert markdown to PDF')
