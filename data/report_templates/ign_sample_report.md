@@ -11,7 +11,7 @@ support_email: {{ report.support_email }}
 :   {{ report.date }}
 {% endif %}{% if report.recipient %}
 User Contact
-:   {{ report.recipient }}
+:   [{{ report.recipient }}](mailto:{{ report.recipient }})
 {% endif %}{% if report.id %}
 Project Name
 :   {{ project.id }} {% if report.group %}({{ project.group }}){% endif %}

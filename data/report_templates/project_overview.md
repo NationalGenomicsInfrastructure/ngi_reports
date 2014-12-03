@@ -8,42 +8,43 @@ support_email: genomics_support@scilifelab.se
 # Project Information
 
 User Project Name
-:   140117_Rapid_Ventana_TdT
+:   {{ project.user_ID }}
 
 NGI Project Name
-:   J.Lundeberg_14_01
+:   {{ project.ngi_name }}
 
 NGI Project ID
-:   P955
+:   {{ project.id }}
 
 User Contact
-:   [jlundberg@ki.se](mailto:jlundberg@ki.se)
+:   [{{ project.contact }}](mailto:{{ project.contact }})
 
 NGI Application Type
-:   Finished Library (No best practice analysis)
+:   {{ project.application_type }} ({% if project.best_practice %}With best practice analysis{% else %}No best practice analysis{% endif %})
 
 Samples &amp; Lanes
-:   1 sample, 2 lanes
+:   {{ project.num_samples }} sample{% if project.num_samples > 1 %}s{% endif %}, {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}
 
 Project Status
-:   Sequencing Finished
+:   {{ project.status }}
 
 Order Dates
-:   _Order received:_ 2014-01-10,  _Contract received:_ 2014-01-15, 
-    _Samples received:_ 2014-01-20,  _Queue date:_ 2014-01-23,
-    _All data delivered:_ 2014-04-02, _Report Date:_ 2014-12-02
+:   _Order received:_ {{ project.dates.order_received }},  _Contract received:_ {{ project.dates.contract_received }}, 
+    _Samples received:_ {{ project.dates.samples_received }},  _Queue date:_ {{ project.dates.queue_date }},
+    _All data delivered:_ {{ project.dates.all_data_delivered }}, _Report Date:_ {{ project.dates.report_date }}
 
 UPPMAX Project ID
-:   `b2011007`
+:   `{{ project.UPPMAX_id }}`
 
 UPPNEX project path
-:   `/proj/b2011007/INBOX/J.Lundberg_14`
-
+:   `{{ project.UPPMAX_path }}`
+{% if project.ref_genome %}
 Reference Genome
-:   Human, hg19
-
+:   {{ project.ref_genome }}
+{% endif %}{% if project.ordered_reads %}
 Minimum ordered reads
-:   200 million
+:   {{ project.ordered_reads }}
+{% endif %}
  
 # Methods
 
@@ -89,7 +90,9 @@ Data processing
 
 NGI ID | User ID | Index | Lib Prep
 -------|---------|-------|---------
-P955_101 | 140117_Rapid_Ventana_TdT | Index 8 (`ACTTGA`) | A
+{% for s in samples %}
+{{s.id}} | {{s.u_id}} | {{s.index}} (`{{s.barcode}}`) | {{s.lib_prep}}
+{% endfor %}
 
 +-----------------+--------------------------+-------------------+---------------+
 | NGI ID          | User ID                  | Index             | Lib Prep      |
