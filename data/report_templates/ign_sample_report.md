@@ -27,11 +27,9 @@ UPPMAX Project ID
 {% endif %}{% if sample.sequencing_platform %}
 Sequencing Platform
 :   {{ sample.sequencing_platform }}
-{% endif %}{% if sample.preps %}
+{% endif %}{% if sample.prep %}
 Library Prep Method
-:   {% for prep in sample.preps %}**{{ prep.label }}:** {{ prep.description }}
-    
-    {% endfor %}
+:   {{ sample.prep }}
 {% endif %}{% if project.sequencing_centre %}
 Sequencing Centre
 :   {{ project.sequencing_centre }}

@@ -5,6 +5,7 @@
 
 import os
 from ngi_reports.common import ign_sample_report
+from statusdb.db import connections as statusdb
 
 class Report(ign_sample_report.CommonReport):
     
@@ -14,12 +15,13 @@ class Report(ign_sample_report.CommonReport):
         # Initialise the parent class
         super(Report, self).__init__(config, LOG, working_dir)
         
-        self.info['recipient'] = 'FUBAR'
-        self.project['group'] = 'FUBAR'
-        self.project['user_sample_id'] = 'FUBAR'
-        self.sample['user_sample_id'] = 'FUBAR'
-        self.sample['preps'] = [{'label': 'A', 'description': 'FUBAR'}]
-        self.sample['flowcells'] = [{'id': 'FUBAR'}]
-
-        
+        # Get project fields from statusdb
+        p = statusdb.ProjectSummaryConnection()
+        proj = p.get_entry(self.project['id'])
+        self.info['recipient'] = proj.get('contact')
+        self.sample['user_sample_id'] = proj.get('customer_name')
+         
+        # Get sample fields from statusdb
+        sample = proj.get('samples', {}).get(self.sample['id'])
+        self.sample['prep'] = proj.get('details', {}).get('library_construction_method')
 
