@@ -42,19 +42,65 @@
   .floatright {
     float:right;
   }
+  .center {
+    text-align:center;
+  }
+  
+  blockquote {
+    font-style:italic;
+    padding-left:15px;
+    margin-left:15px;
+    border-left: 3px solid #CCCCCC;
+  }
+  
+  table {
+    width:100%;
+    border:1px solid #D9D9D9;
+    border-spacing: 0;
+    border-collapse: collapse;
+  }
+  table th {
+    background-color: #D9D9D9
+  }
+  table th, table td {
+    border:1px solid #D9D9D9;
+    padding:8px;
+  }
+  table p {
+    margin:0;
+  }
+  
+  /* Ticks and Crosses */
+  img[src="tick.png"] {
+    content: url(data:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAEnQAABJ0BfDRroQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADnSURBVDiNpZOvbgJBEIe/gRwCgSDUnMLVYcBUYYtA1eLoEyCoafDwBHgMD1BPcoqXwFWRENKKiuZyU7Mkk+lxHLDJiN2Z7zeZPyuqyj2ncgskIrWbBURkCnyLSCIiEapa2oAXQI09XwO3gaOBf4CHsnAEbF32V1XlFFAHHgsEFg5eGx8x8BUcK6Dq4AGQGXgHNKzAyKkvjTMG9sb3C/RcAprAwYnMwog37n3yr7yg8hS6aoMTd/8AJFcgiAyB1EEn+wRauQ129Yxz4BTon51QzsjeDZwBb4U7cmbuHWAOdC8tmdz7nf8A20hyYB2Q4kIAAAAASUVORK5CYII=);
+  }
+  img[src="cross.png"] {
+    content: url(data:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAARwAAAEcBRwD1sgAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAChSURBVDiNxZNLDsIwEEOfuTGgNhVCCMrnnFlyi2GTVkNISkQXRMrGHjvzi8yMNWezSu0NJPWSoqS+FiwppJhuBs2MVMYTsHS7CXf8wfFxxl3A3QUYsHfcMePCh0HFZAucMmx40xRSvWaCqrhokEwuLWIzq46xfTkKr59/LqEgHoBHUxOXug3cvo4RiIupwuj44iJ1ySTk4izLCOwmTH//jS92nTFgQt+ghAAAAABJRU5ErkJggg==);
+  }
+  img[src="tick.png"], img[src="cross.png"] {
+    height:16px;
+    width:16px;
+    display:inline-block;
+    padding: 0 10px 0 5px;
+  }
 
   /* Nicer code - styles stolen from GitHub */
   code {
     white-space:pre;
     padding:3px 0;
     margin:0;
-    background-color:rgba(0,0,0,0.1);
+    background-color:#EEEEEE;
     border-radius:3px;
     font: 13px Consolas, "Liberation Mono", Menlo, Courier, monospace;
   }
   code:before, code:after {
     letter-spacing: -0.2em;
     content: "\00a0";
+  }
+  pre {
+    background-color:#EEEEEE;
+    padding:8px 5px;
+    border-radius:3px;
   }
 
   /* Make definition lists look like nice tables */
@@ -78,7 +124,7 @@
   }
   dl dt {
     display: block;
-    width: 150px;
+    width: 200px;
     overflow:hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -88,7 +134,7 @@
   }
   dl dd {
     display: block;
-    margin-left:168px;
+    margin-left:228px;
     background-color:#FFFFFF;
   }
   dl p {
@@ -129,6 +175,10 @@
   h3.date {
     display:none;
   }
+  
+  .swedac {
+    margin-top:30px;
+  }
 
   /* Page Footer */
   footer {
@@ -142,6 +192,15 @@
   footer a {
     color:#999999;
     text-decoration:none;
+  }
+  
+  /***** Specific Report Types ******/
+  #library-statistics dl dt, #variants dl dt {
+    width: 200px;
+  }
+  #library-statistics dl dd, #variants dl dd {
+    text-align:right;
+    margin-left:228px;
   }
   
   </style>
@@ -169,7 +228,21 @@
 
 
 
-<h1 id="sample-information">Sample Information</h1>
+
+<div id="sample-information" class="section level1">
+<h1>Sample Information</h1>
+<dl>
+<dt>Report Date</dt>
+<dd>2014-11-13
+</dd>
+<dt>User Contact</dt>
+<dd>phil.ewels@scilifelab.se
+</dd>
+<dt>Project Name</dt>
+<dd>M.Kaller_14_05 (Swedish Genomes Pilot v3 )
+</dd>
+</dl>
+<p>Some spacer text here.</p>
 <dl>
 <dt>Report Date</dt>
 <dd>2014-11-13
@@ -206,7 +279,9 @@
 <p><code>140815_SN1025_0223_BC4HAPACXX</code></p>
 </dd>
 </dl>
-<h1 id="library-statistics">Library Statistics</h1>
+</div>
+<div id="library-statistics" class="section level1">
+<h1>Library Statistics</h1>
 <dl>
 <dt>Total Reads</dt>
 <dd>908,585,160
@@ -231,28 +306,38 @@
 </dd>
 </dl>
 <p>See below for more information about coverage and insert size. The <code>qualimapReport.html</code> report in your delivery folder contains additional library statistics. Note that the duplication rate above is calculated using <a href="http://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates">Picard Mark Duplicates</a>. Qualimap calculates duplicates differently and the figure in the report will be different to the Picard result..</p>
-<h2 id="distribution-of-sequencing-coverage">Distribution of sequencing coverage</h2>
+<div id="distribution-of-sequencing-coverage" class="section level2">
+<h2>Distribution of sequencing coverage</h2>
 <p>Calculating the coverage of a genome tells you how much information you have about the sequence content of any given position. More coverage means more data and so greater confidence in your results. A specific locus with 30X coverage will have 30 unique reads covering that location. Different positions in the genome may have different coverages due to variations in how well reads map to the underlying sequence. Other factors such as GC bias in library preparation may also have an effect.</p>
 <p>To calculate the plot below, we create rolling windows across the genome and count the frequencies of the different coverages observed. This was done using the <a href="http://qualimap.bioinfo.cipf.es/">QualiMap</a> tool and plotted with an <a href="https://github.com/SciLifeLab/visualizations">NGI script</a>.</p>
 <div class="figure">
 <img src="plots/qualimap_coverage.png" alt="Sequencing Coverage" /><p class="caption">Sequencing Coverage</p>
 </div>
-<h2 id="proportion-of-library-with-increasing-coverage-depths">Proportion of library with increasing coverage depths</h2>
+</div>
+<div id="proportion-of-library-with-increasing-coverage-depths" class="section level2">
+<h2>Proportion of library with increasing coverage depths</h2>
 <p>Another way to assess coverage is to look at the proportion of the reference genome with a certain coverage. The plot below shows what percentage of the reference genome is covered with increasing coverage thresholds. As above, this data was calculated using <a href="http://qualimap.bioinfo.cipf.es/">QualiMap</a> and plotted with an <a href="https://github.com/SciLifeLab/visualizations">NGI script</a>.</p>
 <div class="figure">
 <img src="plots/genome_fraction.png" alt="Genome Fractional Coverage" /><p class="caption">Genome Fractional Coverage</p>
 </div>
-<h2 id="library-fragment-insert-sizes">Library fragment insert sizes</h2>
+</div>
+<div id="library-fragment-insert-sizes" class="section level2">
+<h2>Library fragment insert sizes</h2>
 <p>By inspecting where each read pair maps to in the reference genome, we can reconstruct the reads that were present in the library and calculate the range of insert sizes. This gives an insight into the quality of the sequencing library. We counted how many reads with each insert size were seen and plotted this in the histogram below. This was done using the <a href="http://qualimap.bioinfo.cipf.es/">QualiMap</a> tool and plotted with an <a href="https://github.com/SciLifeLab/visualizations">NGI script</a>.</p>
 <div class="figure">
 <img src="plots/qualimap_insertsize.png" alt="Insert Sizes" /><p class="caption">Insert Sizes</p>
 </div>
-<h2 id="distribution-of-reads-by-gc-content">Distribution of reads by GC content</h2>
+</div>
+<div id="distribution-of-reads-by-gc-content" class="section level2">
+<h2>Distribution of reads by GC content</h2>
 <p>Library preparation and sequencing alignment can be affected by differences in GC content. Here, we plot the proportions of the library reads at each GC content. The red dotted line shows the profile for the reference genome. This data was calculated using <a href="http://qualimap.bioinfo.cipf.es/">QualiMap</a> and plotted with an <a href="https://github.com/SciLifeLab/visualizations">NGI script</a>.</p>
 <div class="figure">
 <img src="plots/gc_distribution.png" alt="GC Content Distribution" /><p class="caption">GC Content Distribution</p>
 </div>
-<h1 id="variants">Variants</h1>
+</div>
+</div>
+<div id="variants" class="section level1">
+<h1>Variants</h1>
 <dl>
 <dt>Change Rate</dt>
 <dd>1 change per 774 bp
@@ -293,6 +378,9 @@
 <img src="plots/snpEff_effect_regions.png" alt="Insert Sizes" /><p class="caption">Insert Sizes</p>
 </div>
 <p>See the <code>snpEff_summary.html</code> report in your delivery folder for more details.</p>
+</div>
+
+
 
 <footer>
       <a class="floatleft" href="mailto:genomics_support@scilifelab.se">genomics_support@scilifelab.se</a>
@@ -300,3 +388,4 @@
 </footer>
 </body>
 </html>
+

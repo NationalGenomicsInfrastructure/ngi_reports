@@ -31,10 +31,15 @@ All reports should be generated as Markdown `.md` files. We can then
 use [Pandoc](http://johnmacfarlane.net/pandoc/) to convert these into 
 whatever file format we like (PDF initially, probably HTML later).
 
-To make report generation as simple as possible, all images should be
-generated in both PDF and HTML-friendly formats (almost always
-`.png`). On top of this, vector format plots are very useful to users
-so PDF and SVG plots should be delivered in addition where possible.
+All figures should be plotted as both `.png` files (for HTML reports)
+and `.pdf` (for PDF reports). When setting the file names for the
+markdown, write the file name without an extension. The pandoc
+conversion will automatically use the correct file type for the report
+that it's making.
+
+If you can't make `png` and `pdf` for whatever reaason, just
+specify the full file name with extension and this will be used for
+everything.
 
 ## Information Flow
 The general structure of the package is intended to allow easy use of

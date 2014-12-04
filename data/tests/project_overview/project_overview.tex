@@ -1,0 +1,515 @@
+\documentclass[12pt]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+    \usepackage{xltxtra,xunicode}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \newcommand{\euro}{€}
+  \setmainfont{Helvetica Neue}
+  \setsansfont{Helvetica Neue}
+  \setmonofont[Mapping=tex-ansi]{Consolas}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage{longtable,booktabs}
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex]{hyperref}
+\else
+  \usepackage[unicode=true]{hyperref}
+\fi
+\usepackage[usenames, dvipsnames]{color}
+\definecolor{grey}{gray}{0.5}
+\definecolor{lightgrey}{gray}{0.8}
+\definecolor{linkblue}{rgb}{0,0,0.6}
+\hypersetup{breaklinks=true,
+            bookmarks=true,
+            pdfauthor={},
+            pdftitle={Project Overview},
+            colorlinks=true,
+            citecolor=black,
+            urlcolor=linkblue,
+            linkcolor=black,
+            pdfborder={0 0 0}}
+\urlstyle{same}  % don't use monospace font for urls
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\setcounter{secnumdepth}{0}
+
+%%%%%%%%%% HERE COMES THE CUSTOM STUFF %%%%%%%%%%%%%%
+
+% Make some new symbols
+\usepackage{amssymb}% http://ctan.org/pkg/amssymb
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\newcommand{\tickmark}{\ding{51}}%
+\newcommand{\crossmark}{\ding{55}}%
+
+% Set the header and footer up
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage[top=2.5cm, bottom=4.5cm, left=2cm, right=2cm, heightrounded]{geometry}
+\pagestyle{fancy}
+\lhead{\includegraphics[width=5cm]{/Users/philewels/Work/ngi_reports/data/pandoc_templates//assets/SLL_logo.pdf}\vspace{0.3cm}}
+\rhead{\includegraphics[width=5cm]{/Users/philewels/Work/ngi_reports/data/pandoc_templates//assets/NGI_logo.pdf}\vspace{0.45cm}}
+\chead{\color{grey}National Genomics Infrastructure - Project Overview}
+	\lfoot{
+		\vspace{0cm} % not sure why i need this. Something to do with the href?
+		\href{mailto:genomics\_support@scilifelab.se}{
+			\color{grey}{genomics\_support@scilifelab.se}
+		}
+	}
+\cfoot{\color{grey}Page \thepage\ of {\hypersetup{linkcolor=grey}\pageref{LastPage}}}
+\rfoot{\color{grey}J.Lundeberg\_14\_01}
+
+% Make the header and footer rules thin and grey
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{grey}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\footrule}{\hbox to\headwidth{\color{grey}\leaders\hrule height \headrulewidth\hfill}}
+
+% Build the Main Title
+\title{
+	\vspace{0.5cm}
+	{\fontsize{32}{36}\selectfont Project Overview}
+			\\\vspace{0.5em}
+		{\fontsize{24}{28}\selectfont J.Lundeberg\_14\_01}
+		\\\headrule
+	\vspace{-2cm}
+}
+\date{}
+\author{}
+
+% Section header font sizes
+\usepackage{titlesec}
+\titleformat{\section}{\fontsize{18}{22}\bfseries}{\thesection}{1em}{}
+
+% Spacing after headers
+\titlespacing\section{0pt}{24pt plus 4pt minus 2pt}{8pt plus 4pt minus 2pt}
+\titlespacing\subsection{0pt}{18pt plus 4pt minus 2pt}{4pt plus 2pt minus 2pt}
+\titlespacing\subsubsection{0pt}{12pt plus 4pt minus 2pt}{0pt plus 0pt minus 2pt}
+
+% Make code \texttt smaller have grey highlighting
+% http://tex.stackexchange.com/questions/42961/adding-a-highlight-to-texttt-blocks
+\usepackage{soul}
+\definecolor{vlightgrey}{gray}{.95}
+\sethlcolor{vlightgrey}
+\let\OldTexttt\texttt
+\renewcommand{\texttt}[1]{\OldTexttt{\small\hl{#1}}}
+
+% Italic blockquote with left border
+\let\oldquote\quote
+\renewcommand\quote{\itshape\oldquote}
+
+
+% Styling the definition lists to look like the other report
+% Solution kindly provided by Gonzalo Medina
+% http://tex.stackexchange.com/questions/213236/customising-description-lists
+% Double dollar signs are for pandoc
+\usepackage{enumitem}
+\usepackage{etoolbox}
+\usepackage{tikzpagenodes}
+\usetikzlibrary{tikzmark,calc}
+
+\newcounter{colordesc}
+\newlength\longestlabel
+\setlength\longestlabel{5.5cm}
+
+\setlist[description]{style=multiline, leftmargin=\longestlabel, itemsep=0cm}
+
+\AtBeginEnvironment{description}{%
+  \stepcounter{colordesc}%
+  \begin{tikzpicture}[overlay,remember picture]
+  
+  % Filled grey box over headers
+  \fill[gray!30] 
+    ( $ (pic cs:start-\thecolordesc) + (-5pt,-1.85\topsep) $ ) 
+      rectangle 
+    ( $ ({pic cs:start-\thecolordesc}|-{pic cs:end-\thecolordesc}) + (\longestlabel-5pt,-.5\topsep) $ );
+  
+  
+  % Border along the right hand side of the definition list
+  \draw[gray!30] 
+    ( $ (current page text area.east|-{pic cs:start-\thecolordesc}) + (5pt,-1.85\topsep) $ )
+      -- 
+    ( $ (current page text area.east|-{pic cs:end-\thecolordesc})  + (5pt,-0.45\topsep) $ );
+  
+  \end{tikzpicture}%
+  \tikzmark{start-\thecolordesc}%
+}
+\AtEndEnvironment{description}{%
+  \tikzmark{end-\thecolordesc}%
+}
+
+% Border along the bottom of the definition list
+\AtEndEnvironment{description}{%
+  \tikz[overlay,remember picture]\draw[gray!30]
+    ( $ (current page text area.west|-{pic cs:end-\thecolordesc}) + (0,-.45\topsep) $ ) 
+    -- ++(1.01\textwidth,0);%
+}
+
+% Top borders of list items
+\renewcommand*\descriptionlabel[1]{%
+  \tikz\draw[overlay,gray!30]
+    (-5pt,.8\baselineskip) -- 
+    (1.01\textwidth,.8\baselineskip);%
+    \hspace\labelsep\normalfont\bfseries #1%
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancyplain}
+
+
+\section{Project Information}\label{project-information}
+
+\begin{description}
+\itemsep1pt\parskip0pt\parsep0pt
+\item[User Project Name]
+140117\_Rapid\_Ventana\_TdT
+\item[NGI Project Name]
+J.Lundeberg\_14\_01
+\item[NGI Project ID]
+P955
+\item[User Contact]
+\href{mailto:jlundberg@ki.se}{\nolinkurl{jlundberg@ki.se}}
+\item[NGI Application Type]
+Finished Library (No best practice analysis)
+\item[Samples \& Lanes]
+1 sample, 2 lanes
+\item[Project Status]
+Sequencing Finished
+\item[Order Dates]
+\emph{Order received:} 2014-01-10, \emph{Contract received:} 2014-01-15,
+\emph{Samples received:} 2014-01-20, \emph{Queue date:} 2014-01-23,
+\emph{All data delivered:} 2014-04-02, \emph{Report Date:} 2014-12-02
+\item[UPPMAX Project ID]
+\texttt{b2011007}
+\item[UPPNEX project path]
+\texttt{/proj/b2011007/INBOX/J.Lundberg\_14}
+\item[Reference Genome]
+Human, hg19
+\item[Minimum ordered reads]
+200 million
+\end{description}
+
+\section{Methods}\label{methods}
+
+\subsubsection{Library construction}\label{library-construction}
+
+\begin{enumerate}
+\def\labelenumi{\Alph{enumi})}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  Library was prepared using the ``650 bp insert standard DNA (Illumina
+  TruSeq DNA)'' protocol and clustering was done by cBot.
+\end{enumerate}
+
+\subsubsection{Sequencing}\label{sequencing}
+
+\begin{enumerate}
+\def\labelenumi{\Alph{enumi})}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  All samples were sequenced on HiSeq2500 (HiSeq Control Software
+  2.0.12.0/RTA 1.17.21.3) with a 2x101 setup.The Bcl to Fastq conversion
+  was performed using bcl2Fastq v1.8.3 from the CASAVA software suite.
+  The quality scale used is Sanger / phred33 / Illumina 1.8+.
+\end{enumerate}
+
+\subsubsection{Data Flow}\label{data-flow}
+
+All data (demultiplexed) from the instrument are collected and
+transfered securely to a storage server with well established pipeline.
+
+\subsubsection{Data Processing:}\label{data-processing}
+
+A set of standard quality checks were performed to assure that all
+sequenced data meet NGI guaranteed quality / quantity. All analysis are
+carried out in UPPMAX servers before delivering the raw data.
+
+\subsubsection{Swedac Accreditation}\label{swedac-accreditation}
+
+The National Genomics Infrastructure is accredited by
+\href{http://www.swedac.se}{Swedac}. This means that our services are
+subject to highly stringent quality control procedures, so that you can
+be sure that your data is of excellent quality.
+
+\begin{description}
+\itemsep1pt\parskip0pt\parsep0pt
+\item[Library preparation]
+~\crossmark~~~ Not Swedac Accredited
+\item[Sequencing data]
+~\tickmark~~ Swedac Accredited
+\item[Data flow]
+~\tickmark~~ Swedac Accredited
+\item[Data processing]
+~\tickmark~~ Swedac Accredited
+\end{description}
+
+\section{Sample Info}\label{sample-info}
+
+\begin{longtable}[c]{@{}llll@{}}
+\toprule
+NGI ID & User ID & Index & Lib Prep\tabularnewline
+\midrule
+\endhead
+P955\_101 & 140117\_Rapid\_Ventana\_TdT & Index 8 (\texttt{ACTTGA}) &
+A\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{longtable}[c]{@{}llll@{}}
+\toprule
+\begin{minipage}[b]{0.20\columnwidth}\raggedright\strut
+NGI ID
+\strut\end{minipage} &
+\begin{minipage}[b]{0.30\columnwidth}\raggedright\strut
+User ID
+\strut\end{minipage} &
+\begin{minipage}[b]{0.22\columnwidth}\raggedright\strut
+Index
+\strut\end{minipage} &
+\begin{minipage}[b]{0.17\columnwidth}\raggedright\strut
+Lib Prep
+\strut\end{minipage}\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{0.20\columnwidth}\raggedright\strut
+P955\_101
+\strut\end{minipage} &
+\begin{minipage}[t]{0.30\columnwidth}\raggedright\strut
+140117\_Rapid\_Ventana\_TdT
+\strut\end{minipage} &
+\begin{minipage}[t]{0.22\columnwidth}\raggedright\strut
+Index 8 (\texttt{ACTTGA})
+\strut\end{minipage} &
+\begin{minipage}[t]{0.17\columnwidth}\raggedright\strut
+A
+\strut\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
+
+\section{Yield Overview}\label{yield-overview}
+
+\begin{longtable}[c]{@{}llllll@{}}
+\toprule
+\begin{minipage}[b]{0.15\columnwidth}\raggedright\strut
+Sample
+\strut\end{minipage} &
+\begin{minipage}[b]{0.12\columnwidth}\raggedright\strut
+Lib QC
+\strut\end{minipage} &
+\begin{minipage}[b]{0.16\columnwidth}\raggedright\strut
+Avg. FS
+\strut\end{minipage} &
+\begin{minipage}[b]{0.12\columnwidth}\raggedright\strut
+≥ Q30
+\strut\end{minipage} &
+\begin{minipage}[b]{0.15\columnwidth}\raggedright\strut
+\# Reads
+\strut\end{minipage} &
+\begin{minipage}[b]{0.12\columnwidth}\raggedright\strut
+Status
+\strut\end{minipage}\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{0.15\columnwidth}\raggedright\strut
+P955\_101b
+\strut\end{minipage} &
+\begin{minipage}[t]{0.12\columnwidth}\raggedright\strut
+Passed
+\strut\end{minipage} &
+\begin{minipage}[t]{0.16\columnwidth}\raggedright\strut
+350 bp
+\strut\end{minipage} &
+\begin{minipage}[t]{0.12\columnwidth}\raggedright\strut
+59.34\%
+\strut\end{minipage} &
+\begin{minipage}[t]{0.15\columnwidth}\raggedright\strut
+105.66 M
+\strut\end{minipage} &
+\begin{minipage}[t]{0.12\columnwidth}\raggedright\strut
+Passed
+\strut\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  \emph{Lib QC:} Reception control library quality control step
+\item
+  \emph{Avg. FS:} Average fragment size.
+\item
+  \emph{≥ Q30:} Percentage of bases above quality score Q30 for the
+  sample.
+\item
+  \emph{\# Reads:} Millions of reads sequenced.
+\end{itemize}
+
+\section{Run Info}\label{run-info}
+
+\begin{longtable}[c]{@{}llllllll@{}}
+\toprule
+\begin{minipage}[b]{0.08\columnwidth}\raggedright\strut
+Date
+\strut\end{minipage} &
+\begin{minipage}[b]{0.13\columnwidth}\raggedright\strut
+FC id
+\strut\end{minipage} &
+\begin{minipage}[b]{0.07\columnwidth}\raggedright\strut
+Lane
+\strut\end{minipage} &
+\begin{minipage}[b]{0.11\columnwidth}\raggedright\strut
+Clusters
+\strut\end{minipage} &
+\begin{minipage}[b]{0.09\columnwidth}\raggedright\strut
+\% PhiX
+\strut\end{minipage} &
+\begin{minipage}[b]{0.09\columnwidth}\raggedright\strut
+≥ Q30
+\strut\end{minipage} &
+\begin{minipage}[b]{0.12\columnwidth}\raggedright\strut
+\% Unique
+\strut\end{minipage} &
+\begin{minipage}[b]{0.09\columnwidth}\raggedright\strut
+Method
+\strut\end{minipage}\tabularnewline
+\midrule
+\endhead
+\begin{minipage}[t]{0.08\columnwidth}\raggedright\strut
+140123
+\strut\end{minipage} &
+\begin{minipage}[t]{0.13\columnwidth}\raggedright\strut
+\texttt{B-H8A63ADXX}
+\strut\end{minipage} &
+\begin{minipage}[t]{0.07\columnwidth}\raggedright\strut
+1
+\strut\end{minipage} &
+\begin{minipage}[t]{0.11\columnwidth}\raggedright\strut
+66.88 M
+\strut\end{minipage} &
+\begin{minipage}[t]{0.09\columnwidth}\raggedright\strut
+0.52\%
+\strut\end{minipage} &
+\begin{minipage}[t]{0.09\columnwidth}\raggedright\strut
+58.70\%
+\strut\end{minipage} &
+\begin{minipage}[t]{0.12\columnwidth}\raggedright\strut
+80.51\%
+\strut\end{minipage} &
+\begin{minipage}[t]{0.09\columnwidth}\raggedright\strut
+A
+\strut\end{minipage}\tabularnewline
+\begin{minipage}[t]{0.08\columnwidth}\raggedright\strut
+140123
+\strut\end{minipage} &
+\begin{minipage}[t]{0.13\columnwidth}\raggedright\strut
+\texttt{B-H8A63ADXX}
+\strut\end{minipage} &
+\begin{minipage}[t]{0.07\columnwidth}\raggedright\strut
+2
+\strut\end{minipage} &
+\begin{minipage}[t]{0.11\columnwidth}\raggedright\strut
+65.89 M
+\strut\end{minipage} &
+\begin{minipage}[t]{0.09\columnwidth}\raggedright\strut
+0.56\%
+\strut\end{minipage} &
+\begin{minipage}[t]{0.09\columnwidth}\raggedright\strut
+57.15\%
+\strut\end{minipage} &
+\begin{minipage}[t]{0.12\columnwidth}\raggedright\strut
+78.32\%
+\strut\end{minipage} &
+\begin{minipage}[t]{0.09\columnwidth}\raggedright\strut
+A
+\strut\end{minipage}\tabularnewline
+\bottomrule
+\end{longtable}
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item
+  \emph{FC id:} Position on flowcell - Flowcell ID.
+\item
+  \emph{≥ Q30:} Percentage of bases above quality score Q30 on the lane.
+\item
+  \emph{Unique:} Percentage of reads recovered after demultiplexing.
+\item
+  \emph{Method:} Sequencing method used. See above for description.
+\end{itemize}
+
+\section{General Information}\label{general-information}
+
+\subsection{Naming conventions}\label{naming-conventions}
+
+The data is delivered in FastQ format using Illumina 1.8 quality scores.
+There will be one file for the forward reads and one file for the
+reverse reads (if the run was a paired-end run).
+
+The naming of the files follow the convention:
+
+\begin{verbatim}
+[LANE]_[DATE]_[POSITION][FLOWCELL]_[NGI-NAME]_[READ].fastq.gz
+\end{verbatim}
+
+\subsection{Data access at UPPMAX}\label{data-access-at-uppmax}
+
+Data from the sequencing will be uploaded to the UPPNEX (UPPMAX Next
+Generation sequence Cluster Storage,
+\href{http://www.uppmax.uu.se}{uppmax.uu.se}), from which the user can
+access it. You can find the data in the INBOX folder of the UPPNEX
+project, which was created for you when your order was placed:
+
+\begin{verbatim}
+/proj/b2011007/INBOX/J.Lundberg_14
+\end{verbatim}
+
+If you have problems accessing your data, please contact SciLifeLab
+\href{mailto:\%20genomics_support@scilifelab.se}{genomics\_support@scilifelab.se}.
+If you have questions regarding UPPNEX, please contact
+\href{mailto:support@uppmax.uu.se}{\nolinkurl{support@uppmax.uu.se}}.
+
+\subsection{Acknowledgements}\label{acknowledgements}
+
+In publications based on data from the work covered by this contract,
+the authors must acknowledge SciLifeLab, NGI and Uppmax:
+
+\begin{quote}
+The authors would like to acknowledge support from Science for Life
+Laboratory, the National Genomics Infrastructure, NGI, and Uppmax for
+providing assistance in massive parallel sequencing and computational
+infrastructure.
+\end{quote}
+
+\section{Further Help}\label{further-help}
+
+If you have any queries, please get in touch at
+\href{mailto:\%20genomics_support@scilifelab.se}{genomics\_support@scilifelab.se}.
+
+
+
+\end{document}
