@@ -12,7 +12,6 @@ from pandocfilters import toJSONFilter, Image, Str, RawInline
 
 # Replace [tick] or [cross] with different icons in PDF and HTML
 def tick_cross_images (key, value, format, meta):
-    template_dir = '/Users/philewels/Work/ngi_reports/data/pandoc_templates/assets/'
     if key == 'Str' and value == '[tick]':
         if format == "latex":
             return RawInline('latex', r'~\tickmark~~')
