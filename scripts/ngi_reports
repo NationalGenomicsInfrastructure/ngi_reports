@@ -19,7 +19,7 @@ LOG = loggers.minimal_logger('NGI Reports')
 config = report_config.load_config()
 
 ## create choices for report type based on available report template
-allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(config.get("ngi_reports","report_templates")) ]
+allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'data', 'report_templates'))) ]
 
 def make_report (report_type, working_dir=os.getcwd(), **kwargs):
     
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>', help="Type of report to generate")
-    parser.add_argument('--project', default=None, action="store", help="Project name to generate report")
+    parser.add_argument('--project', default=None, action="store", help="Project name to generate 'project_summary' report")
 
     kwargs = vars(parser.parse_args())
            

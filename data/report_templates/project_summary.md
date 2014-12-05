@@ -38,7 +38,7 @@ UPPNEX project path
 :   `{{ project.UPPMAX_path }}`
 {% if project.reference.genome %}
 Reference Genome
-:   {{ project.reference.organism}}({{ project.reference.genome }})
+:   {{ project.reference.organism}} ({{ project.reference.genome }})
 {% endif %}{% if project.ordered_reads %}
 Minimum ordered reads
 :   {{ project.ordered_reads }}

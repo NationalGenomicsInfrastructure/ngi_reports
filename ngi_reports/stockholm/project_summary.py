@@ -3,7 +3,6 @@
 """
 
 import os
-import sys
 import jinja2
 import numpy as np
 from datetime import datetime
@@ -20,15 +19,21 @@ class Report(object):
         self.LOG = LOG
         self.config = config
         self.date_format = "%Y-%m-%d"
-        self.proj_name = kwargs.get('project')
+        try:
+            self.proj_name = kwargs['project']
+        except KeyError:
+            self.LOG.error("No project name found - please specify using '--project'")
+            raise
         self.creation_date = datetime.now().strftime(self.date_format)
         
         # project information realted
         self.pcon = ProjectSummaryConnection()
+        self.scon = SampleRunMetricsConnection()
         try:
             self.proj_db_key = self.pcon.name_view[self.proj_name]
         except KeyError:
-            sys.exit("Please provide a valid project. Either project name is not passed with '--project' option or it is not a valid project!!")
+            self.LOG.error("Project <project_name> not found in statusdb")
+            raise
         self.proj = self.pcon.get_entry(self.proj_name)
         self.proj_samples = self.proj.get('samples',{})
         self.proj_details = self.proj.get('details',{})
@@ -46,7 +51,6 @@ class Report(object):
         info = {'ngi_name' : self.proj.get('project_name'),
                 'ngi_id' : self.proj.get('project_id'),
                 'contact' : self.proj.get('contact'),
-                'status' : self.get_project_status(),
                 'dates' : self.get_order_dates(),
                 'application' : self.proj.get('application'),
                 'num_samples' : self.proj.get('no_of_samples'),
@@ -56,7 +60,8 @@ class Report(object):
                 'UPPMAX_path' : self.get_uppmax_path(kwargs.get('uppmax_id')),
                 'UPPMAX_id' : kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id'),
                 'ordered_reads' : kwargs.get('reads_minimum') if kwargs.get('reads_minimum') else self.get_ordered_reads(),
-                'best_practice' : False if self.proj_details.get('best_practice_bioinformatics','No')=="No" else True }
+                'best_practice' : False if self.proj_details.get('best_practice_bioinformatics','No')=="No" else True,
+                'status' : return "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing" }
         return info
     
     ## collect all information required for project section in reports
@@ -64,14 +69,6 @@ class Report(object):
     def get_methods_info(self):
         info = {'library_construction' : self.get_libprep_method()}
         return info
-    
-    ## get status if all samples are sequenced
-    def get_project_status(self):
-        try:
-            seq_done = self.proj['project_summary']['all_samples_sequenced']
-            return "Sequecning done"
-        except KeyError:
-            return "Sequencing ongoing"
     
     ## get uppmax path where project data is delivered
     def get_uppmax_path(self,uppmax):
@@ -135,8 +132,7 @@ class Report(object):
         # Load the Jinja2 template
         try:
             # This is not very elegant :)
-            #templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'data', 'report_templates'))
-            templates_dir = os.path.realpath(self.config.get("ngi_reports","report_templates"))
+            templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'data', 'report_templates'))
             env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
             template = env.get_template('project_summary.md')
         except:
@@ -149,4 +145,3 @@ class Report(object):
         except:
             self.LOG.error('Could not parse the ign_sample_report template')
             raise
-        
