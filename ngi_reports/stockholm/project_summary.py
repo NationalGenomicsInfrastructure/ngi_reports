@@ -6,7 +6,6 @@
 import os
 import jinja2
 import numpy as np
-from datetime import datetime
 from collections import OrderedDict
 from string import ascii_uppercase as alphabets
 from ngi_reports.common import project_summary
@@ -20,10 +19,6 @@ class Report(project_summary.CommonReport):
         # Initialise the parent class
         super(Report, self).__init__(config, LOG, working_dir)
         
-        # general initialization
-        self.date_format = "%Y-%m-%d"
-        self.creation_date = datetime.now().strftime(self.date_format)
-        
         # Project name - collect from the command line if we have it
         if kwargs.get('project') is not None:
             self.proj_name = kwargs['project']
@@ -36,6 +31,8 @@ class Report(project_summary.CommonReport):
                 self.LOG.error("No project name found - please specify using '--project'")
                 raise NameError("No project name found - please specify using '--project'")
         
+        # Report filename
+        self.report_fn = "{}_project_summary".format(self.proj_name)
         
         # project information realted
         self.pcon = ProjectSummaryConnection()
@@ -51,10 +48,6 @@ class Report(project_summary.CommonReport):
         self.accredit_info = {}
         self.project_info = self.get_project_info(**kwargs)
         self.methods_info = self.get_methods_info()
-        
-        # report name and directory to be created
-        self.report_dir = "reports"
-        self.report_fn = "{}_project_summary".format(self.proj_name)
         
     ## collect all information required for project section in reports
     ## and retruns as a dictionary to render in template
