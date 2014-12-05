@@ -9,10 +9,7 @@ import re
 import xmltodict
 from datetime import datetime
 
-from ngi_visualizations.qualimap import coverage_histogram
-from ngi_visualizations.qualimap import genome_fraction_coverage
-from ngi_visualizations.qualimap import insert_size
-from ngi_visualizations.qualimap import gc_distribution
+from ngi_visualizations.qualimap import coverage_histogram, genome_fraction_coverage, insert_size, gc_distribution
 from ngi_visualizations.snpEff import snpEff_plots
 
 class CommonReport(object):
