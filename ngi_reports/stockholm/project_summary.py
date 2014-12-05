@@ -1,5 +1,6 @@
-"""
-    Class for generating project reports
+#!/usr/bin/env python
+
+""" Class for generating project reports
 """
 
 import os
@@ -8,23 +9,33 @@ import numpy as np
 from datetime import datetime
 from collections import OrderedDict
 from string import ascii_uppercase as alphabets
+from ngi_reports.common import project_summary
 from statusdb.db.connections import ProjectSummaryConnection, SampleRunMetricsConnection, FlowcellRunMetricsConnection
 
-class Report(object):
+class Report(project_summary.CommonReport):
     
     ## initialize class and assign basic variables
     def __init__(self, config, LOG, working_dir, **kwargs):
         
+        # Initialise the parent class
+        super(Report, self).__init__(config, LOG, working_dir)
+        
         # general initialization
-        self.LOG = LOG
-        self.config = config
         self.date_format = "%Y-%m-%d"
-        try:
-            self.proj_name = kwargs['project']
-        except KeyError:
-            self.LOG.error("No project name found - please specify using '--project'")
-            raise
         self.creation_date = datetime.now().strftime(self.date_format)
+        
+        # Project name - collect from the command line if we have it
+        if kwargs.get('project') is not None:
+            self.proj_name = kwargs['project']
+        else:
+            # Check to see if the common parent class got it from
+            # the file system
+            try:
+                self.proj_name
+            except NameError:
+                self.LOG.error("No project name found - please specify using '--project'")
+                raise NameError("No project name found - please specify using '--project'")
+        
         
         # project information realted
         self.pcon = ProjectSummaryConnection()
@@ -41,7 +52,7 @@ class Report(object):
         self.project_info = self.get_project_info(**kwargs)
         self.methods_info = self.get_methods_info()
         
-        #report name and directory to be created
+        # report name and directory to be created
         self.report_dir = "reports"
         self.report_fn = "{}_project_summary".format(self.proj_name)
         
