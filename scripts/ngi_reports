@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import argparse
 import os
+import sys
 import shlex
 import shutil
 import subprocess
@@ -17,7 +18,10 @@ from ngi_reports.common import config as report_config
 LOG = loggers.minimal_logger('NGI Reports')
 config = report_config.load_config()
 
-def make_report (report_type, working_dir=os.getcwd()):
+## create choices for report type based on available report template
+allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ]
+
+def make_report (report_type, working_dir=os.getcwd(), **kwargs):
     
     # Setup
     template_fn = '{}.md'.format(report_type)
@@ -26,7 +30,7 @@ def make_report (report_type, working_dir=os.getcwd()):
     # Import the module for this report type
     ngi_node = config.get('ngi_reports', 'ngi_node')
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
-    report = report_mod.Report(config, LOG, working_dir)
+    report = report_mod.Report(config, LOG, working_dir, **kwargs)
     
     # Work out all of the directory and file names
     output_dir = os.path.realpath(os.path.join(working_dir, report.report_dir))
@@ -73,21 +77,14 @@ def make_report (report_type, working_dir=os.getcwd()):
         LOG.error('Could not convert markdown to PDF')
         raise
 
-
-
-
-
-
-
-
-
+# calling main method to generate report
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Make an NGI Report")
     parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
         help="Working Directory. Default: cwd when script is executed.")
-    parser.add_argument('report_type',  metavar='<report type>',
-        help="Type of report to generate")
+    parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>', help="Type of report to generate")
+    parser.add_argument('--project', default=None, action="store", help="Project name to generate 'project_summary' report")
 
     kwargs = vars(parser.parse_args())
-    
+           
     make_report(**kwargs)
