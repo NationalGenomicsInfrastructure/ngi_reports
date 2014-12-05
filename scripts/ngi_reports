@@ -19,7 +19,7 @@ LOG = loggers.minimal_logger('NGI Reports')
 config = report_config.load_config()
 
 ## create choices for report type based on available report template
-allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'data', 'report_templates'))) ]
+allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ]
 
 def make_report (report_type, working_dir=os.getcwd(), **kwargs):
     

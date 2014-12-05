@@ -61,7 +61,7 @@ class Report(object):
                 'UPPMAX_id' : kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id'),
                 'ordered_reads' : kwargs.get('reads_minimum') if kwargs.get('reads_minimum') else self.get_ordered_reads(),
                 'best_practice' : False if self.proj_details.get('best_practice_bioinformatics','No')=="No" else True,
-                'status' : return "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing" }
+                'status' : "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing" }
         return info
     
     ## collect all information required for project section in reports
