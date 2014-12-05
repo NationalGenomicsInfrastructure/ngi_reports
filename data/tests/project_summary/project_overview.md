@@ -74,36 +74,29 @@ This means that our services are subject to highly stringent quality control pro
 so that you can be sure that your data is of excellent quality.
 
 Library preparation
-:   ![cross] Not Swedac Accredited
+:   [cross] Not Swedac Accredited
 
 Sequencing data
-:   ![tick] Swedac Accredited
+:   [tick] Swedac Accredited
 
 Data flow
-:   ![tick] Swedac Accredited
+:   [tick] Swedac Accredited
 
 Data processing
-:   ![tick] Swedac Accredited
+:   [tick] Swedac Accredited
 
 # Sample Info
 
 NGI ID | User ID | Index | Lib Prep
--------|---------|-------|---------
+-------|---------|-------|----------
 P955_101 | 140117_Rapid_Ventana_TdT | Index 8 (`ACTTGA`) | A
 
-+-----------------+--------------------------+-------------------+---------------+
-| NGI ID          | User ID                  | Index             | Lib Prep      |
-+=================+==========================+===================+===============+
-| P955_101        | 140117_Rapid_Ventana_TdT | Index 8 (`ACTTGA`)| A             |
-+-----------------+--------------------------+-------------------+---------------+
 
 # Yield Overview
 
-+---------------+------------+----------------+------------+---------------+------------+
-| Sample        | Lib QC     | Avg. FS        | &ge; Q30   | # Reads       | Status     |
-+===============+============+================+============+===============+============+
-| P955_101b     | Passed     | 350 bp         | 59.34%     | 105.66 M      | Passed     |
-+---------------+------------+----------------+------------+---------------+------------+
+Sample | Lib QC | Avg. FS | &ge; Q30 | # Reads | Status
+-------|--------|--------:|---------:|--------:|-------
+P955_101b | Passed | 350 bp | 59.34% | 105.66 M | Passed
 
 * _Lib QC:_ Reception control library quality control step
 * _Avg. FS:_ Average fragment size.
@@ -111,13 +104,11 @@ P955_101 | 140117_Rapid_Ventana_TdT | Index 8 (`ACTTGA`) | A
 * _# Reads:_ Millions of reads sequenced.
 
 # Run Info
-+---------+---------------+--------+------------+----------+----------+-------------+----------+
-| Date    | FC id         | Lane   | Clusters   | % PhiX   | &ge; Q30 | % Unique    | Method   |
-+=========+===============+========+============+==========+==========+=============+==========+
-| 140123  | `B-H8A63ADXX` | 1      | 66.88 M    | 0.52%     | 58.70%  | 80.51%      | A        |
-+---------+---------------+--------+------------+----------+----------+-------------+----------+
-| 140123  | `B-H8A63ADXX` | 2      | 65.89 M    | 0.56%     | 57.15%  | 78.32%      | A        |
-+---------+---------------+--------+------------+----------+----------+-------------+----------+
+
+Date | FC id | Lane | Clusters | % PhiX | &ge; Q30| % Unique | Method
+-----|-------|------|---------:|-------:|--------:|---------:|--------
+2014-01-23 | `B-H8A63ADXX` | 1 | 66.88 M | 0.52% | 58.70% | 80.51% | A
+2014-01-23 | `B-H8A63ADXX` | 2 | 65.89 M | 0.56% | 57.15% | 78.32% | A
 
 * _FC id:_ Position on flowcell - Flowcell ID.
 * _&ge; Q30:_ Percentage of bases above quality score Q30 on the lane.
@@ -167,6 +158,3 @@ the authors must acknowledge SciLifeLab, NGI and Uppmax:
 # Further Help
 If you have any queries, please get in touch at
 [genomics_support@scilifelab.se](mailto: genomics_support@scilifelab.se).
-
-[tick]: tick.png
-[cross]: cross.png

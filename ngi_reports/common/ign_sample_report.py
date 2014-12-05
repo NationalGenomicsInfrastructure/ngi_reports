@@ -9,10 +9,7 @@ import re
 import xmltodict
 from datetime import datetime
 
-from ngi_visualizations.qualimap import coverage_histogram
-from ngi_visualizations.qualimap import genome_fraction_coverage
-from ngi_visualizations.qualimap import insert_size
-from ngi_visualizations.qualimap import gc_distribution
+from ngi_visualizations.qualimap import coverage_histogram, genome_fraction_coverage, insert_size, gc_distribution
 from ngi_visualizations.snpEff import snpEff_plots
 
 class CommonReport(object):
@@ -259,31 +256,31 @@ class CommonReport(object):
         cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
         cov_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_coverage'))
         coverage_histogram.plot_coverage_histogram(cov_fn, cov_output)
-        self.plots['coverage_plot'] = '{}.png'.format(cov_output)
+        self.plots['coverage_plot'] = cov_output
         
         # Qualimap genome fraction coverage plot
         cov_frac_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'genome_fraction_coverage.txt'))
         cov_frac_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_genome_fraction'))
         genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output)
-        self.plots['cov_frac_plot'] = '{}.png'.format(cov_frac_output)
+        self.plots['cov_frac_plot'] = cov_frac_output
         
         # Qualimap insert size plot
         insert_size_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'insert_size_histogram.txt'))
         insert_size_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_insert_size'))
         insert_size.plot_insert_size_histogram(insert_size_fn, insert_size_output)
-        self.plots['insert_size_plot'] = '{}.png'.format(insert_size_output)
+        self.plots['insert_size_plot'] = insert_size_output
         
         # Qualimap GC distribution plot
         gc_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'mapped_reads_gc-content_distribution.txt'))
         gc_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_gc_distribution'))
         gc_distribution.plot_genome_fraction_coverage(gc_fn, gc_output)
-        self.plots['gc_dist_plot'] = '{}.png'.format(gc_output)
+        self.plots['gc_dist_plot'] = gc_output
         
         # snpEff plot
         snpEFf_fn = os.path.realpath(os.path.join(self.snpeff_data_dir, 'snpEff_summary.csv'))
         snpEFf_output = os.path.realpath(os.path.join(self.plots_dir, self.sample['id'] + '_snpEff_effect'))
         snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
-        self.plots['snpEFf_plot'] = '{}_types.png'.format(snpEFf_output)
+        self.plots['snpEFf_plot'] = '{}_types'.format(snpEFf_output)
     
     
     

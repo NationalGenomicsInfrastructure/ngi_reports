@@ -72,16 +72,16 @@ This means that our services are subject to highly stringent quality control pro
 so that you can be sure that your data is of excellent quality.
 
 Library preparation
-:   ![cross] Not Swedac Accredited
+:   icon_cross Not Swedac Accredited
 
 Sequencing data
-:   ![tick] Swedac Accredited
+:   icon_tick Swedac Accredited
 
 Data flow
-:   ![tick] Swedac Accredited
+:   icon_tick Swedac Accredited
 
 Data processing
-:   ![tick] Swedac Accredited
+:   icon_tick Swedac Accredited
 
 # Sample Info
 
@@ -167,6 +167,3 @@ the authors must acknowledge SciLifeLab, NGI and Uppmax:
 # Further Help
 If you have any queries, please get in touch at
 [genomics_support@scilifelab.se](mailto: genomics_support@scilifelab.se).
-
-[tick]: tick.png
-[cross]: cross.png

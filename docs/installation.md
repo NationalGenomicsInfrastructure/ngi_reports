@@ -3,13 +3,28 @@
 ## Python Package
 To create reports you need to install the `ngi_reports` package.
 First, either download or clone the [repository](https://github.com/SciLifeLab/ngi_reports).
-Install the package by running:
+Make sure that you include the `--recursive` flag:
 
 ```
+git clone --recursive git@github.com:SciLifeLab/ngi_reports.git
+```
+_(remember to fork instead if you intend to make changes to the code)_
+
+Next, install the package by running:
+
+```
+cd ngi_reports
 python setup.py install
 ```
 
-This should install all dependencies so that the python code is ready to run.
+You also need to install the `pandocfilters` submodule:
+
+```
+cd data/pandoc_templates/pandocfilters/
+python setup.py install
+```
+
+These commands should install all dependencies so that the python code is ready to run.
 If you're intending to make changes to the code, use `develop` instead of `install`
 so that you don't need to run the setup script each time you make a change.
 

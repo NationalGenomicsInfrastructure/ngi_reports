@@ -62,7 +62,7 @@ def make_report (report_type, working_dir=os.getcwd(), **kwargs):
     # Convert markdown to HTML using pandoc
     try:
         LOG.info('Creating the HTML report')
-        html_cmd = shlex.split('pandoc -s --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html {2}'.format(output_bn, pandoc_dir, swedac))
+        html_cmd = shlex.split('pandoc --standalone --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py {2}'.format(output_bn, pandoc_dir, swedac))
         subprocess.call(html_cmd)
     except:
         LOG.error('Could not convert markdown to HTML')
@@ -71,7 +71,7 @@ def make_report (report_type, working_dir=os.getcwd(), **kwargs):
     # Convert markdown to PDF using pandoc
     try:    
         LOG.info('Creating the PDF report')
-        pdf_cmd = shlex.split('pandoc -s {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex -V template_dir={1} {2}'.format(output_bn, pandoc_dir, swedac))
+        pdf_cmd = shlex.split('pandoc --standalone {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter {1}/pandoc_filters.py -V template_dir={1} {2}'.format(output_bn, pandoc_dir, swedac))
         subprocess.call(pdf_cmd)
     except:
         LOG.error('Could not convert markdown to PDF')

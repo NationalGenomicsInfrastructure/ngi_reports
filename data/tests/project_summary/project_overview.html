@@ -71,10 +71,10 @@
   }
   
   /* Ticks and Crosses */
-  img[src="tick.png"] {
+  span.icon_tick {
     content: url(data:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAEnQAABJ0BfDRroQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAADnSURBVDiNpZOvbgJBEIe/gRwCgSDUnMLVYcBUYYtA1eLoEyCoafDwBHgMD1BPcoqXwFWRENKKiuZyU7Mkk+lxHLDJiN2Z7zeZPyuqyj2ncgskIrWbBURkCnyLSCIiEapa2oAXQI09XwO3gaOBf4CHsnAEbF32V1XlFFAHHgsEFg5eGx8x8BUcK6Dq4AGQGXgHNKzAyKkvjTMG9sb3C/RcAprAwYnMwog37n3yr7yg8hS6aoMTd/8AJFcgiAyB1EEn+wRauQ129Yxz4BTon51QzsjeDZwBb4U7cmbuHWAOdC8tmdz7nf8A20hyYB2Q4kIAAAAASUVORK5CYII=);
   }
-  img[src="cross.png"] {
+  span.icon_cross {
     content: url(data:data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAARwAAAEcBRwD1sgAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAChSURBVDiNxZNLDsIwEEOfuTGgNhVCCMrnnFlyi2GTVkNISkQXRMrGHjvzi8yMNWezSu0NJPWSoqS+FiwppJhuBs2MVMYTsHS7CXf8wfFxxl3A3QUYsHfcMePCh0HFZAucMmx40xRSvWaCqrhokEwuLWIzq46xfTkKr59/LqEgHoBHUxOXug3cvo4RiIupwuj44iJ1ySTk4izLCOwmTH//jS92nTFgQt+ghAAAAABJRU5ErkJggg==);
   }
   img[src="tick.png"], img[src="cross.png"] {
@@ -302,16 +302,16 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\
 <p>The National Genomics Infrastructure is accredited by <a href="http://www.swedac.se">Swedac</a>. This means that our services are subject to highly stringent quality control procedures, so that you can be sure that your data is of excellent quality.</p>
 <dl>
 <dt>Library preparation</dt>
-<dd><img src="cross.png" alt="cross" /> Not Swedac Accredited
+<dd><span class="icon_cross">&#10008;</span>  Not Swedac Accredited
 </dd>
 <dt>Sequencing data</dt>
-<dd><img src="tick.png" alt="tick" /> Swedac Accredited
+<dd><span class="icon_tick">&#10004;</span>  Swedac Accredited
 </dd>
 <dt>Data flow</dt>
-<dd><img src="tick.png" alt="tick" /> Swedac Accredited
+<dd><span class="icon_tick">&#10004;</span>  Swedac Accredited
 </dd>
 <dt>Data processing</dt>
-<dd><img src="tick.png" alt="tick" /> Swedac Accredited
+<dd><span class="icon_tick">&#10004;</span>  Swedac Accredited
 </dd>
 </dl>
 </div>
@@ -319,12 +319,6 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\
 <div id="sample-info" class="section level1">
 <h1>Sample Info</h1>
 <table>
-<colgroup>
-<col width="22%" />
-<col width="33%" />
-<col width="24%" />
-<col width="19%" />
-</colgroup>
 <thead>
 <tr class="header">
 <th align="left">NGI ID</th>
@@ -335,10 +329,10 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left"><p>P955_101</p></td>
-<td align="left"><p>140117_Rapid_Ventana_TdT</p></td>
-<td align="left"><p>Index 8 (<code>ACTTGA</code>)</p></td>
-<td align="left"><p>A</p></td>
+<td align="left">P955_101</td>
+<td align="left">140117_Rapid_Ventana_TdT</td>
+<td align="left">Index 8 (<code>ACTTGA</code>)</td>
+<td align="left">A</td>
 </tr>
 </tbody>
 </table>
@@ -346,32 +340,24 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\
 <div id="yield-overview" class="section level1">
 <h1>Yield Overview</h1>
 <table>
-<colgroup>
-<col width="18%" />
-<col width="14%" />
-<col width="19%" />
-<col width="14%" />
-<col width="18%" />
-<col width="14%" />
-</colgroup>
 <thead>
 <tr class="header">
 <th align="left">Sample</th>
 <th align="left">Lib QC</th>
-<th align="left">Avg. FS</th>
-<th align="left">≥ Q30</th>
-<th align="left"># Reads</th>
+<th align="right">Avg. FS</th>
+<th align="right">≥ Q30</th>
+<th align="right"># Reads</th>
 <th align="left">Status</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left"><p>P955_101b</p></td>
-<td align="left"><p>Passed</p></td>
-<td align="left"><p>350 bp</p></td>
-<td align="left"><p>59.34%</p></td>
-<td align="left"><p>105.66 M</p></td>
-<td align="left"><p>Passed</p></td>
+<td align="left">P955_101b</td>
+<td align="left">Passed</td>
+<td align="right">350 bp</td>
+<td align="right">59.34%</td>
+<td align="right">105.66 M</td>
+<td align="left">Passed</td>
 </tr>
 </tbody>
 </table>
@@ -385,48 +371,38 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\
 <div id="run-info" class="section level1">
 <h1>Run Info</h1>
 <table>
-<colgroup>
-<col width="10%" />
-<col width="16%" />
-<col width="9%" />
-<col width="13%" />
-<col width="11%" />
-<col width="11%" />
-<col width="14%" />
-<col width="11%" />
-</colgroup>
 <thead>
 <tr class="header">
 <th align="left">Date</th>
 <th align="left">FC id</th>
 <th align="left">Lane</th>
-<th align="left">Clusters</th>
-<th align="left">% PhiX</th>
-<th align="left">≥ Q30</th>
-<th align="left">% Unique</th>
+<th align="right">Clusters</th>
+<th align="right">% PhiX</th>
+<th align="right">≥ Q30</th>
+<th align="right">% Unique</th>
 <th align="left">Method</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left"><p>140123</p></td>
-<td align="left"><p><code>B-H8A63ADXX</code></p></td>
-<td align="left"><p>1</p></td>
-<td align="left"><p>66.88 M</p></td>
-<td align="left"><p>0.52%</p></td>
-<td align="left"><p>58.70%</p></td>
-<td align="left"><p>80.51%</p></td>
-<td align="left"><p>A</p></td>
+<td align="left">2014-01-23</td>
+<td align="left"><code>B-H8A63ADXX</code></td>
+<td align="left">1</td>
+<td align="right">66.88 M</td>
+<td align="right">0.52%</td>
+<td align="right">58.70%</td>
+<td align="right">80.51%</td>
+<td align="left">A</td>
 </tr>
 <tr class="even">
-<td align="left"><p>140123</p></td>
-<td align="left"><p><code>B-H8A63ADXX</code></p></td>
-<td align="left"><p>2</p></td>
-<td align="left"><p>65.89 M</p></td>
-<td align="left"><p>0.56%</p></td>
-<td align="left"><p>57.15%</p></td>
-<td align="left"><p>78.32%</p></td>
-<td align="left"><p>A</p></td>
+<td align="left">2014-01-23</td>
+<td align="left"><code>B-H8A63ADXX</code></td>
+<td align="left">2</td>
+<td align="right">65.89 M</td>
+<td align="right">0.56%</td>
+<td align="right">57.15%</td>
+<td align="right">78.32%</td>
+<td align="left">A</td>
 </tr>
 </tbody>
 </table>
@@ -480,9 +456,6 @@ document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+'geno
 </div>
 
 
-<div class="swedac center">
-  <a href="http://search.swedac.se/en/accreditations/1850" target="_blank"><img title="Swedac Accredited" src="data:image/png;base64,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"></a>
-</div>
 
 <footer>
       <a class="floatleft" href="mailto:genomics_support@scilifelab.se">genomics_support@scilifelab.se</a>
