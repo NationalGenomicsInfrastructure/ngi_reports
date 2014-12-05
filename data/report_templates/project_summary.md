@@ -1,7 +1,7 @@
 ---
 title: Project Overview
-subtitle: J.Lundeberg_14_01
-date: 2014-12-02
+subtitle: {{ project.ngi_name }}
+date: {{ project.report_date }}
 support_email: genomics_support@scilifelab.se
 ---
 
@@ -14,13 +14,13 @@ NGI Project Name
 :   {{ project.ngi_name }}
 
 NGI Project ID
-:   {{ project.id }}
+:   {{ project.ngi_id }}
 
 User Contact
 :   [{{ project.contact }}](mailto:{{ project.contact }})
 
 NGI Application Type
-:   {{ project.application_type }} ({% if project.best_practice %}With best practice analysis{% else %}No best practice analysis{% endif %})
+:   {{ project.application }} ({% if project.best_practice %}With best practice analysis{% else %}No best practice analysis{% endif %})
 
 Samples &amp; Lanes
 :   {{ project.num_samples }} sample{% if project.num_samples > 1 %}s{% endif %}, {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}
@@ -29,18 +29,16 @@ Project Status
 :   {{ project.status }}
 
 Order Dates
-:   _Order received:_ {{ project.dates.order_received }},  _Contract received:_ {{ project.dates.contract_received }}, 
-    _Samples received:_ {{ project.dates.samples_received }},  _Queue date:_ {{ project.dates.queue_date }},
-    _All data delivered:_ {{ project.dates.all_data_delivered }}, _Report Date:_ {{ project.dates.report_date }}
+:   {{ project.dates }}
 
 UPPMAX Project ID
 :   `{{ project.UPPMAX_id }}`
 
 UPPNEX project path
 :   `{{ project.UPPMAX_path }}`
-{% if project.ref_genome %}
+{% if project.reference.genome %}
 Reference Genome
-:   {{ project.ref_genome }}
+:   {{ project.reference.organism}} ({{ project.reference.genome }})
 {% endif %}{% if project.ordered_reads %}
 Minimum ordered reads
 :   {{ project.ordered_reads }}
@@ -50,8 +48,7 @@ Minimum ordered reads
 
 ### Library construction
 
-A) Library was prepared using the "650 bp insert standard DNA (Illumina TruSeq DNA)" 
-    protocol and clustering was done by cBot.
+{{ methods.library_construction }} and clustering was done by cBot.
 
 ### Sequencing
 A) All samples were sequenced on HiSeq2500 (HiSeq Control
@@ -149,7 +146,7 @@ from which the user can access it. You can find the data in the INBOX folder of 
 UPPNEX project, which was created for you when your order was placed: 
 
 ```
-/proj/b2011007/INBOX/J.Lundberg_14
+{{ project.UPPMAX_path }}
 ```
 
 
