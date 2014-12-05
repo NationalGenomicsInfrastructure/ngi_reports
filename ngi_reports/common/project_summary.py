@@ -17,6 +17,10 @@ class CommonReport(object):
         self.working_dir = working_dir
         
         # general initialization
+        self.project_info = {}
+        self.methods_info = {}
+        self.accredit_info = {}
+        
         self.date_format = "%Y-%m-%d"
         self.creation_date = datetime.now().strftime(self.date_format)
         
@@ -32,10 +36,17 @@ class CommonReport(object):
             except IOError as e:
                 raise IOError("Could not open configuration file \"{}\".".format(xml_fn))
         
-            run = run['project']        
+            run = run['project']  
+            # First, try to grab the project name. This is the most important  
             try:
-                self.proj_name = run['metadata']['name']
+                self.project_info['ngi_name'] = run['metadata']['name']
                 self.report_dir = os.path.join(working_dir, 'delivery', 'reports')
             except KeyError:
                 self.LOG.warning('Could not find Project Name key in XML file')
                 pass
+            
+            # Ok, now we can get the rest of the less critical ones 
+            # in a separate try / except block
+            # try:
+                
+                
