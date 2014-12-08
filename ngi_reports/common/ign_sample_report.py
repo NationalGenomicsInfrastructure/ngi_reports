@@ -14,7 +14,7 @@ from ngi_visualizations.snpEff import snpEff_plots
 
 class CommonReport(object):
     
-    def __init__(self, config, LOG, working_dir):
+    def __init__(self, config, LOG, working_dir, **kwargs):
         
         # Incoming handles
         self.config = config

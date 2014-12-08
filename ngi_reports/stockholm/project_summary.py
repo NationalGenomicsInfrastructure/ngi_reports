@@ -17,7 +17,7 @@ class Report(project_summary.CommonReport):
     def __init__(self, config, LOG, working_dir, **kwargs):
         
         # Initialise the parent class
-        super(Report, self).__init__(config, LOG, working_dir)
+        super(Report, self).__init__(config, LOG, working_dir, **kwargs)
         
         # Project name - collect from the command line if we have it
         if kwargs.get('project') is not None:

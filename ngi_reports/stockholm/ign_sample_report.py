@@ -10,10 +10,10 @@ from statusdb.db import connections as statusdb
 class Report(ign_sample_report.CommonReport):
     
     # Initialise the report
-    def __init__(self, config, LOG, working_dir):
+    def __init__(self, config, LOG, working_dir, **kwargs):
         
         # Initialise the parent class
-        super(Report, self).__init__(config, LOG, working_dir)
+        super(Report, self).__init__(config, LOG, working_dir, **kwargs)
         
         # Get project fields from statusdb
         p = statusdb.ProjectSummaryConnection()
