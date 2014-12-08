@@ -49,9 +49,11 @@ To make these commands easier to run, you can create functions in your `.bashrc`
 (`.bash_profile` on Mac). Add the following:
 
 ```bash
+# NGI Reports
 function make_report {
-  pandoc ${1}.md -o ${1}.html --template=pandoc_templates/html_pandoc.html
-  pandoc ${1}.md -o ${1}.pdf --template=pandoc_templates/latex_pandoc.tex --latex-engine=xelatex
+  PD_DIR='path/to/ngi_reports/data/pandoc_templates'
+  pandoc --standalone --section-divs ${1}.md -o ${1}.html --template=${PD_DIR}/html_pandoc.html --default-image-extension=png --filter ${PD_DIR}/pandoc_filters.py -V template_dir=${PD_DIR}/ ${2}
+  pandoc --standalone ${1}.md -o ${1}.pdf --template=${PD_DIR}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter ${PD_DIR}/pandoc_filters.py -V template_dir=${PD_DIR}/ ${2}
 }
 export -f make_report
 ```
