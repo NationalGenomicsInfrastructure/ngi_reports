@@ -3,6 +3,7 @@ title: Project Overview
 subtitle: {{ project.ngi_name }}
 date: {{ project.report_date }}
 support_email: genomics_support@scilifelab.se
+swedac: true
 ---
 
 # Project Information
