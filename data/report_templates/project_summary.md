@@ -59,13 +59,15 @@ A) All samples were sequenced on HiSeq2500 (HiSeq Control
     phred33 / Illumina 1.8+.
 
 ### Data Flow
-All data (demultiplexed) from the instrument are collected and transfered securely
-to a storage server with well established pipeline.
+Raw sequencing data is demultiplexed and converted to FastQ on site before 
+being transferred securely to [UPPMAX](http://www.uppmax.uu.se/) for delivery.
+Raw data is also transferred to [SNIC SweStore](http://www.snic.vr.se/projects/swestore)
+for long term data security.
 
-### Data Processing:
-A set of standard quality checks were performed to assure that all sequenced data
-meet NGI guaranteed quality / quantity. All analysis are carried out in UPPMAX servers
-before delivering the raw data.
+### Data Processing
+To ensure that all sequenced data meets our guarantee of data quality and quantity,
+a number of standardised bioinformatics quality control checks are performed before
+delivery. These include checking the yield, sequence read quality and cross-sample contamination.
 
 ### Swedac Accreditation
 The National Genomics Infrastructure is accredited by [Swedac](http://www.swedac.se).
