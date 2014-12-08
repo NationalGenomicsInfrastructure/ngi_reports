@@ -314,22 +314,12 @@ class CommonReport(object):
 
 
 
-
-    def parse_template(self):
-        
+    # Return the parsed markdown
+    def parse_template(self, template):
+        # check that we have everythin
         if not self.check_fields():
             self.LOG.error('Some mandatory fields were missing - exiting')
             raise AttributeError
-        
-        # Load the Jinja2 template
-        try:
-            # This is not very elegant :)
-            templates_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'data', 'report_templates'))
-            env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir))
-            template = env.get_template('ign_sample_report.md')
-        except:
-            self.LOG.error('Could not load the Jinja report template')
-            raise
         
         # Parse the template
         try:

@@ -4,6 +4,7 @@
 """
 
 from datetime import datetime
+import jinja2
 import os
 import xmltodict
 
@@ -45,8 +46,19 @@ class CommonReport(object):
                 self.LOG.warning('Could not find Project Name key in XML file')
                 pass
             
-            # Ok, now we can get the rest of the less critical ones 
-            # in a separate try / except block
-            # try:
-                
+            # TODO - Get other fields from the XML files if we can.
+            # These will be over-written by statusDB information in
+            # Stockholm but will give a helping-hand to Uppsala.
+            # As they're less critical we can do it in a separate
+            # try / except block
+    
+    
+    # Return the parsed markdown
+    def parse_template(self, template):
+        # Parse the template
+        try:
+            return template.render(project=self.project_info, methods=self.methods_info)
+        except:
+            self.LOG.error('Could not parse the ign_sample_report template')
+            raise
                 
