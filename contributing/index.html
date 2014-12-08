@@ -161,10 +161,14 @@ in the <code>/docs</code> folder.</p>
 <p>All reports should be generated as Markdown <code>.md</code> files. We can then
 use <a href="http://johnmacfarlane.net/pandoc/">Pandoc</a> to convert these into 
 whatever file format we like (PDF initially, probably HTML later).</p>
-<p>To make report generation as simple as possible, all images should be
-generated in both PDF and HTML-friendly formats (almost always
-<code>.png</code>). On top of this, vector format plots are very useful to users
-so PDF and SVG plots should be delivered in addition where possible.</p>
+<p>All figures should be plotted as both <code>.png</code> files (for HTML reports)
+and <code>.pdf</code> (for PDF reports). When setting the file names for the
+markdown, write the file name without an extension. The pandoc
+conversion will automatically use the correct file type for the report
+that it's making.</p>
+<p>If you can't make <code>png</code> and <code>pdf</code> for whatever reaason, just
+specify the full file name with extension and this will be used for
+everything.</p>
 <h2 id="information-flow">Information Flow</h2>
 <p>The general structure of the package is intended to allow easy use of
 the package by both Stockholm and Uppsala NGI nodes. There is a
