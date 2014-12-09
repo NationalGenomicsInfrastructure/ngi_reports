@@ -62,41 +62,56 @@ class CommonReport(object):
     def parse_setup_xml(self):
         """ Parses the XML setup file that Piper uses
         """
-        xml_fn = os.path.join(self.working_dir, 'project_setup_output_file.xml')
-        try:
-            with open(os.path.realpath(xml_fn)) as fh:
-                run = xmltodict.parse(fh)
-        except IOError as e:
-            raise IOError("Could not open configuration file \"{}\".".format(xml_fn))
+        xml_files = []
+        # Find XML files in working directory
+        for file in os.listdir(self.working_dir):
+            if file.endswith(".xml"):
+                xml_files.append(os.path.join(self.working_dir, file))
+        # Find XML files in setup_xml_files/
+        setup_dir = os.path.join(self.working_dir, 'setup_xml_files')
+        if os.path.isdir(setup_dir):
+            for file in os.listdir(setup_dir):
+                if file.endswith(".xml"):
+                    xml_files.append(os.path.join(setup_dir, file))
         
-        run = run['project']
-          
-        # Essential fields   
-        try:
-            self.project['id'] = run['metadata']['name']
-            # One sample
-            if isinstance(run['inputs']['sample'], dict):
-                sid = run['inputs']['sample']['samplename']
-                self.samples[sid] = {'id': sid}
-            # Many samples
-            elif isinstance(run['inputs']['sample'], list):
-                for sample in run['inputs']['sample']:
-                    sid = sample['samplename']
-                    self.samples[sid] = {'id': sid}
+        
+        self.LOG.info('Found {} setup XML file{}..'.format(len(xml_files), 's' if len(xml_files) > 1 else ''))
+        for xml_fn in xml_files:
+            try:
+                with open(os.path.realpath(xml_fn)) as fh:
+                    raw_xml = xmltodict.parse(fh)
+            except IOError as e:
+                self.LOG.warning("Could not open configuration file \"{}\".".format(xml_fn))
+                pass
             else:
-                raise KeyError("Could not parse run['inputs']['sample']")
-        except KeyError as e:
-            self.LOG.error('Could not find essential key in sample XML file: '+e.message)
-            raise KeyError(e.message)
+                run = raw_xml['project']
+                # Essential fields   
+                try:
+                    self.project['id'] = run['metadata']['name']
+                    # One sample
+                    if isinstance(run['inputs']['sample'], dict):
+                        sid = run['inputs']['sample']['samplename']
+                        self.samples[sid] = {'id': sid}
+                    # Many samples
+                    elif isinstance(run['inputs']['sample'], list):
+                        for sample in run['inputs']['sample']:
+                            sid = sample['samplename']
+                            self.samples[sid] = {'id': sid}
+                    else:
+                        # This is passed below so doesn't halt execution
+                        raise KeyError("Could not parse run['inputs']['sample']")
+                except KeyError as e:
+                    self.LOG.warning('Could not find essential key in sample XML file: '+e.message)
+                    pass
         
-        # Non-Essential fields   
-        try:
-            self.project['UPPMAXid'] = run['metadata']['uppmaxprojectid']
-            self.project['sequencing_platform'] = run['metadata']['platform']
-            self.project['ref_genome'] = os.path.basename(run['metadata']['reference'])
-        except KeyError as e:
-            self.LOG.warning('Could not find optional key in sample XML file: '+e.message)
-            pass
+                # Non-Essential fields   
+                try:
+                    self.project['UPPMAXid'] = run['metadata']['uppmaxprojectid']
+                    self.project['sequencing_platform'] = run['metadata']['platform']
+                    self.project['ref_genome'] = os.path.basename(run['metadata']['reference'])
+                except KeyError as e:
+                    self.LOG.warning('Could not find optional key in sample XML file: '+e.message)
+                    pass
         
         
     
@@ -275,7 +290,7 @@ class CommonReport(object):
             
             # Create the plots subdirectory
             plots_dir_rel = os.path.join('plots', sample_id)
-            plots_dir = os.path.realpath(os.path.join(self.working_dir, plots_dir_rel))
+            plots_dir = os.path.realpath(os.path.join(self.report_dir, plots_dir_rel))
             if not os.path.exists(plots_dir):
                 os.makedirs(plots_dir)
         
@@ -289,35 +304,35 @@ class CommonReport(object):
             # Qualimap coverage plot
             cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
             cov_output_rel = os.path.join(plots_dir_rel, '{}_coverage'.format(sample_id))
-            cov_output = os.path.realpath(os.path.join(self.working_dir, cov_output_rel))
+            cov_output = os.path.join(plots_dir, '{}_coverage'.format(sample_id))
             coverage_histogram.plot_coverage_histogram(cov_fn, cov_output)
             self.plots[sample_id]['coverage_plot'] = cov_output_rel
         
             # Qualimap genome fraction coverage plot
             cov_frac_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'genome_fraction_coverage.txt'))
             cov_frac_output_rel = os.path.join(plots_dir_rel, '{}_genome_fraction'.format(sample_id))
-            cov_frac_output = os.path.realpath(os.path.join(self.working_dir, cov_frac_output_rel))
+            cov_frac_output = os.path.join(plots_dir, '{}_genome_fraction'.format(sample_id))
             genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output)
             self.plots[sample_id]['cov_frac_plot'] = cov_frac_output_rel
         
             # Qualimap insert size plot
             insert_size_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'insert_size_histogram.txt'))
             insert_size_output_rel = os.path.join(plots_dir_rel, '{}_insert_size'.format(sample_id))
-            insert_size_output = os.path.realpath(os.path.join(self.working_dir, insert_size_output_rel))
+            insert_size_output = os.path.join(plots_dir, '{}_insert_size'.format(sample_id))
             insert_size.plot_insert_size_histogram(insert_size_fn, insert_size_output)
             self.plots[sample_id]['insert_size_plot'] = insert_size_output_rel
         
             # Qualimap GC distribution plot
             gc_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'mapped_reads_gc-content_distribution.txt'))
             gc_output_rel = os.path.join(plots_dir_rel, '{}_gc_distribution'.format(sample_id))
-            gc_output = os.path.realpath(os.path.join(self.working_dir, gc_output_rel))
+            gc_output = os.path.join(plots_dir, '{}_gc_distribution'.format(sample_id))
             gc_distribution.plot_genome_fraction_coverage(gc_fn, gc_output)
             self.plots[sample_id]['gc_dist_plot'] = gc_output_rel
         
             # snpEff plot
             snpEFf_fn = os.path.realpath(os.path.join(snpeff_data_dir, 'snpEff_summary.csv'))
             snpEFf_output_rel = os.path.join(plots_dir_rel, '{}_snpEff_effect'.format(sample_id))
-            snpEFf_output = os.path.realpath(os.path.join(self.working_dir, snpEFf_output_rel))
+            snpEFf_output = os.path.join(plots_dir, '{}_snpEff_effect'.format(sample_id))
             snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
             self.plots[sample_id]['snpEFf_plot'] = '{}_types'.format(snpEFf_output_rel)
     

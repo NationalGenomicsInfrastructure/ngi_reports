@@ -54,6 +54,10 @@ def make_reports (report_type, working_dir=os.getcwd(), **kwargs):
         LOG.error('Could not load the Jinja report template')
         raise
     
+    # Change to the reports directory - pandoc needs this for relative URLs
+    old_cwd = os.getcwd()
+    os.chdir(report.report_dir)
+    
     # Get parsed markdown and print to file(s)
     output_mds = report.parse_template(template)
     for output_bn, output_md in output_mds.iteritems():
@@ -78,6 +82,9 @@ def make_reports (report_type, working_dir=os.getcwd(), **kwargs):
         except:
             LOG.error('Could not convert markdown to PDF')
             raise
+    
+    # Change back to previous working dir
+    os.chdir(old_cwd)
 
 # calling main method to generate report
 if __name__ == "__main__":
