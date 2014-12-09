@@ -1,6 +1,6 @@
 # Installation
 
-## Python Package
+## ngi_reports Python Package
 To create reports you need to install the `ngi_reports` package.
 First, either download or clone the [repository](https://github.com/SciLifeLab/ngi_reports).
 Make sure that you include the `--recursive` flag:
@@ -29,7 +29,9 @@ If you're intending to make changes to the code, use `develop` instead of `insta
 so that you don't need to run the setup script each time you make a change.
 
 Next, you need a config file in your home directory called
-`~/.ngi_reports/ngi_reports.conf`. This should look like this:
+`~/.ngi_config/ngi_reports.conf`. This file should be formatted for 
+[Python ConfigParser](https://docs.python.org/2/library/configparser.html)
+and look like this:
 
 ```bash
 [ngi_reports]
@@ -39,6 +41,12 @@ ngi_node: stockholm
 
 Obviously, if you're working at the Uppsala NGI node, use `uppsala` instead
 of `stockholm`.
+
+## Status DB
+If you're running `ngi_reports` from the Stockholm NGI node, you'll need access
+to Status DB. This is done using the [statusdb](https://github.com/SciLifeLab/statusdb)
+python package. See that readme for installation instructions (it's very similar to the
+above, but I don't want to duplicate it here in case it gets out of date).
 
 ## Pandoc Conversion
 NGI reports use [Pandoc](http://johnmacfarlane.net/pandoc/)

@@ -10,18 +10,23 @@ from statusdb.db import connections as statusdb
 class Report(ign_sample_report.CommonReport):
     
     # Initialise the report
-    def __init__(self, config, LOG, working_dir):
+    def __init__(self, config, LOG, working_dir, **kwargs):
         
         # Initialise the parent class
-        super(Report, self).__init__(config, LOG, working_dir)
+        super(Report, self).__init__(config, LOG, working_dir, **kwargs)
         
         # Get project fields from statusdb
         p = statusdb.ProjectSummaryConnection()
         proj = p.get_entry(self.project['id'])
         self.info['recipient'] = proj.get('contact')
-        self.sample['user_sample_id'] = proj.get('customer_name')
+        self.project['prep'] = proj.get('details', {}).get('library_construction_method')
          
         # Get sample fields from statusdb
-        sample = proj.get('samples', {}).get(self.sample['id'])
-        self.sample['prep'] = proj.get('details', {}).get('library_construction_method')
+        for sid in self.samples.iterkeys():
+            try:
+                self.samples[sid]['user_sample_id'] = proj['samples'][sid]['customer_name']
+                self.samples[sid]['barcode'] = proj['samples'][sid]['library_prep']['A']['reagent_label']
+            except KeyError:
+                pass
+            
 
