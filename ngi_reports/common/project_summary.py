@@ -55,9 +55,14 @@ class CommonReport(object):
     
     # Return the parsed markdown
     def parse_template(self, template):
+        
+        # Make the file basename
+        output_bn = os.path.realpath(os.path.join(self.working_dir, self.report_dir, self.report_fn))
+        
         # Parse the template
         try:
-            return template.render(project=self.project_info, methods=self.methods_info)
+            md = template.render(project=self.project_info, methods=self.methods_info)
+            return {output_bn: md}
         except:
             self.LOG.error('Could not parse the ign_sample_report template')
             raise

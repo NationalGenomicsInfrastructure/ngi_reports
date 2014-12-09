@@ -12,7 +12,7 @@ support_email: {{ report.support_email }}
 {% endif %}{% if report.recipient %}
 User Contact
 :   [{{ report.recipient }}](mailto:{{ report.recipient }})
-{% endif %}{% if report.id %}
+{% endif %}{% if project.id %}
 Project Name
 :   {{ project.id }} {% if report.group %}({{ project.group }}){% endif %}
 {% endif %}{% if sample.user_sample_id %}
@@ -24,18 +24,21 @@ NGI Sample Name
 {% endif %}{% if project.UPPMAXid %}
 UPPMAX Project ID
 :   `{{ project.UPPMAXid }}`
-{% endif %}{% if sample.sequencing_platform %}
+{% endif %}{% if project.sequencing_platform %}
 Sequencing Platform
-:   {{ sample.sequencing_platform }}
-{% endif %}{% if sample.prep %}
+:   {{ project.sequencing_platform }}
+{% endif %}{% if project.prep %}
 Library Prep Method
-:   {{ sample.prep }}
+:   {{ project.prep }}
 {% endif %}{% if project.sequencing_centre %}
 Sequencing Centre
 :   {{ project.sequencing_centre }}
-{% endif %}{% if sample.ref_genome %}
+{% endif %}{% if project.ref_genome %}
 Reference Genome
-:   `{{ sample.ref_genome }}`
+:   `{{ project.ref_genome }}`
+{% endif %}{% if sample.barcode %}
+Pooling Reagent
+:   `{{ sample.barcode }}`
 {% endif %}{% if sample.flowcells %}
 Flow Cells
 :   {% for fc in sample.flowcells %}`{{ fc.id }}`
