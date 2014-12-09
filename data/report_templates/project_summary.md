@@ -49,9 +49,10 @@ Minimum ordered reads
 
 ### Library construction
 
-{{ methods.library_construction }}. Clustering was done using an [Illumina cBot](http://products.illumina.com/products/cbot.html).
+{{ project.library_construction }}. Clustering was done using an [Illumina cBot](http://products.illumina.com/products/cbot.html).
 
 ### Sequencing
+{{ project.sequencing_methods }}
 A) All samples were sequenced on HiSeq2500 (HiSeq Control
     Software 2.0.12.0/RTA 1.17.21.3) with a 2x101 setup.The Bcl to
     Fastq conversion was performed using bcl2Fastq v1.8.3 from the
