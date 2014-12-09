@@ -198,7 +198,7 @@ class CommonReport(object):
         for sample_id in self.samples.iterkeys():
             snpEff = {}
             # Build the expected filenames
-            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, 'snpEff_output'))
+            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '08_misc', sample_id))
             snpEff_csv = os.path.join(snpeff_data_dir, 'snpEff_summary.csv')
             try:
                 synonymous_SNPs = 0
