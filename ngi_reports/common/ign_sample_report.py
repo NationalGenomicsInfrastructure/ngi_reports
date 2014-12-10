@@ -298,8 +298,7 @@ class CommonReport(object):
             qualimap_raw_dir = os.path.realpath(os.path.join(self.working_dir, 'delivery',
                 'quality_control', '{}.clean.dedup.recal.qc'.format(sample_id),
                 'raw_data_qualimapReport'))
-            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, 'snpEff_output'))
-
+            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '08_misc', sample_id))
         
             # Qualimap coverage plot
             cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
