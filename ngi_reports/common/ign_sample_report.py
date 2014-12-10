@@ -172,7 +172,7 @@ class CommonReport(object):
                     self.samples[sample_id]['automsomal_coverage'] = '{:.2f}'.format(autosomal_cov)
             
             
-                # Why is this not in the text file? I'm a sad panda.
+                # Why is this not in the text file? This makes me a sad panda.
                 with open(os.path.realpath(qualimap_report), 'r') as fh:
                     for line in fh:
                         line = line.strip()
@@ -198,7 +198,7 @@ class CommonReport(object):
         for sample_id in self.samples.iterkeys():
             snpEff = {}
             # Build the expected filenames
-            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, 'snpEff_output'))
+            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '08_misc', sample_id))
             snpEff_csv = os.path.join(snpeff_data_dir, 'snpEff_summary.csv')
             try:
                 synonymous_SNPs = 0
@@ -298,21 +298,28 @@ class CommonReport(object):
             qualimap_raw_dir = os.path.realpath(os.path.join(self.working_dir, 'delivery',
                 'quality_control', '{}.clean.dedup.recal.qc'.format(sample_id),
                 'raw_data_qualimapReport'))
-            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, 'snpEff_output'))
-
-        
+            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '08_misc', sample_id))
+            
+            # Be intelligent about upper limit for coverage
+            cov_max_x = 60
+            try:
+                if float(self.samples[sample_id]['median_insert_size']) > 30:
+                    cov_max_x = int(self.samples[sample_id]['median_insert_size']) * 2
+            except KeyError:
+                pass
+            
             # Qualimap coverage plot
             cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
             cov_output_rel = os.path.join(plots_dir_rel, '{}_coverage'.format(sample_id))
             cov_output = os.path.join(plots_dir, '{}_coverage'.format(sample_id))
-            coverage_histogram.plot_coverage_histogram(cov_fn, cov_output)
+            coverage_histogram.plot_coverage_histogram(cov_fn, cov_output, max_x=cov_max_x)
             self.plots[sample_id]['coverage_plot'] = cov_output_rel
         
             # Qualimap genome fraction coverage plot
             cov_frac_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'genome_fraction_coverage.txt'))
             cov_frac_output_rel = os.path.join(plots_dir_rel, '{}_genome_fraction'.format(sample_id))
             cov_frac_output = os.path.join(plots_dir, '{}_genome_fraction'.format(sample_id))
-            genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output)
+            genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output, max_x=cov_max_x)
             self.plots[sample_id]['cov_frac_plot'] = cov_frac_output_rel
         
             # Qualimap insert size plot

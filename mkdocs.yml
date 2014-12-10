@@ -2,6 +2,7 @@ site_name: NGI Reports
 repo_url: https://github.com/SciLifeLab/ngi_reports/
 site_description: Package to generate reports for NGI Stockholm and Uppsala
 site_author: Phil Ewels
+theme: flatly
 pages:
 - ['index.md', 'Introduction'] 
 - ['installation.md', 'Installation'] 

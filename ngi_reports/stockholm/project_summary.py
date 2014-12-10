@@ -42,9 +42,7 @@ class Report(project_summary.CommonReport):
             self.LOG.error("Project <project_name> not found in statusdb")
             raise
         self.proj = self.pcon.get_entry(self.project_info['ngi_name'])
-        
-        self.proj_samples = self.proj.get('samples',{})
-        self.proj_details = self.proj.get('details',{})
+        self.proj_details = self.proj.get('details',{})     
         
         # Helper vars
         # TODO - Make this more comprehensive
@@ -71,16 +69,28 @@ class Report(project_summary.CommonReport):
         self.project_info['ordered_reads'] = self.get_ordered_reads()
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['status'] = "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing"
-        self.methods_info['library_construction'] = 'The library was prepared using the _"{}"_ protocol'.format(self.proj_details.get('library_construction_method'))
+        self.project_info['library_construction'] = 'The library was prepared using the _"{}"_ protocol'.format(self.proj_details.get('library_construction_method'))
+        
+        
+        # Get flow cell information from statusdb
+        # TODO - this doesn't do anything
+        for sample in self.proj.get('samples',{}):
+            try:
+                fcids_raw = sample['library_prep']['A']['sample_run_metrics'].keys()
+                for fcid_raw in sample['library_prep']['A']['sample_run_metrics'].keys():
+                    fcid = "_".join(fcid_raw.split("_")[0:3]
+                    
+        # TODO - this doesn't do anything
+        self.project_info['sequencing_methods'] = 'Clustered using {} and sequenced on {} ({}) with a {} setup in {} mode.'.format('FUBAR', 'FUBAR', 'FUBAR', 'FUBAR', 'FUBAR')
         
     
     ## get minimum ordered reads for this project
     # in rare cases there might be different amounts ordered for different pools
     def get_ordered_reads(self):
         reads_min = []
-        for sample in self.proj_samples:
+        for sample in self.proj.get('samples',{}):
             try:
-                reads_min.append("{}M".format(self.proj_samples[sample]['details']['reads_min']))
+                reads_min.append("{}M".format(self.proj['samples'][sample]['details']['reads_min']))
             except KeyError:
                 continue
         return ", ".join(list(set(reads_min)))
