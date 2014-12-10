@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 """ Class for generating project reports
+Note: Much of this code was written by Pontus and lifted from
+the SciLifeLab repo - see
+https://github.com/senthil10/scilifelab/blob/edit_report/scilifelab/report/sequencing_report.py
 """
 
 import os
@@ -8,7 +11,7 @@ import numpy as np
 from collections import OrderedDict
 from string import ascii_uppercase as alphabets
 from ngi_reports.common import project_summary
-from statusdb.db.connections import ProjectSummaryConnection, SampleRunMetricsConnection, FlowcellRunMetricsConnection
+from statusdb.db.connections import *
 
 class Report(project_summary.CommonReport):
     
@@ -33,19 +36,30 @@ class Report(project_summary.CommonReport):
         # Report filename
         self.report_fn = "{}_project_summary".format(self.project_info['ngi_name'])
         
+        # Get connections to the databases in StatusDB
+        pcon = ProjectSummaryConnection(**kwargs)
+        assert pcon, "Could not connect to {} database in StatusDB".format("project")
+        fcon = FlowcellRunMetricsConnection(**kwargs)
+        assert fcon, "Could not connect to {} database in StatusDB".format("flowcell")
+        scon = SampleRunMetricsConnection(**kwargs)
+        assert scon, "Could not connect to {} database in StatusDB".format("samples")
+        
         # Get project information from statusdb
-        self.pcon = ProjectSummaryConnection()
-        self.scon = SampleRunMetricsConnection()
-        try:
-            self.proj_db_key = self.pcon.name_view[self.project_info['ngi_name']]
-        except KeyError:
-            self.LOG.error("Project <project_name> not found in statusdb")
-            raise
-        self.proj = self.pcon.get_entry(self.project_info['ngi_name'])
-        self.proj_details = self.proj.get('details',{})     
+        self.proj = pcon.get_entry(self.project_info['ngi_name'])
+        if not project:
+            self.LOG.error("No such project '{}'".format(self.project_info['ngi_name']))
+            raise KeyError
+            
+        # Bail If the data source is not lims (old projects)
+        if self.proj.get('source') != 'lims':
+            self.LOG.error("The source for data for project {} is not LIMS.".format(self.project_info['ngi_name']))
+            raise BaseException
+        
+        # Build the base info that we get specifics from
+        self.proj_details = self.proj.get('details',{})
+
         
         # Helper vars
-        # TODO - Make this more comprehensive
         organism_names = {
             'hg19': 'Human',
             'hg18': 'Human',
@@ -69,19 +83,9 @@ class Report(project_summary.CommonReport):
         self.project_info['ordered_reads'] = self.get_ordered_reads()
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['status'] = "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing"
-        self.project_info['library_construction'] = 'The library was prepared using the _"{}"_ protocol'.format(self.proj_details.get('library_construction_method'))
         
         
-        # Get flow cell information from statusdb
-        # TODO - this doesn't do anything
-        for sample in self.proj.get('samples',{}):
-            try:
-                fcids_raw = sample['library_prep']['A']['sample_run_metrics'].keys()
-                for fcid_raw in sample['library_prep']['A']['sample_run_metrics'].keys():
-                    fcid = "_".join(fcid_raw.split("_")[0:3]
-                    
-        # TODO - this doesn't do anything
-        self.project_info['sequencing_methods'] = 'Clustered using {} and sequenced on {} ({}) with a {} setup in {} mode.'.format('FUBAR', 'FUBAR', 'FUBAR', 'FUBAR', 'FUBAR')
+        
         
     
     ## get minimum ordered reads for this project

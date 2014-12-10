@@ -19,8 +19,7 @@ class CommonReport(object):
         
         # general initialization
         self.project_info = {}
-        self.methods_info = {}
-        self.accredit_info = {}
+        self.samples_info = {}
         
         self.date_format = "%Y-%m-%d"
         self.creation_date = datetime.now().strftime(self.date_format)
@@ -61,7 +60,7 @@ class CommonReport(object):
         
         # Parse the template
         try:
-            md = template.render(project=self.project_info, methods=self.methods_info)
+            md = template.render(project=self.project_info, samples=self.samples_info)
             return {output_bn: md}
         except:
             self.LOG.error('Could not parse the ign_sample_report template')
