@@ -91,7 +91,11 @@ Data processing
 
 NGI ID | User ID | Index | Lib Prep
 -------|---------|-------|----------
-P955_101 | 140117_Rapid_Ventana_TdT | Index 8 (`ACTTGA`) | A
+{% for sample in samples.values()  -%}
+{% for prep in sample.preps.values() -%}
+{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ prep.barcode }}` | {{ prep.label }}
+{% endfor -%}
+{%- endfor %}
 
 
 # Yield Overview
@@ -111,7 +115,7 @@ Date | FC id | Lane | Clusters | % PhiX | &ge; Q30| % Unique | Method
 2014-01-23 | `B-H8A63ADXX` | 1 | 66.88 M | 0.52% | 58.70% | 80.51% | A
 2014-01-23 | `B-H8A63ADXX` | 2 | 65.89 M | 0.56% | 57.15% | 78.32% | A
 
-* _FC id:_ Position on flowcell - Flowcell ID.
+* _FC id:_ Flow cell position and ID.
 * _&ge; Q30:_ Percentage of bases above quality score Q30 on the lane.
 * _Unique:_ Percentage of reads recovered after demultiplexing.
 * _Method:_ Sequencing method used. See above for description.
