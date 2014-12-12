@@ -75,7 +75,6 @@ def make_reports (report_type, working_dir=os.getcwd(), **kwargs):
             subprocess.call(html_cmd)
         except OSError:
             LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')
-            pass
     
         # Convert markdown to PDF using pandoc
         try:    
@@ -83,7 +82,6 @@ def make_reports (report_type, working_dir=os.getcwd(), **kwargs):
             subprocess.call(pdf_cmd)
         except OSError:
             LOG.error('Could not convert markdown to PDF - pandoc error. Skipping HTML report generation...')
-            pass
     
     # Change back to previous working dir
     os.chdir(old_cwd)
