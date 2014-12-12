@@ -33,7 +33,7 @@ Next, you need a config file in your home directory called
 [Python ConfigParser](https://docs.python.org/2/library/configparser.html)
 and look like this:
 
-```bash
+```ini
 [ngi_reports]
 support_email: genomics_support@scilifelab.se
 ngi_node: stockholm
@@ -41,6 +41,20 @@ ngi_node: stockholm
 
 Obviously, if you're working at the Uppsala NGI node, use `uppsala` instead
 of `stockholm`.
+
+## ngi_visualizations
+The `ngi_reports` scripts use a separete Python module called `ngi_visualizations`.
+You can find this repository along with installation instructions on github:
+[ngi_visualizations](https://github.com/SciLifeLab/ngi_visualizations)
+
+At the time of writing, the package could be installed as follows:
+
+```bash
+git clone git@github.com:SciLifeLab/ngi_visualizations.git
+cd ngi_visualizations
+python setup.py install
+```
+
 
 ## Status DB
 If you're running `ngi_reports` from the Stockholm NGI node, you'll need access
@@ -56,8 +70,39 @@ and download the appropriate version for your system. Make sure that you also
 download and install LaTeX and all of the LaTeX packages that you can get your
 hands on.
 
+Note - nestor and milou UPPMAX nodes have pandoc installed, but a very old version.
+This software has been build and tested with Pandoc v1.13.1 and won't work with
+version 1.9.4.1 which is on UPPMAX. Thankfully the latest version can be installed manually
+as follows:
+
+```
+..coming soon..
+```
+
 ### Fonts
 The LaTeX to PDF conversion uses two fonts - **Helvetica Neue** for headings
 and body text, and **Consolas** for code. If you're using Mac OSX you can get
 Consolas by following the instructions in
 [this blog post](http://zjhzxhz.com/2014/01/install-microsofts-consolas-font-on-mac-os-x/).
+
+
+## Bash Commands
+To use `ngi_reports` from the command line easily, you need to add some lines
+to your `~/.bashrc` file (`~/.bash_profile` on a mac):
+**note that you need to change the `ngi_reports_dir` variable at the start..**
+
+```
+# NGI Reports
+ngi_reports_dir=/CHANGE/THIS/PATH/TO/YOUR/ngi_reports
+PATH=${ngi_reports_dir}/scripts:$PATH
+function make_report {
+	for f in "$@"; do
+	  fn=${f%.md}
+	  echo "Converting ${f}.."
+	  PD_DIR=${ngi_reports_dir}/data/pandoc_templates
+	  pandoc --standalone --section-divs ${fn}.md -o ${fn}.html --template=${PD_DIR}/html_pandoc.html --default-image-extension=png --filter ${PD_DIR}/pandoc_filters.py -V template_dir=${PD_DIR}/ 
+	  pandoc --standalone ${fn}.md -o ${fn}.pdf --template=${PD_DIR}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter ${PD_DIR}/pandoc_filters.py -V template_dir=${PD_DIR}/ 
+	done
+}
+export -f make_report
+```
