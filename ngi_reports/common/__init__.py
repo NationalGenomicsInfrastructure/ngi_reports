@@ -20,7 +20,7 @@ class BaseReport(object):
         self.working_dir = working_dir
     
         # Setup
-        ngi_node = config.get('ngi_reports', 'ngi_node')
+        self.ngi_node = config.get('ngi_reports', 'ngi_node')
     
         # Standalone fields
         self.date_format = "%Y-%m-%d"

@@ -29,7 +29,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.report_dir = os.path.join('delivery', 'reports')
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
         self.info['date'] = datetime.today().strftime('%Y-%m-%d')
-        self.project['sequencing_centre'] = 'NGI {}'.format(ngi_node.title())
+        self.project['sequencing_centre'] = 'NGI {}'.format(self.ngi_node.title())
         
         # Scrape information from the filesystem
         # This function is in the common BaseReport class in __init__.py
