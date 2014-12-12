@@ -2,28 +2,27 @@
 
 ## Report Generation
 The usual entry point for report generation is through the `ngi_reports` script.
-You can make it easier to run this script by adding it's location to your `PATH`
-in your `.bash_rc` script (`.bash_profile` if using a Mac):
+See the [installation instructions](installation.md) for instructions on how
+to add this script to your `PATH`.
 
-```bash
-echo "PATH=path/to/ngi_reports/scripts:$PATH" >> ~/.bashrc
+If you have an output directory made by Piper, `ngi_reports` will read everything
+it needs from the setup XML files. You can run it as so:
+
 ```
-
-Then you can run the ngi_reports script in the pipeline output directory:
-
-```bash
-cd path/to/output
+cd path/to/piper/output
 ngi_reports <report_type>
 ```
 
-If you are in the correct output directory and select a relevant report
-type, the script should generate a directory called `reports` containing 
+Other report types or non-piper directories may need additional command line inputs.
+
+The package will generate a directory called `reports` containing 
 a PDF report, an HTML report, a Markdown report and a subdirectory called `plots`.
+If running from a Piper directory, `reports` will be inside `delivery`.
 
 The package is designed to be run automatically by the processing pipelines.
 
-## Available Report Types
-To list the available report types, run:
+### Available Report Types
+To list the available report types and get additional help, run:
 
 ```
 ngi_reports -h
@@ -31,37 +30,11 @@ ngi_reports -h
 
 ## Manual Edits
 If you need to manually edit any reports, make your changes to the markdown
-file and then run the following two commands:
-
-```bash
-pandoc report.md -o report.html --template=pandoc_templates/html_pandoc.html
-pandoc report.md -o report.pdf --template=pandoc_templates/latex_pandoc.tex --latex-engine=xelatex
-```
-
-***Note:*** Replace `pandoc_templates/` with the correct relative or absolute
-path to this directory on your machine; eg:
-
-```bash
-/Users/philewels/Work/ngi_reports/data/pandoc_templates/
-```
-
-To make these commands easier to run, you can create functions in your `.bashrc` file
-(`.bash_profile` on Mac). Add the following:
-
-```bash
-# NGI Reports
-function make_report {
-  PD_DIR='path/to/ngi_reports/data/pandoc_templates'
-  pandoc --standalone --section-divs ${1}.md -o ${1}.html --template=${PD_DIR}/html_pandoc.html --default-image-extension=png --filter ${PD_DIR}/pandoc_filters.py -V template_dir=${PD_DIR}/ ${2}
-  pandoc --standalone ${1}.md -o ${1}.pdf --template=${PD_DIR}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter ${PD_DIR}/pandoc_filters.py -V template_dir=${PD_DIR}/ ${2}
-}
-export -f make_report
-```
-
-Again, make sure that you update the `pandoc_templates/` path.
-You can then create reports by running:
+files and then run the following command:
 
 ```
-make_report report_fn
+make_report *md
 ```
-_(note - do not include the `.md` extension)_
+
+This is a bash function described in the [installation](installation.md)
+docs. You can supply as many markdown file paths as you like.

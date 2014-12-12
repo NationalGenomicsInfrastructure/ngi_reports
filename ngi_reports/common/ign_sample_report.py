@@ -6,38 +6,36 @@
 import jinja2
 import os
 import re
-import xmltodict
 from datetime import datetime
 
+import ngi_reports.common
 from ngi_visualizations.qualimap import coverage_histogram, genome_fraction_coverage, insert_size, gc_distribution
 from ngi_visualizations.snpEff import snpEff_plots
 
-class CommonReport(object):
+class CommonReport(ngi_reports.common.BaseReport):
     
     def __init__(self, config, LOG, working_dir, **kwargs):
         
-        # Incoming handles
-        self.config = config
-        self.LOG = LOG
-        self.working_dir = working_dir
-    
-        # Setup
-        ngi_node = config.get('ngi_reports', 'ngi_node')
-    
+        # Initialise the parent class
+        super(CommonReport, self).__init__(config, LOG, working_dir, **kwargs)
+        
         # Initialise empty dictionaries
         self.info = {}
         self.project = {}
         self.samples = {}
         self.plots = {}
         
+        # Scrape information from the filesystem
+        # This function is in the common BaseReport class in __init__.py
+        xml = self.parse_piper_xml()
+        self.project = xml['project']
+        self.samples = xml['samples']
+        
         # Self-sufficient Fields
         self.report_dir = os.path.join('delivery', 'reports')
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
         self.info['date'] = datetime.today().strftime('%Y-%m-%d')
-        self.project['sequencing_centre'] = 'NGI {}'.format(ngi_node.title())
-        
-        # Scrape information from the filesystem
-        self.parse_setup_xml()
+        self.project['sequencing_centre'] = 'NGI {}'.format(self.ngi_node.title())
         
         # Sanity check - make sure that we have some samples
         if len(self.samples) == 0:
@@ -55,66 +53,6 @@ class CommonReport(object):
         # Plot graphs
         self.make_plots()
 
-
-
-
-
-    def parse_setup_xml(self):
-        """ Parses the XML setup file that Piper uses
-        """
-        xml_files = []
-        # Find XML files in working directory
-        for file in os.listdir(self.working_dir):
-            if file.endswith(".xml"):
-                xml_files.append(os.path.join(self.working_dir, file))
-        # Find XML files in setup_xml_files/
-        setup_dir = os.path.join(self.working_dir, 'setup_xml_files')
-        if os.path.isdir(setup_dir):
-            for file in os.listdir(setup_dir):
-                if file.endswith(".xml"):
-                    xml_files.append(os.path.join(setup_dir, file))
-        
-        
-        self.LOG.info('Found {} setup XML file{}..'.format(len(xml_files), 's' if len(xml_files) > 1 else ''))
-        for xml_fn in xml_files:
-            try:
-                with open(os.path.realpath(xml_fn)) as fh:
-                    raw_xml = xmltodict.parse(fh)
-            except IOError as e:
-                self.LOG.warning("Could not open configuration file \"{}\".".format(xml_fn))
-                pass
-            else:
-                run = raw_xml['project']
-                # Essential fields   
-                try:
-                    self.project['id'] = run['metadata']['name']
-                    # One sample
-                    if isinstance(run['inputs']['sample'], dict):
-                        sid = run['inputs']['sample']['samplename']
-                        self.samples[sid] = {'id': sid}
-                    # Many samples
-                    elif isinstance(run['inputs']['sample'], list):
-                        for sample in run['inputs']['sample']:
-                            sid = sample['samplename']
-                            self.samples[sid] = {'id': sid}
-                    else:
-                        # This is passed below so doesn't halt execution
-                        raise KeyError("Could not parse run['inputs']['sample']")
-                except KeyError as e:
-                    self.LOG.warning('Could not find essential key in sample XML file: '+e.message)
-                    pass
-        
-                # Non-Essential fields   
-                try:
-                    self.project['UPPMAXid'] = run['metadata']['uppmaxprojectid']
-                    self.project['sequencing_platform'] = run['metadata']['platform']
-                    self.project['ref_genome'] = os.path.basename(run['metadata']['reference'])
-                except KeyError as e:
-                    self.LOG.warning('Could not find optional key in sample XML file: '+e.message)
-                    pass
-        
-        
-    
     
     
     
@@ -364,6 +302,8 @@ class CommonReport(object):
                 return False
         for f in project_fields:
             if f not in self.project.keys():
+                import json
+                print(json.dumps(self.project, indent=4))
                 self.LOG.error('Mandatory project field missing: '+f)
                 return False
         for sample_id in self.samples.iterkeys():
@@ -385,7 +325,7 @@ class CommonReport(object):
         output_mds = {}
         
         # Go through each sample making the report
-        for sample_id, sample in self.samples.iteritems():
+        for sample_id, sample in sorted(self.samples.iteritems()):
             
             self.LOG.info('Processing report for {}'.format(sample_id))
             

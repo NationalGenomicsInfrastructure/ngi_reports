@@ -66,22 +66,22 @@ def make_reports (report_type, working_dir=os.getcwd(), **kwargs):
                 print(output_md, file=fh)
         except IOError as e:
             raise IOError(e)
-    
+        
+        LOG.info('Converting markdown to HTML and PDF')
+        
         # Convert markdown to HTML using pandoc
         try:
             html_cmd = shlex.split('pandoc --standalone --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir))
             subprocess.call(html_cmd)
-        except:
-            LOG.error('Could not convert markdown to HTML')
-            raise
+        except OSError:
+            LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')
     
         # Convert markdown to PDF using pandoc
         try:    
             pdf_cmd = shlex.split('pandoc --standalone {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter {1}/pandoc_filters.py -V template_dir={1}'.format(output_bn, pandoc_dir))
             subprocess.call(pdf_cmd)
-        except:
-            LOG.error('Could not convert markdown to PDF')
-            raise
+        except OSError:
+            LOG.error('Could not convert markdown to PDF - pandoc error. Skipping HTML report generation...')
     
     # Change back to previous working dir
     os.chdir(old_cwd)
