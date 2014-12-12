@@ -59,6 +59,7 @@ class Report(project_summary.CommonReport):
 
         # Helper vars
         self.proj_details = self.proj.get('details',{})
+        print(self.organism_names)
 
         ## Get information for the reports from statusdb
         self.project_info['ngi_id'] = self.proj.get('project_id')
@@ -68,7 +69,7 @@ class Report(project_summary.CommonReport):
         self.project_info['num_samples'] = self.proj.get('no_of_samples')
         self.project_info['reference'] = {}
         self.project_info['reference']['genome'] = None if self.proj.get('reference_genome') == 'other' else self.proj.get('reference_genome')
-        self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'])
+        self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], '')
         self.project_info['user_ID'] = self.proj_details.get('customer_project_reference')
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
         self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id');
