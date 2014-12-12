@@ -25,17 +25,17 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.samples = {}
         self.plots = {}
         
-        # Self-sufficient Fields
-        self.report_dir = os.path.join('delivery', 'reports')
-        self.info['support_email'] = config.get('ngi_reports', 'support_email')
-        self.info['date'] = datetime.today().strftime('%Y-%m-%d')
-        self.project['sequencing_centre'] = 'NGI {}'.format(self.ngi_node.title())
-        
         # Scrape information from the filesystem
         # This function is in the common BaseReport class in __init__.py
         xml = self.parse_piper_xml()
         self.project = xml['project']
         self.samples = xml['samples']
+        
+        # Self-sufficient Fields
+        self.report_dir = os.path.join('delivery', 'reports')
+        self.info['support_email'] = config.get('ngi_reports', 'support_email')
+        self.info['date'] = datetime.today().strftime('%Y-%m-%d')
+        self.project['sequencing_centre'] = 'NGI {}'.format(self.ngi_node.title())
         
         # Sanity check - make sure that we have some samples
         if len(self.samples) == 0:
@@ -302,6 +302,8 @@ class CommonReport(ngi_reports.common.BaseReport):
                 return False
         for f in project_fields:
             if f not in self.project.keys():
+                import json
+                print(json.dumps(self.project, indent=4))
                 self.LOG.error('Mandatory project field missing: '+f)
                 return False
         for sample_id in self.samples.iterkeys():
