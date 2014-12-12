@@ -25,6 +25,7 @@ class BaseReport(object):
         # Standalone fields
         self.date_format = "%Y-%m-%d"
         self.creation_date = datetime.now().strftime(self.date_format)
+        self.organism_names = config._sections.get('organism_names', [])
     
     
     def parse_piper_xml(self):
@@ -85,3 +86,4 @@ class BaseReport(object):
                     pass
         
         return {'project': project, 'samples': samples}
+
