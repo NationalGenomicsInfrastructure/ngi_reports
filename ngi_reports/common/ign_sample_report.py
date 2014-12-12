@@ -12,7 +12,7 @@ import ngi_reports.common
 from ngi_visualizations.qualimap import coverage_histogram, genome_fraction_coverage, insert_size, gc_distribution
 from ngi_visualizations.snpEff import snpEff_plots
 
-class CommonReport(ign_sample_report.common.BaseReport):
+class CommonReport(ngi_reports.common.BaseReport):
     
     def __init__(self, config, LOG, working_dir, **kwargs):
         
