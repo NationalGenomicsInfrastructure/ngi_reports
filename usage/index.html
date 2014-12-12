@@ -115,8 +115,6 @@
         
             <li><a href="#report-generation">Report Generation</a></li>
         
-            <li><a href="#available-report-types">Available Report Types</a></li>
-        
             <li><a href="#manual-edits">Manual Edits</a></li>
         
     
@@ -127,54 +125,32 @@
 <h1 id="usage">Usage</h1>
 <h2 id="report-generation">Report Generation</h2>
 <p>The usual entry point for report generation is through the <code>ngi_reports</code> script.
-You can make it easier to run this script by adding it's location to your <code>PATH</code>
-in your <code>.bash_rc</code> script (<code>.bash_profile</code> if using a Mac):</p>
-<pre><code class="bash">echo &quot;PATH=path/to/ngi_reports/scripts:$PATH&quot; &gt;&gt; ~/.bashrc
-</code></pre>
-
-<p>Then you can run the ngi_reports script in the pipeline output directory:</p>
-<pre><code class="bash">cd path/to/output
+See the <a href="../installation">installation instructions</a> for instructions on how
+to add this script to your <code>PATH</code>.</p>
+<p>If you have an output directory made by Piper, <code>ngi_reports</code> will read everything
+it needs from the setup XML files. You can run it as so:</p>
+<pre><code>cd path/to/piper/output
 ngi_reports &lt;report_type&gt;
 </code></pre>
 
-<p>If you are in the correct output directory and select a relevant report
-type, the script should generate a directory called <code>reports</code> containing 
-a PDF report, an HTML report, a Markdown report and a subdirectory called <code>plots</code>.</p>
+<p>Other report types or non-piper directories may need additional command line inputs.</p>
+<p>The package will generate a directory called <code>reports</code> containing 
+a PDF report, an HTML report, a Markdown report and a subdirectory called <code>plots</code>.
+If running from a Piper directory, <code>reports</code> will be inside <code>delivery</code>.</p>
 <p>The package is designed to be run automatically by the processing pipelines.</p>
-<h2 id="available-report-types">Available Report Types</h2>
-<p>To list the available report types, run:</p>
+<h3 id="available-report-types">Available Report Types</h3>
+<p>To list the available report types and get additional help, run:</p>
 <pre><code>ngi_reports -h
 </code></pre>
 
 <h2 id="manual-edits">Manual Edits</h2>
 <p>If you need to manually edit any reports, make your changes to the markdown
-file and then run the following two commands:</p>
-<pre><code class="bash">pandoc report.md -o report.html --template=pandoc_templates/html_pandoc.html
-pandoc report.md -o report.pdf --template=pandoc_templates/latex_pandoc.tex --latex-engine=xelatex
+files and then run the following command:</p>
+<pre><code>make_report *md
 </code></pre>
 
-<p><strong><em>Note:</em></strong> Replace <code>pandoc_templates/</code> with the correct relative or absolute
-path to this directory on your machine; eg:</p>
-<pre><code class="bash">/Users/philewels/Work/ngi_reports/data/pandoc_templates/
-</code></pre>
-
-<p>To make these commands easier to run, you can create functions in your <code>.bashrc</code> file
-(<code>.bash_profile</code> on Mac). Add the following:</p>
-<pre><code class="bash"># NGI Reports
-function make_report {
-  PD_DIR='path/to/ngi_reports/data/pandoc_templates'
-  pandoc --standalone --section-divs ${1}.md -o ${1}.html --template=${PD_DIR}/html_pandoc.html --default-image-extension=png --filter ${PD_DIR}/pandoc_filters.py -V template_dir=${PD_DIR}/ ${2}
-  pandoc --standalone ${1}.md -o ${1}.pdf --template=${PD_DIR}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter ${PD_DIR}/pandoc_filters.py -V template_dir=${PD_DIR}/ ${2}
-}
-export -f make_report
-</code></pre>
-
-<p>Again, make sure that you update the <code>pandoc_templates/</code> path.
-You can then create reports by running:</p>
-<pre><code>make_report report_fn
-</code></pre>
-
-<p><em>(note - do not include the <code>.md</code> extension)</em></p>
+<p>This is a bash function described in the <a href="../installation">installation</a>
+docs. You can supply as many markdown file paths as you like.</p>
 </div>
         </div>
 
