@@ -11,7 +11,7 @@ import numpy as np
 from collections import OrderedDict
 from string import ascii_uppercase as alphabets
 from ngi_reports.common import project_summary
-from statusdb.db.connections import *
+from statusdb.db import connections as statusdb
 
 class Report(project_summary.CommonReport):
     
@@ -38,11 +38,11 @@ class Report(project_summary.CommonReport):
         
         # Get connections to the databases in StatusDB
         self.LOG.info("Connecting to statusDB...")
-        pcon = ProjectSummaryConnection(**kwargs)
+        pcon = statusdb.ProjectSummaryConnection(**kwargs)
         assert pcon, "Could not connect to {} database in StatusDB".format("project")
-        fcon = FlowcellRunMetricsConnection(**kwargs)
+        fcon = statusdb.FlowcellRunMetricsConnection(**kwargs)
         assert fcon, "Could not connect to {} database in StatusDB".format("flowcell")
-        scon = SampleRunMetricsConnection(**kwargs)
+        scon = statusdb.SampleRunMetricsConnection(**kwargs)
         assert scon, "Could not connect to {} database in StatusDB".format("samples")
         self.LOG.info("...connected")
         
@@ -59,13 +59,8 @@ class Report(project_summary.CommonReport):
 
         # Helper vars
         self.proj_details = self.proj.get('details',{})
-        organism_names = {
-            'hg19': 'Human',
-            'hg18': 'Human',
-            'mm10': 'Mouse',
-            'mm9': 'Mouse'
-        }
-        
+        print(self.organism_names)
+
         ## Get information for the reports from statusdb
         self.project_info['ngi_id'] = self.proj.get('project_id')
         self.project_info['contact'] = self.proj.get('contact')
@@ -74,7 +69,7 @@ class Report(project_summary.CommonReport):
         self.project_info['num_samples'] = self.proj.get('no_of_samples')
         self.project_info['reference'] = {}
         self.project_info['reference']['genome'] = None if self.proj.get('reference_genome') == 'other' else self.proj.get('reference_genome')
-        self.project_info['reference']['organism'] = organism_names.get(self.project_info['reference']['genome'])
+        self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], '')
         self.project_info['user_ID'] = self.proj_details.get('customer_project_reference')
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
         self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id');

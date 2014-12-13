@@ -37,10 +37,17 @@ and look like this:
 [ngi_reports]
 support_email: genomics_support@scilifelab.se
 ngi_node: stockholm
+
+[organism_names]
+hg19: Human
+hg18: Human
+mm10: Mouse
+mm9: Mouse
 ```
 
-Obviously, if you're working at the Uppsala NGI node, use `uppsala` instead
-of `stockholm`.
+Obviously, if you're working at the Uppsala NGI node, change the `ngi_node` to
+`uppsala` instead of `stockholm`. The `organism_names` section should have 
+reference id key - text pairs. This is used to make the report more verbose.
 
 ## ngi_visualizations
 The `ngi_reports` scripts use a separete Python module called `ngi_visualizations`.
