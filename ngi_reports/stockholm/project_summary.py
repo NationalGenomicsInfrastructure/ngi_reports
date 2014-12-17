@@ -59,7 +59,6 @@ class Report(project_summary.CommonReport):
 
         # Helper vars
         self.proj_details = self.proj.get('details',{})
-        print(self.organism_names)
 
         ## Get information for the reports from statusdb
         self.project_info['ngi_id'] = self.proj.get('project_id')

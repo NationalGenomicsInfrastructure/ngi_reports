@@ -43,6 +43,15 @@ hg19: Human
 hg18: Human
 mm10: Mouse
 mm9: Mouse
+canFam3: Dog
+canFam2: Dog
+sacCer2: Saccharomyces cerevisiae
+TAIR9: Arabidopsis
+rn5: Rat
+rn4: Rat
+WS210: C. elegans
+xenTro2: Xenopus
+dm3: Drosophila
 ```
 
 Obviously, if you're working at the Uppsala NGI node, change the `ngi_node` to
