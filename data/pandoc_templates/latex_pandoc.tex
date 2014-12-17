@@ -15,9 +15,31 @@
   \fi
   \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
   \newcommand{\euro}{€}
-  \setmainfont{Helvetica Neue}
-  \setsansfont{Helvetica Neue}
-  \setmonofont[Mapping=tex-ansi]{Consolas}
+  \setmainfont[ Path              = $template_dir$/assets/fonts/,
+                Extension         = .ttf,
+                BoldFont          = HelveticaNeueBold,
+                ItalicFont        = HelveticaNeueItalic,
+                BoldItalicFont    = HelveticaNeueBoldItalic,
+                SmallCapsFeatures = {Letters = SmallCaps},
+                Numbers           = OldStyle
+              ]{HelveticaNeue}
+  \setsansfont[ Path              = $template_dir$/assets/fonts/,
+                Extension         = .ttf,
+                BoldFont          = HelveticaNeueBold,
+                ItalicFont        = HelveticaNeueItalic,
+                BoldItalicFont    = HelveticaNeueBoldItalic,
+                SmallCapsFeatures = {Letters = SmallCaps},
+                Numbers           = OldStyle
+              ]{HelveticaNeue}
+  \setmonofont[ Path              = $template_dir$/assets/fonts/,
+                Extension         = .ttf,
+                BoldFont          = Consolas_Bold,
+                ItalicFont        = Consolas_Italic,
+                BoldItalicFont    = Consolas_Bold_Italic,
+                SmallCapsFeatures = {Letters = SmallCaps},
+                Numbers           = OldStyle
+              ]{Consolas}
+
 \fi
 % use upquote if available, for straight quotes in verbatim environments
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
