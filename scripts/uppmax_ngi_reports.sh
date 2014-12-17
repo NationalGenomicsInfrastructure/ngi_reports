@@ -11,7 +11,10 @@
 
 # Add the scripts directory to the path
 ngi_reports_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && cd ../ && pwd )
-PATH=${ngi_reports_dir}/scripts:$PATH
+export PATH=${ngi_reports_dir}/scripts:$PATH
+
+# Add XeLaTeX to the path
+export PATH=/home/phil/opt/TeXLive/bin/x86_64-linux:$PATH
 
 # Make an alias so that the main script uses the pandoc binary
 alias ngi_reports='ngi_reports --pandoc_binary '
