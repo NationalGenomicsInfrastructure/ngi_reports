@@ -120,12 +120,20 @@ download and install [BasicTeX](http://www.tug.org/mactex/morepackages.html)
 If you're using a PC, install [MiKTeX](http://miktex.org/)
 
 Again, the UPPMAX installation of LaTeX and XeLaTeX isn't good enough for
-what we need, and again, there is a portable installation bundled with the 
-repository. Same as above - if you're using the UPPMAX bash script then
+what we need, and again, we use a portable installation. This is too big to put
+on GitHub (> 4gb) and so is stored in `..somewhere..`.
+As with above - if you're using the UPPMAX bash script then
 everything _should_ work..
+
+If for whatever reason that _doesn't_ work (wrong group permissions or something)
+then you can generate this software yourself by downloading and installing a portable
+version of [TeXLive](https://www.tug.org/texlive/doc/texlive-en/texlive-en.html#tlportable).
+You'll need to add this directory to your path by editing the `ngi_reports` bash script.
 
 ### Fonts
 The LaTeX to PDF conversion uses two fonts - **Helvetica Neue** for headings
-and body text, and **Consolas** for code. If you're using Mac OSX you can get
-Consolas by following the instructions in
-[this blog post](http://zjhzxhz.com/2014/01/install-microsofts-consolas-font-on-mac-os-x/).
+and body text, and **Consolas** for code. These come bundled in the repository
+in `ata/pandoc_templates/assets/fonts/`. If you don't have them installed
+the PDF should still look correct (as it references this path directly when generating
+the output), but the HTML may not render properly. If so, you can install these fonts
+on your local machine from that directory.
