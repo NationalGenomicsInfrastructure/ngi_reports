@@ -157,10 +157,26 @@ and look like this:</p>
 <pre><code class="ini">[ngi_reports]
 support_email: genomics_support@scilifelab.se
 ngi_node: stockholm
+
+[organism_names]
+hg19: Human
+hg18: Human
+mm10: Mouse
+mm9: Mouse
+canFam3: Dog
+canFam2: Dog
+sacCer2: Saccharomyces cerevisiae
+TAIR9: Arabidopsis
+rn5: Rat
+rn4: Rat
+WS210: C. elegans
+xenTro2: Xenopus
+dm3: Drosophila
 </code></pre>
 
-<p>Obviously, if you're working at the Uppsala NGI node, use <code>uppsala</code> instead
-of <code>stockholm</code>.</p>
+<p>Obviously, if you're working at the Uppsala NGI node, change the <code>ngi_node</code> to
+<code>uppsala</code> instead of <code>stockholm</code>. The <code>organism_names</code> section should have 
+reference id key - text pairs. This is used to make the report more verbose.</p>
 <h2 id="ngi_visualizations">ngi_visualizations</h2>
 <p>The <code>ngi_reports</code> scripts use a separete Python module called <code>ngi_visualizations</code>.
 You can find this repository along with installation instructions on github:
