@@ -226,14 +226,21 @@ the commands should use this binary and everything should work.</p>
 download and install <a href="http://www.tug.org/mactex/morepackages.html">BasicTeX</a>
 If you're using a PC, install <a href="http://miktex.org/">MiKTeX</a></p>
 <p>Again, the UPPMAX installation of LaTeX and XeLaTeX isn't good enough for
-what we need, and again, there is a portable installation bundled with the 
-repository. Same as above - if you're using the UPPMAX bash script then
+what we need, and again, we use a portable installation. This is too big to put
+on GitHub (&gt; 4gb) and so is stored in <code>..somewhere..</code>.
+As with above - if you're using the UPPMAX bash script then
 everything <em>should</em> work..</p>
+<p>If for whatever reason that <em>doesn't</em> work (wrong group permissions or something)
+then you can generate this software yourself by downloading and installing a portable
+version of <a href="https://www.tug.org/texlive/doc/texlive-en/texlive-en.html#tlportable">TeXLive</a>.
+You'll need to add this directory to your path by editing the <code>ngi_reports</code> bash script.</p>
 <h3 id="fonts">Fonts</h3>
 <p>The LaTeX to PDF conversion uses two fonts - <strong>Helvetica Neue</strong> for headings
-and body text, and <strong>Consolas</strong> for code. If you're using Mac OSX you can get
-Consolas by following the instructions in
-<a href="http://zjhzxhz.com/2014/01/install-microsofts-consolas-font-on-mac-os-x/">this blog post</a>.</p>
+and body text, and <strong>Consolas</strong> for code. These come bundled in the repository
+in <code>ata/pandoc_templates/assets/fonts/</code>. If you don't have them installed
+the PDF should still look correct (as it references this path directly when generating
+the output), but the HTML may not render properly. If so, you can install these fonts
+on your local machine from that directory.</p>
 </div>
         </div>
 
