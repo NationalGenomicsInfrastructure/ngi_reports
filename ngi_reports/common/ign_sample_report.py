@@ -238,26 +238,18 @@ class CommonReport(ngi_reports.common.BaseReport):
                 'raw_data_qualimapReport'))
             snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '08_misc', sample_id))
             
-            # Be intelligent about upper limit for coverage
-            cov_max_x = 60
-            try:
-                if float(self.samples[sample_id]['median_insert_size']) > 30:
-                    cov_max_x = int(self.samples[sample_id]['median_insert_size']) * 2
-            except KeyError:
-                pass
-            
             # Qualimap coverage plot
             cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
             cov_output_rel = os.path.join(plots_dir_rel, '{}_coverage'.format(sample_id))
             cov_output = os.path.join(plots_dir, '{}_coverage'.format(sample_id))
-            coverage_histogram.plot_coverage_histogram(cov_fn, cov_output, max_x=cov_max_x)
+            coverage_histogram.plot_coverage_histogram(cov_fn, cov_output)
             self.plots[sample_id]['coverage_plot'] = cov_output_rel
         
             # Qualimap genome fraction coverage plot
             cov_frac_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'genome_fraction_coverage.txt'))
             cov_frac_output_rel = os.path.join(plots_dir_rel, '{}_genome_fraction'.format(sample_id))
             cov_frac_output = os.path.join(plots_dir, '{}_genome_fraction'.format(sample_id))
-            genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output, max_x=cov_max_x)
+            genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output)
             self.plots[sample_id]['cov_frac_plot'] = cov_frac_output_rel
         
             # Qualimap insert size plot
