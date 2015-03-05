@@ -266,7 +266,7 @@ class CommonReport(ngi_reports.common.BaseReport):
             self.plots[sample_id]['gc_dist_plot'] = gc_output_rel
 
             # snpEff plot
-            snpEFf_fn = os.path.realpath(os.path.join(snpeff_data_dir, '{}.clean.dedup.recal.bam.raw.annotated.vcf.snpEff.summary.csv'.format(sample_id))
+            snpEFf_fn = os.path.realpath(os.path.join(snpeff_data_dir, '{}.clean.dedup.recal.bam.raw.annotated.vcf.snpEff.summary.csv'.format(sample_id)))
             snpEFf_output_rel = os.path.join(plots_dir_rel, '{}_snpEff_effect'.format(sample_id))
             snpEFf_output = os.path.join(plots_dir, '{}_snpEff_effect'.format(sample_id))
             snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
