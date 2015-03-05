@@ -33,5 +33,5 @@ class Report(ign_sample_report.CommonReport):
             try:
                 self.samples[sid]['user_sample_id'] = proj['samples'][sid]['customer_name']
                 self.samples[sid]['barcode'] = proj['samples'][sid]['library_prep']['A']['reagent_label']
-            except KeyError:
+            except TypeError, KeyError:
                 self.LOG.warn("Could not retrieve sample details from statusdb for {} {}. Skipping...".format(self.project['id'], sid))
