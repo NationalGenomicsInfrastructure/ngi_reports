@@ -43,14 +43,13 @@ class CommonReport(ngi_reports.common.BaseReport):
             raise IOError
 
         # Get more info from the filesystem
+        self.LOG.info('Parsing QC files')
         self.parse_qualimap()
         self.parse_snpeff()
-
-        # Picard duplication rate, taken from the .metrics file
-        # TODO - Pull this in when the Piper bug has been patched.
-        # self.sample['duplication_rate'] = 'FUBAR']
+        self.parse_picard_metrics()
 
         # Plot graphs
+        self.LOG.info('Plotting graphs')
         self.make_plots()
 
 
@@ -133,11 +132,13 @@ class CommonReport(ngi_reports.common.BaseReport):
     def parse_snpeff(self):
         """ Parse the snpEff output to get information about SNPs
         """
+
         for sample_id in self.samples.iterkeys():
+
             snpEff = {}
             # Build the expected filenames
-            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '07_variant_calls'))
-            snpEff_csv = os.path.join(snpeff_data_dir, '{}.clean.dedup.recal.bam.raw.annotated.vcf.snpEff.summary.csv'.format(sample_id))
+            snpEff_csv = os.path.realpath(os.path.join(self.working_dir, '07_variant_calls',
+                '{}.clean.dedup.recal.bam.raw.annotated.vcf.snpEff.summary.csv'.format(sample_id)))
             try:
                 synonymous_SNPs = 0
                 nonsynonymous_SNPs = 0
@@ -216,6 +217,34 @@ class CommonReport(ngi_reports.common.BaseReport):
 
 
 
+    def parse_picard_metrics(self):
+        """ Parse the picard metrics file to get the duplication rates
+        """
+        for sample_id in self.samples.iterkeys():
+
+            # Build the expected filenames
+            snpEff_csv = os.path.realpath(os.path.join(self.working_dir,
+                '05_processed_alignments', '{}.metrics'.format(sample_id)))
+            try:
+                synonymous_SNPs = 0
+                nonsynonymous_SNPs = 0
+
+                with open(os.path.realpath(snpEff_csv), 'r') as fh:
+                    nextLine = False
+                    for line in fh:
+                        line = line.strip()
+
+                        if nextLine is True:
+                            parts = line.split("\t")
+                            percentDup = float(parts[7])
+                            self.samples[sample_id]['duplication_rate'] = '{:.3f}%'.format(percentDup)
+                            nextLine = False
+                        if line == 'LIBRARY	UNPAIRED_READS_EXAMINED	READ_PAIRS_EXAMINED	UNMAPPED_READS	UNPAIRED_READ_DUPLICATES	READ_PAIR_DUPLICATES	READ_PAIR_OPTICAL_DUPLICATES	PERCENT_DUPLICATION	ESTIMATED_LIBRARY_SIZE':
+                            nextLine = True
+
+            except:
+                self.LOG.error("Something went wrong with parsing the picard metrics file")
+                raise
 
 
 
@@ -315,10 +344,9 @@ class CommonReport(ngi_reports.common.BaseReport):
 
         output_mds = {}
 
+        self.LOG.info('Processing reports')
         # Go through each sample making the report
         for sample_id, sample in sorted(self.samples.iteritems()):
-
-            self.LOG.info('Processing report for {}'.format(sample_id))
 
             # Make the file basename
             report_fn = sample_id + '_ign_sample_report'

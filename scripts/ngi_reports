@@ -23,28 +23,28 @@ config = report_config.load_config()
 allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ]
 
 def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, **kwargs):
-    
+
     # Setup
     template_fn = '{}.md'.format(report_type)
     LOG.info('Report type: {}'.format(report_type))
-    
+
     # Import the modules for this report type
     ngi_node = config.get('ngi_reports', 'ngi_node')
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
-    
+
     # Make the report object
     report = report_mod.Report(config, LOG, working_dir, **kwargs)
-    
+
     # Work out all of the directory names
     output_dir = os.path.realpath(os.path.join(working_dir, report.report_dir))
     assets_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'assets'))
     pandoc_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'pandoc_templates'))
     reports_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))
-    
+
     # Create the directory if we don't already have it
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
-    
+
     # Print the markdown output file
     # Load the Jinja2 template
     try:
@@ -53,12 +53,13 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, **k
     except:
         LOG.error('Could not load the Jinja report template')
         raise
-    
+
     # Change to the reports directory - pandoc needs this for relative URLs
     old_cwd = os.getcwd()
     os.chdir(report.report_dir)
-    
+
     # Get parsed markdown and print to file(s)
+    LOG.info('Converting markdown to HTML and PDF')
     output_mds = report.parse_template(template)
     for output_bn, output_md in output_mds.iteritems():
         try:
@@ -66,29 +67,27 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, **k
                 print(output_md, file=fh)
         except IOError as e:
             raise IOError(e)
-        
-        LOG.info('Converting markdown to HTML and PDF')
-        
+
         # Set path to pandoc
         if pandoc_binary:
             pandoc_cmd = os.path.join(pandoc_dir, 'pandoc')
         else:
             pandoc_cmd = 'pandoc'
-        
+
         # Convert markdown to HTML using pandoc
         try:
             html_cmd = shlex.split('{2} --standalone --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir, pandoc_cmd))
             subprocess.call(html_cmd)
         except OSError:
             LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')
-    
+
         # Convert markdown to PDF using pandoc
-        try:    
+        try:
             pdf_cmd = shlex.split('{2} --standalone {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter {1}/pandoc_filters.py -V template_dir={1}'.format(output_bn, pandoc_dir, pandoc_cmd))
             subprocess.call(pdf_cmd)
         except OSError:
             LOG.error('Could not convert markdown to PDF - pandoc error. Skipping HTML report generation...')
-    
+
     # Change back to previous working dir
     os.chdir(old_cwd)
 
@@ -103,5 +102,5 @@ if __name__ == "__main__":
     parser.add_argument('--project', default=None, action="store", help="Project name to generate 'project_summary' report")
 
     kwargs = vars(parser.parse_args())
-           
+
     make_reports(**kwargs)
