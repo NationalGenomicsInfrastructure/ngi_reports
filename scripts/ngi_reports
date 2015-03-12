@@ -22,14 +22,39 @@ config = report_config.load_config()
 # create choices for report type based on available report template
 allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ]
 
-def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, **kwargs):
+def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pandoc_binary=False, **kwargs):
 
     # Setup
     template_fn = '{}.md'.format(report_type)
     LOG.info('Report type: {}'.format(report_type))
 
+    # Figure out the sequencing node
+    # Start with the command line variable that overwrites everything
+    if ngi_node == 'unknown':
+        # Get from the config file if we can
+        ngi_node = config.get('ngi_reports', 'ngi_node')
+        # Not found in the config, try to get from piper xml file
+        if ngi_node == 'unknown':
+            setup_dir = os.path.join(working_dir, 'setup_xml_files')
+            if os.path.isdir(setup_dir):
+                for file in os.listdir(setup_dir):
+                    if file.endswith(".xml"):
+                        try:
+                            with open(os.path.realpath(xml_fn)) as fh:
+                                raw_xml = xmltodict.parse(fh)
+                                seq_centre = raw_xml['project']['metadata']['sequenceingcenter']
+                                if seq_centre == 'NGI-S':
+                                    ngi_node = 'stockholm'
+                                elif uppmax_id == 'NGI-U':
+                                    ngi_node = 'uppsala'
+                        except IOError:
+                            pass
+
+    # We couldn't find it. Bail
+    if ngi_node == 'unknown':
+        raise "Could not determine sequencing node. Please pass this in with the "
+
     # Import the modules for this report type
-    ngi_node = config.get('ngi_reports', 'ngi_node')
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
 
     # Make the report object
@@ -94,6 +119,8 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, **k
 # calling main method to generate report
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Make an NGI Report")
+    parser.add_argument("-n", "--node", dest="ngi_node", default='unknown',
+        help="NGI Node. Default: attempts to find out from config file or setup XML files.")
     parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument("-l", "--pandoc_binary", dest="pandoc_binary", action='store_true',
