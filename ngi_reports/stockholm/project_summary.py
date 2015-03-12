@@ -76,6 +76,8 @@ class Report(project_summary.CommonReport):
         self.project_info['ordered_reads'] = self.get_ordered_reads()
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['status'] = "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing"
+        self.project_info['library_construction'] = self.proj_details.get('library_construction_method')
+        self.project_info['flowcells_run'] = []
 
         # Collect information about the sample preps
         for sample_id, sample in sorted(self.proj.get('samples', {}).iteritems()):
@@ -83,14 +85,18 @@ class Report(project_summary.CommonReport):
             # Basic fields from Project database
             self.samples_info[sample_id] = {'ngi_id': sample_id}
             self.samples_info[sample_id]['customer_name'] = sample.get('customer_name')
+            self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)')
             self.samples_info[sample_id]['preps'] = {}
+            self.samples_info[sample_id]['flowcell'] = []
 
             ## Get sample objects from statusdb
             s_ids = []
             for sample_run_doc in scon.get_project_sample(sample_id, sample_prj=self.project_info['ngi_name']):
-                self.samples_info[sample_id]['flowcell'] = sample_run_doc.get('flowcell')
-                self.samples_info[sample_id]['lane'] = sample_run_doc.get('lane')
-                self.samples_info[sample_id]['fc_name'] = sample_run_doc.get('name')
+                fc = "{}_{}".format(sample_run_doc.get('date'), sample_run_doc.get('flowcell'))
+                if fc not in self.samples_info[sample_id]['flowcell']:
+                    self.samples_info[sample_id]['flowcell'].append(fc)
+                if fc not in self.project_info['flowcells_run']:
+                    self.project_info['flowcells_run'].append(fc)
                 s_ids.append(sample_run_doc.get("_id"))
 
             # Go through each prep in the Projects database
@@ -106,6 +112,7 @@ class Report(project_summary.CommonReport):
                         if doc_id is not None:
                             self.samples_info[sample_id]['preps'][prep_id] = {'label': prep_id }
                             self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label')
+                            self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status')
                             try:
                                 s_ids.remove(doc_id)
                             except ValueError:
@@ -117,6 +124,33 @@ class Report(project_summary.CommonReport):
             for s_id in s_ids:
                 self.LOG.error("sample_run_metrics document ({}) found for sample {} but no corresponding entry in project database. \
                          Please check for inconsistencies!".format(s_id, sample_id))
+
+        # Collect information for all flowcell run for the project
+        seq_method_info = []
+        for fc in self.project_info['flowcells_run']:
+            seq_template = "{}) Samples were sequenced on {} ({}) with a {} setup. The Bcl to Fastq conversion was performed using {} \
+                            from the CASAVA software suite. The quality scale used is Sanger / phred33 / Illumina 1.8+."
+            fc_obj = fcon.get_entry(fc)
+            run_setup = fc_obj.get("run_setup")
+            fc_runp = fc_obj.get('RunParameters',{})
+            seq_plat = ["HiSeq2500","MiSeq"]["MCSVersion" in fc_runp.keys()]
+            casava = fc_obj.get('DemultiplexConfig',{}).values()[0].get('Software',{}).get('Version')
+            if seq_plat == "MiSeq":
+                seq_software = "MSC {}/RTA {}".format(fc_runp.get("MCSVersion"),fc_runp.get("RTAVersion"))
+            else:
+                seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName"),fc_runp.get("ApplicationVersion"),fc_runp.get("RTAVersion"))
+            tmp_method = seq_template.format("SECTION", seq_plat, seq_software, run_setup,casava)
+            ## to make sure the sequencing methods are uniq
+            if tmp_method not in seq_method_info:
+                seq_method_info.append(tmp_method)
+
+        ## give proper section name for the methods
+        seq_method_info = [seq_method_info[c].replace("SECTION",alphabets[c]) for c in range(len(seq_method_info))]
+        self.project_info['sequencing_methods'] = "\n\n".join(seq_method_info)
+
+
+
+
 
 
 
@@ -157,7 +191,7 @@ class Report(project_summary.CommonReport):
         if self.proj_details.get('contract_received'):
             dates.append("_Contract received:_ {}".format(self.proj_details.get('contract_received')))
         if self.proj_details.get('samples_received'):
-            dates.append("Samples received:_ {}".format(self.proj_details.get('samples_received')))
+            dates.append("_Samples received:_ {}".format(self.proj_details.get('samples_received')))
         if self.proj_details.get('queue_date'):
             dates.append("_Queue date:_ {}".format(self.proj_details.get('queue_date')))
         if self.proj.get('project_summary',{}).get('all_samples_sequenced'):

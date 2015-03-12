@@ -53,11 +53,6 @@ Minimum ordered reads
 
 ### Sequencing
 {{ project.sequencing_methods }}
-A) All samples were sequenced on HiSeq2500 (HiSeq Control
-    Software 2.0.12.0/RTA 1.17.21.3) with a 2x101 setup.The Bcl to
-    Fastq conversion was performed using bcl2Fastq v1.8.3 from the
-    CASAVA software suite. The quality scale used is Sanger /
-    phred33 / Illumina 1.8+.
 
 ### Data Flow
 Raw sequencing data is demultiplexed and converted to FastQ on site before 
@@ -89,22 +84,22 @@ Data processing
 
 # Sample Info
 
-NGI ID | User ID | Index | Lib Prep
--------|---------|-------|----------
+NGI ID | User ID | Index | Lib Prep | Lib QC
+-------|---------|-------|----------|--------
 {% for sample in samples.values()  -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ prep.barcode }}` | {{ prep.label }}
+{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.qc_status }}
 {% endfor -%}
 {%- endfor %}
 
+* _Lib QC:_ Reception control library quality control step
 
 # Yield Overview
 
-Sample | Lib QC | Avg. FS | &ge; Q30 | # Reads | Status
--------|--------|--------:|---------:|--------:|-------
-P955_101b | Passed | 350 bp | 59.34% | 105.66 M | Passed
+Sample | Avg. FS | &ge; Q30 | # Reads | Status
+-------|--------:|---------:|--------:|-------
+P955_101b | 350 bp | 59.34% | 105.66 M | Passed
 
-* _Lib QC:_ Reception control library quality control step
 * _Avg. FS:_ Average fragment size.
 * _&ge; Q30:_ Percentage of bases above quality score Q30 for the sample.
 * _# Reads:_ Millions of reads sequenced.
