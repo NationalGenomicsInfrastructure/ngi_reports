@@ -223,13 +223,13 @@ class CommonReport(ngi_reports.common.BaseReport):
         for sample_id in self.samples.iterkeys():
 
             # Build the expected filenames
-            snpEff_csv = os.path.realpath(os.path.join(self.working_dir,
+            picard_metrics_fn = os.path.realpath(os.path.join(self.working_dir,
                 '05_processed_alignments', '{}.metrics'.format(sample_id)))
             try:
                 synonymous_SNPs = 0
                 nonsynonymous_SNPs = 0
 
-                with open(os.path.realpath(snpEff_csv), 'r') as fh:
+                with open(os.path.realpath(picard_metrics_fn), 'r') as fh:
                     nextLine = False
                     for line in fh:
                         line = line.strip()
