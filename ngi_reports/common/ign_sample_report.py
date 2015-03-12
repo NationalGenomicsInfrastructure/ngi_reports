@@ -194,7 +194,7 @@ class CommonReport(ngi_reports.common.BaseReport):
 
                         if line[:13] == 'Ts_Tv_ratio ,':
                             snpEff['TsTv_ratio'] = '{:.3f}'.format(float(line[14:]))
-                            
+
 
                         # ALTERNATIVE BLOCKS FOR OLDER VERSION OF SNPEFF
                         # Type, Total, Homo, Hetero
@@ -312,7 +312,7 @@ class CommonReport(ngi_reports.common.BaseReport):
             snpEFf_output_rel = os.path.join(plots_dir_rel, '{}_snpEff_effect'.format(sample_id))
             snpEFf_output = os.path.join(plots_dir, '{}_snpEff_effect'.format(sample_id))
             snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
-            self.plots[sample_id]['snpEFf_plot'] = '{}_types'.format(snpEFf_output_rel)
+            self.plots[sample_id]['snpEFf_plot'] = '{}_regions'.format(snpEFf_output_rel)
 
 
 
