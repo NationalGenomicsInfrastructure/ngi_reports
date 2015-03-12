@@ -2,11 +2,11 @@
 
 ## ngi_reports Python Package
 To create reports you need to install the `ngi_reports` package.
-First, either download or clone the [repository](https://github.com/SciLifeLab/ngi_reports).
+First, either download or clone the [repository](https://github.com/NationalGenomicsInfrastructure/ngi_reports).
 Make sure that you include the `--recursive` flag:
 
 ```
-git clone --recursive git@github.com:SciLifeLab/ngi_reports.git
+git clone --recursive https://github.com/NationalGenomicsInfrastructure/ngi_reports.git
 ```
 _(remember to fork instead if you intend to make changes to the code)_
 
@@ -29,7 +29,7 @@ If you're intending to make changes to the code, use `develop` instead of `insta
 so that you don't need to run the setup script each time you make a change.
 
 Next, you need a config file in your home directory called
-`~/.ngi_config/ngi_reports.conf`. This file should be formatted for 
+`~/.ngi_config/ngi_reports.conf`. This file should be formatted for
 [Python ConfigParser](https://docs.python.org/2/library/configparser.html)
 and look like this:
 
@@ -55,12 +55,12 @@ dm3: Drosophila
 ```
 
 Obviously, if you're working at the Uppsala NGI node, change the `ngi_node` to
-`uppsala` instead of `stockholm`. The `organism_names` section should have 
+`uppsala` instead of `stockholm`. The `organism_names` section should have
 reference id key - text pairs. This is used to make the report more verbose.
 
 ## Bash Commands
 To use `ngi_reports` from the command line easily, there are some bash commands
-that you need. These are written into a bash script to make life easy - you need to add 
+that you need. These are written into a bash script to make life easy - you need to add
 this to your `~/.bashrc` file (`~/.bash_profile` on a mac):
 
 ```
@@ -78,12 +78,12 @@ source ~/opt/ngi_reports/scripts/uppmax_ngi_reports.sh
 ## ngi_visualizations
 The `ngi_reports` scripts use a separete Python module called `ngi_visualizations`.
 You can find this repository along with installation instructions on github:
-[ngi_visualizations](https://github.com/SciLifeLab/ngi_visualizations)
+[ngi_visualizations](https://github.com/NationalGenomicsInfrastructure/ngi_visualizations)
 
 At the time of writing, the package could be installed as follows:
 
 ```bash
-git clone git@github.com:SciLifeLab/ngi_visualizations.git
+git clone https://github.com/NationalGenomicsInfrastructure/ngi_visualizations.git
 cd ngi_visualizations
 python setup.py install
 ```
@@ -121,7 +121,12 @@ If you're using a PC, install [MiKTeX](http://miktex.org/)
 
 Again, the UPPMAX installation of LaTeX and XeLaTeX isn't good enough for
 what we need, and again, we use a portable installation. This is too big to put
-on GitHub (> 4gb) and so is stored in `..somewhere..`.
+on GitHub (> 4gb) and so is stored the group directory. The following lines in
+`uppmax_ngi_reports.sh` make it available for us on Nestor:
+```
+# Add XeLaTeX to the path
+export PATH=/apus/v1/a2012043_nobackup/software/TeXLive/bin/x86_64-linux:$PATH
+```
 As with above - if you're using the UPPMAX bash script then
 everything _should_ work..
 
@@ -133,7 +138,7 @@ You'll need to add this directory to your path by editing the `ngi_reports` bash
 ### Fonts
 The LaTeX to PDF conversion uses two fonts - **Helvetica Neue** for headings
 and body text, and **Consolas** for code. These come bundled in the repository
-in `ata/pandoc_templates/assets/fonts/`. If you don't have them installed
+in `ngi_reports/data/pandoc_templates/assets/fonts/`. If you don't have them installed
 the PDF should still look correct (as it references this path directly when generating
 the output), but the HTML may not render properly. If so, you can install these fonts
 on your local machine from that directory.

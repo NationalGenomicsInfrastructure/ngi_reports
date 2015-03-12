@@ -1,7 +1,7 @@
 # NGI Reports Documentation
 
 This documentation describes the code in the
-[ngi_reports](https://github.com/SciLifeLab/ngi_reports)
+[ngi_reports](https://github.com/NationalGenomicsInfrastructure/ngi_reports)
 github repository.
 
 ## Introduction
@@ -20,5 +20,3 @@ This documentation contains information about:
 * [Usage](usage.md)
 * [General notes on contributing](contributing.md)
 * Specific information about each report type
-
-

@@ -8,7 +8,7 @@ reports (eg. parsing text files to extract specific information).
 
 All analysis and plotting should be handled by code in different repositories.
 Specifically, any scripts to generate plots should be added to the
-[visualizations](https://github.com/SciLifeLab/visualizations) repository and
+[visualizations](https://github.com/NationalGenomicsInfrastructure/visualizations) repository and
 then imported as a python package. Code involved in retrieving information
 from Stockholm's StatusDB should use the
 [statusdb](https://github.com/SciLifeLab/statusdb) repository.
@@ -28,7 +28,7 @@ in the `/docs` folder.
 
 ## File Formats
 All reports should be generated as Markdown `.md` files. We can then
-use [Pandoc](http://johnmacfarlane.net/pandoc/) to convert these into 
+use [Pandoc](http://johnmacfarlane.net/pandoc/) to convert these into
 whatever file format we like (PDF initially, probably HTML later).
 
 All figures should be plotted as both `.png` files (for HTML reports)
@@ -78,7 +78,3 @@ Report at the Stockholm NGI node.
     * Jinja2 is used to replace the fields in the template with real data
 * This markdown string is written to a markdown output file by the main `ngi_reports` script
 * `ngi_reports` then calls `pandoc` to convert this file into HTML and PDF.
-
-
-
-
