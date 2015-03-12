@@ -25,6 +25,7 @@ class Report(ign_sample_report.CommonReport):
         if proj is not None:
             self.info['recipient'] = proj.get('contact')
             self.project['prep'] = proj.get('details', {}).get('library_construction_method')
+            self.project['UPPMAXid'] = proj.get('uppnex_id')
 
             # Get sample fields from statusdb
             for sid in self.samples.iterkeys():

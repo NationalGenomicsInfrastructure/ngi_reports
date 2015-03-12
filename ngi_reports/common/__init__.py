@@ -12,22 +12,22 @@ class BaseReport(object):
     """ Base report object class. Provides some common fields and helper
     methods to be used by all report types.
     """
-    
+
     def __init__(self, config, LOG, working_dir, **kwargs):
         # Incoming handles
         self.config = config
         self.LOG = LOG
         self.working_dir = working_dir
-    
+
         # Setup
         self.ngi_node = config.get('ngi_reports', 'ngi_node')
-    
+
         # Standalone fields
         self.date_format = "%Y-%m-%d"
         self.creation_date = datetime.now().strftime(self.date_format)
         self.organism_names = config._sections.get('organism_names', {})
-    
-    
+
+
     def parse_piper_xml(self):
         """ Parses the XML setup files that Piper uses
         """
@@ -44,8 +44,8 @@ class BaseReport(object):
             for file in os.listdir(setup_dir):
                 if file.endswith(".xml"):
                     xml_files.append(os.path.join(setup_dir, file))
-        
-        
+
+
         self.LOG.info('Found {} Piper setup XML file{}..'.format(len(xml_files), '' if len(xml_files) == 1 else 's'))
         for xml_fn in xml_files:
             try:
@@ -56,7 +56,7 @@ class BaseReport(object):
                 pass
             else:
                 run = raw_xml['project']
-                # Essential fields   
+                # Essential fields
                 try:
                     project['id'] = run['metadata']['name']
                     project['ngi_name'] = run['metadata']['name']
@@ -75,15 +75,13 @@ class BaseReport(object):
                 except KeyError as e:
                     self.LOG.warning('Could not find essential key in sample XML file: '+e.message)
                     pass
-        
-                # Non-Essential fields   
+
+                # Non-Essential fields
                 try:
-                    project['UPPMAXid'] = run['metadata']['uppmaxprojectid']
                     project['sequencing_platform'] = run['metadata']['platform']
                     project['ref_genome'] = os.path.basename(run['metadata']['reference'])
                 except KeyError as e:
                     self.LOG.warning('Could not find optional key in sample XML file: '+e.message)
                     pass
-        
-        return {'project': project, 'samples': samples}
 
+        return {'project': project, 'samples': samples}
