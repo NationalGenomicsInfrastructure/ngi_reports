@@ -133,9 +133,9 @@
 <h1 id="installation">Installation</h1>
 <h2 id="ngi_reports-python-package">ngi_reports Python Package</h2>
 <p>To create reports you need to install the <code>ngi_reports</code> package.
-First, either download or clone the <a href="https://github.com/SciLifeLab/ngi_reports">repository</a>.
+First, either download or clone the <a href="https://github.com/NationalGenomicsInfrastructure/ngi_reports">repository</a>.
 Make sure that you include the <code>--recursive</code> flag:</p>
-<pre><code>git clone --recursive git@github.com:SciLifeLab/ngi_reports.git
+<pre><code>git clone --recursive https://github.com/NationalGenomicsInfrastructure/ngi_reports.git
 </code></pre>
 
 <p><em>(remember to fork instead if you intend to make changes to the code)</em></p>
@@ -153,7 +153,7 @@ python setup.py install
 If you're intending to make changes to the code, use <code>develop</code> instead of <code>install</code>
 so that you don't need to run the setup script each time you make a change.</p>
 <p>Next, you need a config file in your home directory called
-<code>~/.ngi_config/ngi_reports.conf</code>. This file should be formatted for 
+<code>~/.ngi_config/ngi_reports.conf</code>. This file should be formatted for
 <a href="https://docs.python.org/2/library/configparser.html">Python ConfigParser</a>
 and look like this:</p>
 <pre><code class="ini">[ngi_reports]
@@ -177,11 +177,11 @@ dm3: Drosophila
 </code></pre>
 
 <p>Obviously, if you're working at the Uppsala NGI node, change the <code>ngi_node</code> to
-<code>uppsala</code> instead of <code>stockholm</code>. The <code>organism_names</code> section should have 
+<code>uppsala</code> instead of <code>stockholm</code>. The <code>organism_names</code> section should have
 reference id key - text pairs. This is used to make the report more verbose.</p>
 <h2 id="bash-commands">Bash Commands</h2>
 <p>To use <code>ngi_reports</code> from the command line easily, there are some bash commands
-that you need. These are written into a bash script to make life easy - you need to add 
+that you need. These are written into a bash script to make life easy - you need to add
 this to your <code>~/.bashrc</code> file (<code>~/.bash_profile</code> on a mac):</p>
 <pre><code>source ~/opt/ngi_reports/scripts/start_ngi_reports.sh
 </code></pre>
@@ -194,9 +194,9 @@ this to your <code>~/.bashrc</code> file (<code>~/.bash_profile</code> on a mac)
 <h2 id="ngi_visualizations">ngi_visualizations</h2>
 <p>The <code>ngi_reports</code> scripts use a separete Python module called <code>ngi_visualizations</code>.
 You can find this repository along with installation instructions on github:
-<a href="https://github.com/SciLifeLab/ngi_visualizations">ngi_visualizations</a></p>
+<a href="https://github.com/NationalGenomicsInfrastructure/ngi_visualizations">ngi_visualizations</a></p>
 <p>At the time of writing, the package could be installed as follows:</p>
-<pre><code class="bash">git clone git@github.com:SciLifeLab/ngi_visualizations.git
+<pre><code class="bash">git clone https://github.com/NationalGenomicsInfrastructure/ngi_visualizations.git
 cd ngi_visualizations
 python setup.py install
 </code></pre>
@@ -227,8 +227,13 @@ download and install <a href="http://www.tug.org/mactex/morepackages.html">Basic
 If you're using a PC, install <a href="http://miktex.org/">MiKTeX</a></p>
 <p>Again, the UPPMAX installation of LaTeX and XeLaTeX isn't good enough for
 what we need, and again, we use a portable installation. This is too big to put
-on GitHub (&gt; 4gb) and so is stored in <code>..somewhere..</code>.
-As with above - if you're using the UPPMAX bash script then
+on GitHub (&gt; 4gb) and so is stored the group directory. The following lines in
+<code>uppmax_ngi_reports.sh</code> make it available for us on Nestor:</p>
+<pre><code># Add XeLaTeX to the path
+export PATH=/apus/v1/a2012043_nobackup/software/TeXLive/bin/x86_64-linux:$PATH
+</code></pre>
+
+<p>As with above - if you're using the UPPMAX bash script then
 everything <em>should</em> work..</p>
 <p>If for whatever reason that <em>doesn't</em> work (wrong group permissions or something)
 then you can generate this software yourself by downloading and installing a portable
@@ -237,7 +242,7 @@ You'll need to add this directory to your path by editing the <code>ngi_reports<
 <h3 id="fonts">Fonts</h3>
 <p>The LaTeX to PDF conversion uses two fonts - <strong>Helvetica Neue</strong> for headings
 and body text, and <strong>Consolas</strong> for code. These come bundled in the repository
-in <code>ata/pandoc_templates/assets/fonts/</code>. If you don't have them installed
+in <code>ngi_reports/data/pandoc_templates/assets/fonts/</code>. If you don't have them installed
 the PDF should still look correct (as it references this path directly when generating
 the output), but the HTML may not render properly. If so, you can install these fonts
 on your local machine from that directory.</p>

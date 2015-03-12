@@ -133,7 +133,7 @@ functionality limited to things which can only be useful in the context of makin
 reports (eg. parsing text files to extract specific information).</p>
 <p>All analysis and plotting should be handled by code in different repositories.
 Specifically, any scripts to generate plots should be added to the
-<a href="https://github.com/SciLifeLab/visualizations">visualizations</a> repository and
+<a href="https://github.com/NationalGenomicsInfrastructure/visualizations">visualizations</a> repository and
 then imported as a python package. Code involved in retrieving information
 from Stockholm's StatusDB should use the
 <a href="https://github.com/SciLifeLab/statusdb">statusdb</a> repository.</p>
@@ -148,7 +148,7 @@ dependencies and how these files should be formatted / generated.</p>
 in the <code>/docs</code> folder.</p>
 <h2 id="file-formats">File Formats</h2>
 <p>All reports should be generated as Markdown <code>.md</code> files. We can then
-use <a href="http://johnmacfarlane.net/pandoc/">Pandoc</a> to convert these into 
+use <a href="http://johnmacfarlane.net/pandoc/">Pandoc</a> to convert these into
 whatever file format we like (PDF initially, probably HTML later).</p>
 <p>All figures should be plotted as both <code>.png</code> files (for HTML reports)
 and <code>.pdf</code> (for PDF reports). When setting the file names for the
