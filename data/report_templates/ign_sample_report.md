@@ -168,7 +168,7 @@ Here we have used the [snpEff](http://snpeff.sourceforge.net/) tool to
 categorise and count different effects. The results were plotted with an
 [NGI script](https://github.com/SciLifeLab/visualizations).
 
-![Insert Sizes]({{ plots.snpEFf_plot }})\
+![snpEff - Effect Regions]({{ plots.snpEFf_plot }})\
 
 See the `snpEff_summary.html` report in your delivery folder for more details.
 
