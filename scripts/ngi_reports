@@ -68,7 +68,8 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
             with open('{}.md'.format(output_bn), 'w') as fh:
                 print(output_md, file=fh)
         except IOError as e:
-            raise IOError(e)
+            LOG.error("Error printing markdown report {} - skipping. {}".format(output_md, IOError(e)))
+            continue
 
         # Set path to pandoc
         if pandoc_binary:

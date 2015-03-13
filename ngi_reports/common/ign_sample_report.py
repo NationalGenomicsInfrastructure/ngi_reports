@@ -39,8 +39,7 @@ class CommonReport(ngi_reports.common.BaseReport):
 
         # Sanity check - make sure that we have some samples
         if len(self.samples) == 0:
-            self.LOG.error('No samples found!')
-            raise IOError
+            raise IOError ('No samples found!')
 
         # Get more info from the filesystem
         self.LOG.info('Parsing QC files')
@@ -123,7 +122,6 @@ class CommonReport(ngi_reports.common.BaseReport):
 
             except:
                 self.LOG.error("Something went wrong with parsing the Qualimap results for sample {}".format(sample_id))
-                raise
 
 
 
@@ -223,7 +221,6 @@ class CommonReport(ngi_reports.common.BaseReport):
 
             except:
                 self.LOG.error("Something went wrong with parsing the snpEff results")
-                raise
 
             if synonymous_SNPs > 0:
                 snpEff['synonymous_SNPs'] = '{:,}'.format(synonymous_SNPs)
@@ -255,9 +252,10 @@ class CommonReport(ngi_reports.common.BaseReport):
                         if line == 'LIBRARY	UNPAIRED_READS_EXAMINED	READ_PAIRS_EXAMINED	UNMAPPED_READS	UNPAIRED_READ_DUPLICATES	READ_PAIR_DUPLICATES	READ_PAIR_OPTICAL_DUPLICATES	PERCENT_DUPLICATION	ESTIMATED_LIBRARY_SIZE':
                             nextLine = True
 
+            except IOError:
+                self.LOG.warning("Warning: Could not find Picard metrics file for {}".format(sample_id))
             except:
                 self.LOG.error("Something went wrong with parsing the picard metrics file")
-                raise
 
 
 
@@ -367,14 +365,15 @@ class CommonReport(ngi_reports.common.BaseReport):
 
             # check that we have everythin
             if not self.check_fields():
-                raise AttributeError('Some mandatory fields were missing - exiting')
+                self.LOG.error("Some mandatory fields were missing for sample {} - skipping".format(sample_id))
+                continue
 
             # Parse the template
             try:
                 md = template.render(report=self.info, project=self.project, sample=sample, plots=self.plots[sample_id])
                 output_mds[output_bn] = md
             except:
-                self.LOG.error('Could not parse the ign_sample_report template')
-                raise
+                self.LOG.error('Could not parse the ign_sample_report template for sample {} - skipping'.format(sample_id))
+                continue
 
         return output_mds
