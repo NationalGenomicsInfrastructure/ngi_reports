@@ -12,6 +12,9 @@ class Report(ign_sample_report.CommonReport):
     # Initialise the report
     def __init__(self, config, LOG, working_dir, **kwargs):
 
+        # Set node
+        self.ngi_node = 'stockholm'
+
         # Initialise the parent class
         super(Report, self).__init__(config, LOG, working_dir, **kwargs)
 

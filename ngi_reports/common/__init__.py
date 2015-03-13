@@ -19,9 +19,6 @@ class BaseReport(object):
         self.LOG = LOG
         self.working_dir = working_dir
 
-        # Setup
-        self.ngi_node = config.get('ngi_reports', 'ngi_node')
-
         # Standalone fields
         self.date_format = "%Y-%m-%d"
         self.creation_date = datetime.now().strftime(self.date_format)
