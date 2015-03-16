@@ -22,14 +22,16 @@ config = report_config.load_config()
 # create choices for report type based on available report template
 allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ]
 
-def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, **kwargs):
+def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pandoc_binary=False, **kwargs):
 
     # Setup
     template_fn = '{}.md'.format(report_type)
     LOG.info('Report type: {}'.format(report_type))
 
+    # Figure out the sequencing node
+    ngi_node = find_ngi_node(ngi_node, working_dir)
+
     # Import the modules for this report type
-    ngi_node = config.get('ngi_reports', 'ngi_node')
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
 
     # Make the report object
@@ -66,7 +68,8 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, **k
             with open('{}.md'.format(output_bn), 'w') as fh:
                 print(output_md, file=fh)
         except IOError as e:
-            raise IOError(e)
+            LOG.error("Error printing markdown report {} - skipping. {}".format(output_md, IOError(e)))
+            continue
 
         # Set path to pandoc
         if pandoc_binary:
@@ -91,9 +94,56 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, **k
     # Change back to previous working dir
     os.chdir(old_cwd)
 
+
+def find_ngi_node(ngi_node='unknown', working_dir=os.getcwd()):
+
+    # 1. Start with the command line variable that overwrites everything
+    if is_valid_ngi_node(ngi_node):
+        return ngi_node.lower()
+
+    # 2. Get from the config file if we can
+    # ngi_reports/common/config.py sets default var if missing to 'unknown'
+    ngi_node = config.get('ngi_reports', 'ngi_node')
+    if is_valid_ngi_node(ngi_node):
+        return ngi_node.lower()
+
+    # 3. Not found in the config, try to get from piper xml file
+    setup_dir = os.path.join(working_dir, 'setup_xml_files')
+    if os.path.isdir(setup_dir):
+        for file in os.listdir(setup_dir):
+            if file.endswith(".xml"):
+                try:
+                    with open(os.path.realpath(file)) as fh:
+                        raw_xml = xmltodict.parse(fh)
+                        seq_centre = raw_xml['project']['metadata']['sequenceingcenter']
+                        if seq_centre == 'NGI-S':
+                            if ngi_node == 'uppsala':
+                                raise RuntimeError ("Piper XML files contained both NGI-S and NGI-U fields. Please specify which with the --ngi_node parameter.")
+                            ngi_node = 'stockholm'
+                        elif uppmax_id == 'NGI-U':
+                            if ngi_node == 'stockholm':
+                                raise RuntimeError ("Piper XML files contained both NGI-S and NGI-U fields. Please specify which with the --ngi_node parameter.")
+                            ngi_node = 'uppsala'
+                except IOError:
+                    pass
+
+    if is_valid_ngi_node(ngi_node):
+        return ngi_node.lower()
+    else:
+        raise RuntimeError ("Could not determine sequencing node or node unrecognised: {} Please pass this in with the --ngi_node paramter.".format(ngi_node))
+
+def is_valid_ngi_node (ngi_node):
+    if ngi_node == 'stockholm' or ngi_node == 'uppsala':
+        return True
+    else:
+        return False
+
+
 # calling main method to generate report
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Make an NGI Report")
+    parser.add_argument("-n", "--ngi_node", dest="ngi_node", default='unknown', choices=['unknown', 'stockholm', 'uppsala'],
+        help="NGI Node. Default: attempts to find out from config file or setup XML files.")
     parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument("-l", "--pandoc_binary", dest="pandoc_binary", action='store_true',

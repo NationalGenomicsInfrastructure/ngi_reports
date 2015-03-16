@@ -39,8 +39,7 @@ class CommonReport(ngi_reports.common.BaseReport):
 
         # Sanity check - make sure that we have some samples
         if len(self.samples) == 0:
-            self.LOG.error('No samples found!')
-            raise IOError
+            raise IOError ('No samples found!')
 
         # Get more info from the filesystem
         self.LOG.info('Parsing QC files')
@@ -123,7 +122,6 @@ class CommonReport(ngi_reports.common.BaseReport):
 
             except:
                 self.LOG.error("Something went wrong with parsing the Qualimap results for sample {}".format(sample_id))
-                raise
 
 
 
@@ -147,22 +145,18 @@ class CommonReport(ngi_reports.common.BaseReport):
                     for line in fh:
                         line = line.strip()
 
-                        # Number_of_variants_before_filter, 4004647
                         if line[:33] == 'Number_of_variants_before_filter,':
                             snpEff['total_snps'] = '{:,}'.format(int(line[34:]))
 
-                        # Number_of_variants_before_filter, 4004647
                         if line[:13] == 'Change_rate ,':
                             snpEff['change_rate'] = '1 change per {:,} bp'.format(int(line[14:]))
 
-                        # Type, Total, Homo, Hetero
-                        # SNP , 4004647 , 1491592 , 2513055
-                        if line[:5] == 'SNP ,':
-                            sections = line.split(',')
-                            snpEff['homotypic_snps'] = '{:,}'.format(int(sections[2].strip()))
-                            snpEff['heterotypic_snps'] = '{:,}'.format(int(sections[3].strip()))
+                        if line[:5] == 'Het ,':
+                            snpEff['heterotypic_snps'] = '{:,}'.format(int(line[6:]))
 
-                        # Type , Count , Percent
+                        if line[:5] == 'Hom ,':
+                            snpEff['homotypic_snps'] = '{:,}'.format(int(line[6:]))
+
                         if line[:10] == 'MISSENSE ,':
                             sections = line.split(',')
                             pc = sections[2].strip()
@@ -184,6 +178,30 @@ class CommonReport(ngi_reports.common.BaseReport):
                             snpEff['percent_silent_SNPs'] = '{:.1f}%'.format(pc)
                             snpEff['silent_SNPs'] = '{:,}'.format(int(sections[1].strip()))
 
+                        if line[:20] == 'synonymous_variant ,':
+                            sections = line.split(',')
+                            synonymous_SNPs += int(sections[1].strip())
+
+                        if line[:13] == 'stop_gained ,':
+                            sections = line.split(',')
+                            snpEff['stops_gained'] = '{:,}'.format(int(sections[1].strip()))
+
+                        if line[:11] == 'stop_lost ,':
+                            sections = line.split(',')
+                            snpEff['stops_lost'] = '{:,}'.format(int(sections[1].strip()))
+
+                        if line[:13] == 'Ts_Tv_ratio ,':
+                            snpEff['TsTv_ratio'] = '{:.3f}'.format(float(line[14:]))
+
+
+                        # ALTERNATIVE BLOCKS FOR OLDER VERSION OF SNPEFF
+                        # Type, Total, Homo, Hetero
+                        # SNP , 4004647 , 1491592 , 2513055
+                        if line[:5] == 'SNP ,':
+                            sections = line.split(',')
+                            snpEff['homotypic_snps'] = '{:,}'.format(int(sections[2].strip()))
+                            snpEff['heterotypic_snps'] = '{:,}'.format(int(sections[3].strip()))
+
                         if line[:10] == 'SYNONYMOUS':
                             sections = line.split(',')
                             synonymous_SNPs += int(sections[1].strip())
@@ -200,13 +218,9 @@ class CommonReport(ngi_reports.common.BaseReport):
                             sections = line.split(',')
                             snpEff['stops_lost'] = '{:,}'.format(int(sections[1].strip()))
 
-                        # Ts_Tv_ratio , 1.989511
-                        if line[:13] == 'Ts_Tv_ratio ,':
-                            snpEff['TsTv_ratio'] = '{:.3f}'.format(float(line[14:]))
 
             except:
                 self.LOG.error("Something went wrong with parsing the snpEff results")
-                raise
 
             if synonymous_SNPs > 0:
                 snpEff['synonymous_SNPs'] = '{:,}'.format(synonymous_SNPs)
@@ -226,14 +240,10 @@ class CommonReport(ngi_reports.common.BaseReport):
             picard_metrics_fn = os.path.realpath(os.path.join(self.working_dir,
                 '05_processed_alignments', '{}.metrics'.format(sample_id)))
             try:
-                synonymous_SNPs = 0
-                nonsynonymous_SNPs = 0
-
                 with open(os.path.realpath(picard_metrics_fn), 'r') as fh:
                     nextLine = False
                     for line in fh:
                         line = line.strip()
-
                         if nextLine is True:
                             parts = line.split("\t")
                             percentDup = float(parts[7])
@@ -242,9 +252,10 @@ class CommonReport(ngi_reports.common.BaseReport):
                         if line == 'LIBRARY	UNPAIRED_READS_EXAMINED	READ_PAIRS_EXAMINED	UNMAPPED_READS	UNPAIRED_READ_DUPLICATES	READ_PAIR_DUPLICATES	READ_PAIR_OPTICAL_DUPLICATES	PERCENT_DUPLICATION	ESTIMATED_LIBRARY_SIZE':
                             nextLine = True
 
+            except IOError:
+                self.LOG.warning("Warning: Could not find Picard metrics file for {}".format(sample_id))
             except:
                 self.LOG.error("Something went wrong with parsing the picard metrics file")
-                raise
 
 
 
@@ -299,7 +310,7 @@ class CommonReport(ngi_reports.common.BaseReport):
             snpEFf_output_rel = os.path.join(plots_dir_rel, '{}_snpEff_effect'.format(sample_id))
             snpEFf_output = os.path.join(plots_dir, '{}_snpEff_effect'.format(sample_id))
             snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
-            self.plots[sample_id]['snpEFf_plot'] = '{}_types'.format(snpEFf_output_rel)
+            self.plots[sample_id]['snpEFf_plot'] = '{}_regions'.format(snpEFf_output_rel)
 
 
 
@@ -354,14 +365,15 @@ class CommonReport(ngi_reports.common.BaseReport):
 
             # check that we have everythin
             if not self.check_fields():
-                raise AttributeError('Some mandatory fields were missing - exiting')
+                self.LOG.error("Some mandatory fields were missing for sample {} - skipping".format(sample_id))
+                continue
 
             # Parse the template
             try:
                 md = template.render(report=self.info, project=self.project, sample=sample, plots=self.plots[sample_id])
                 output_mds[output_bn] = md
             except:
-                self.LOG.error('Could not parse the ign_sample_report template')
-                raise
+                self.LOG.error('Could not parse the ign_sample_report template for sample {} - skipping'.format(sample_id))
+                continue
 
         return output_mds

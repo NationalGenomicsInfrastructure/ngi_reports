@@ -58,6 +58,11 @@ Obviously, if you're working at the Uppsala NGI node, change the `ngi_node` to
 `uppsala` instead of `stockholm`. The `organism_names` section should have
 reference id key - text pairs. This is used to make the report more verbose.
 
+**Note:** In production, `ngi_reports` is run as the `funk` user by both
+Stockholm and Uppsala nodes. Here, the config file should _not_ contain the
+`ngi_node` option. The code will try to guess the node from Piper XML files
+or can be specified with the `--ngi_node` command line parameter.
+
 ## Bash Commands
 To use `ngi_reports` from the command line easily, there are some bash commands
 that you need. These are written into a bash script to make life easy - you need to add

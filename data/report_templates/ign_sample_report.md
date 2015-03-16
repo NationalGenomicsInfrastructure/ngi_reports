@@ -42,7 +42,7 @@ Pooling Reagent
 {% endif %}{% if sample.flowcells %}
 Flow Cells
 :   {% for fc in sample.flowcells %}`{{ fc.id }}`
-    
+
     {% endfor %}
 {% endif %}
 
@@ -72,10 +72,12 @@ GC Content
 
 See below for more information about coverage and insert size. The
 `qualimapReport.html` report in your delivery folder contains additional library
-statistics. Note that the duplication rate above is calculated using
+statistics.
+{% if sample.duplication_rate %}Note that the duplication rate above is calculated using
 [Picard Mark Duplicates](http://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates).
 Qualimap calculates duplicates differently and the figure in
 the report will be different to the Picard result..
+{% endif %}
 
 ## Distribution of sequencing coverage
 Calculating the coverage of a genome tells you how much information you have
@@ -119,7 +121,7 @@ this in the histogram below. This was done using the
 ## Distribution of reads by GC content
 Library preparation and sequencing alignment can be affected by differences in
 GC content. Here, we plot the proportions of the library reads at each GC
-content. The red dotted line shows the profile for the reference genome. 
+content. The red dotted line shows the profile for the reference genome.
 This data was calculated using [QualiMap](http://qualimap.bioinfo.cipf.es/)
 and plotted with an [NGI script](https://github.com/SciLifeLab/visualizations).
 
@@ -129,50 +131,47 @@ and plotted with an [NGI script](https://github.com/SciLifeLab/visualizations).
 
 {% if sample.snpeff %}
 # Variants
-
+{% if sample.snpeff.change_rate %}
 Change Rate
 :   {{ sample.snpeff.change_rate }}
-
+{% endif %}{% if sample.snpeff.total_snps %}
 Total SNPs
 :   {{ sample.snpeff.total_snps }}
-
+{% endif %}{% if sample.snpeff.homotypic_snps %}
 Homotypic SNPs
 :   {{ sample.snpeff.homotypic_snps }}
-
+{% endif %}{% if sample.snpeff.heterotypic_snps %}
 Heterotypic SNPs
 :   {{ sample.snpeff.heterotypic_snps }}
-
+{% endif %}{% if sample.snpeff.TsTv_ratio %}
 Ts/Tv Ratio
 :   {{ sample.snpeff.TsTv_ratio }}
-
+{% endif %}{% if sample.snpeff.synonymous_SNPs %}
 Synonymous SNPs
 :   {{ sample.snpeff.synonymous_SNPs }}
-
+{% endif %}{% if sample.snpeff.nonsynonymous_SNPs %}
 Non-Synonymous SNPs
 :   {{ sample.snpeff.nonsynonymous_SNPs }}
-
+{% endif %}{% if sample.snpeff.stops_gained and sample.snpeff.stops_lost %}
 Stop Gained / Lost
 :   {{ sample.snpeff.stops_gained }} / {{ sample.snpeff.stops_lost }}
-
+{% endif %}{% if sample.snpeff.percent_missense_SNPs and sample.snpeff.missense_SNPs %}
 Missense SNPs
 :   {{ sample.snpeff.percent_missense_SNPs }}  -   {{ sample.snpeff.missense_SNPs }}
-
+{% endif %}{% if sample.snpeff.percent_nonsense_SNPs and sample.snpeff.nonsense_SNPs %}
 Nonsense SNPs
 :   {{ sample.snpeff.percent_nonsense_SNPs }}  -   {{ sample.snpeff.nonsense_SNPs }}
-
+{% endif %}{% if sample.snpeff.percent_silent_SNPs and sample.snpeff.silent_SNPs %}
 Silent SNPs
 :   {{ sample.snpeff.percent_silent_SNPs }}  -   {{ sample.snpeff.silent_SNPs }}
-
+{% endif %}
 Different effects can be attributed to each SNP depending on where it occurs.
 Here we have used the [snpEff](http://snpeff.sourceforge.net/) tool to
 categorise and count different effects. The results were plotted with an
 [NGI script](https://github.com/SciLifeLab/visualizations).
 
-![Insert Sizes]({{ plots.snpEFf_plot }})\
+![snpEff - Effect Regions]({{ plots.snpEFf_plot }})\
 
 See the `snpEff_summary.html` report in your delivery folder for more details.
 
 {% endif %}
-
-
-

@@ -14,14 +14,14 @@ from ngi_reports.common import project_summary
 from statusdb.db import connections as statusdb
 
 class Report(project_summary.CommonReport):
-    
+
     ## initialize class and assign basic variables
     def __init__(self, config, LOG, working_dir, **kwargs):
-        
+
         # Initialise the parent class
         # This will grab info from the Piper XML files if found
         super(Report, self).__init__(config, LOG, working_dir, **kwargs)
-        
+
         # Project name - collect from the command line if we have it
         if kwargs.get('project') is not None:
             self.project_info['ngi_name'] = kwargs['project']
@@ -32,10 +32,10 @@ class Report(project_summary.CommonReport):
             except KeyError:
                 self.LOG.error("No project name found - please specify using '--project'")
                 raise KeyError("No project name found - please specify using '--project'")
-        
+
         # Report filename
         self.report_fn = "{}_project_summary".format(self.project_info['ngi_name'])
-        
+
         # Get connections to the databases in StatusDB
         self.LOG.info("Connecting to statusDB...")
         pcon = statusdb.ProjectSummaryConnection(**kwargs)
@@ -45,13 +45,13 @@ class Report(project_summary.CommonReport):
         scon = statusdb.SampleRunMetricsConnection(**kwargs)
         assert scon, "Could not connect to {} database in StatusDB".format("samples")
         self.LOG.info("...connected")
-        
+
         # Get the project from statusdb
         self.proj = pcon.get_entry(self.project_info['ngi_name'])
         if not self.proj:
             self.LOG.error("No such project '{}'".format(self.project_info['ngi_name']))
             raise KeyError
-            
+
         # Bail If the data source is not lims (old projects)
         if self.proj.get('source') != 'lims':
             self.LOG.error("The source for data for project {} is not LIMS.".format(self.project_info['ngi_name']))
@@ -71,14 +71,14 @@ class Report(project_summary.CommonReport):
         self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], '')
         self.project_info['user_ID'] = self.proj_details.get('customer_project_reference')
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
-        self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id');
+        self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id')
         self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'])
         self.project_info['ordered_reads'] = self.get_ordered_reads()
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['status'] = "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing"
         self.project_info['library_construction'] = self.proj_details.get('library_construction_method')
         self.project_info['flowcells_run'] = []
-        
+
         # Collect information about the sample preps
         for sample_id, sample in sorted(self.proj.get('samples', {}).iteritems()):
             self.LOG.info('Processing sample {}'.format(sample_id))
@@ -88,7 +88,7 @@ class Report(project_summary.CommonReport):
             self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)')
             self.samples_info[sample_id]['preps'] = {}
             self.samples_info[sample_id]['flowcell'] = []
-            
+
             ## Get sample objects from statusdb
             s_ids = []
             for sample_run_doc in scon.get_project_sample(sample_id, sample_prj=self.project_info['ngi_name']):
@@ -98,7 +98,7 @@ class Report(project_summary.CommonReport):
                 if fc not in self.project_info['flowcells_run']:
                     self.project_info['flowcells_run'].append(fc)
                 s_ids.append(sample_run_doc.get("_id"))
-            
+
             # Go through each prep in the Projects database
             for prep_id, prep in sample.get('library_prep', {}).iteritems():
                 for fc_name, lane in prep.get('sample_run_metrics', {}).iteritems():
@@ -119,7 +119,7 @@ class Report(project_summary.CommonReport):
                                 self.LOG.warn('Project DB sample_run_metrics document id {} for run {} not found in the samples database!'.format(doc_id, fc_name))
                         else:
                             self.LOG.warn("No sample_run_metrics document for run {} with id {} found in samples database!".format(fc_name, doc_id))
-            
+
             ## Warn if any aren't also mentioned in the statusdb project
             for s_id in s_ids:
                 self.LOG.error("sample_run_metrics document ({}) found for sample {} but no corresponding entry in project database. \
@@ -143,20 +143,28 @@ class Report(project_summary.CommonReport):
             ## to make sure the sequencing methods are uniq
             if tmp_method not in seq_method_info:
                 seq_method_info.append(tmp_method)
-            
+
         ## give proper section name for the methods
         seq_method_info = [seq_method_info[c].replace("SECTION",alphabets[c]) for c in range(len(seq_method_info))]
         self.project_info['sequencing_methods'] = "\n\n".join(seq_method_info)
 
-        
-        
-        
-       
-        
 
-        
-        
-        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def get_ordered_reads(self):
         """ Get the minimum ordered reads for this project or return None
         """
@@ -172,8 +180,8 @@ class Report(project_summary.CommonReport):
             return ", ".join(list(set(reads_min)))
         else:
             return None
-    
-    
+
+
     def get_order_dates(self):
         """ Get order dates as a markdown string. Ignore if unavilable in status DB
         """
@@ -191,4 +199,3 @@ class Report(project_summary.CommonReport):
         if self.creation_date:
             dates.append("_Report date:_ {}".format(self.creation_date))
         return ", ".join(dates)
-    

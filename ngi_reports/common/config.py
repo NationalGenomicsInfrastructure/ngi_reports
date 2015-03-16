@@ -11,7 +11,7 @@ def load_config(config_file=None):
     try:
         if not config_file:
             config_file = os.path.join(os.environ.get('HOME'), '.ngi_config', 'ngi_reports.conf')
-        config = ConfigParser.SafeConfigParser()
+        config = ConfigParser.SafeConfigParser({'ngi_node': 'unknown'})
         with open(config_file) as f:
             config.readfp(f)
         return config
