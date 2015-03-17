@@ -246,8 +246,8 @@ class CommonReport(ngi_reports.common.BaseReport):
                         line = line.strip()
                         if nextLine is True:
                             parts = line.split("\t")
-                            percentDup = float(parts[7])
-                            self.samples[sample_id]['duplication_rate'] = '{:.3f}%'.format(percentDup)
+                            percentDup = float(parts[7]) * 100
+                            self.samples[sample_id]['duplication_rate'] = '{:.2f}%'.format(percentDup)
                             nextLine = False
                         if line == 'LIBRARY	UNPAIRED_READS_EXAMINED	READ_PAIRS_EXAMINED	UNMAPPED_READS	UNPAIRED_READ_DUPLICATES	READ_PAIR_DUPLICATES	READ_PAIR_OPTICAL_DUPLICATES	PERCENT_DUPLICATION	ESTIMATED_LIBRARY_SIZE':
                             nextLine = True
