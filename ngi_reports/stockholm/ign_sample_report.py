@@ -22,8 +22,7 @@ class Report(ign_sample_report.CommonReport):
         self.LOG.info('Connecting to statusDB...')
         pcon = statusdb.ProjectSummaryConnection()
         assert pcon, "Could not connect to project database in StatusDB"
-        proj = pcon.get_entry(self.project['id'])
-        self.LOG.info('...connected')
+        proj = pcon.get_entry(self.project['id'], use_id_view=True)
 
         if proj is not None:
             self.info['recipient'] = proj.get('contact')
