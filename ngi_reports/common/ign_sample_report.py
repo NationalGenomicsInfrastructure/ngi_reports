@@ -7,6 +7,7 @@ import jinja2
 import os
 import re
 from datetime import datetime
+import re
 
 import ngi_reports.common
 from ngi_visualizations.qualimap import coverage_histogram, genome_fraction_coverage, insert_size, gc_distribution
@@ -14,7 +15,7 @@ from ngi_visualizations.snpEff import snpEff_plots
 
 class CommonReport(ngi_reports.common.BaseReport):
 
-    def __init__(self, config, LOG, working_dir, **kwargs):
+    def __init__(self, config, LOG, working_dir, create_plots=True, **kwargs):
 
         # Initialise the parent class
         super(CommonReport, self).__init__(config, LOG, working_dir, **kwargs)
@@ -35,7 +36,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.report_dir = os.path.join('delivery', 'reports')
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
         self.info['date'] = datetime.today().strftime('%Y-%m-%d')
-        self.project['sequencing_centre'] = 'NGI {}'.format(self.ngi_node.title())
+        self.project['sequencing_centre'] = 'NGI {}'.format(config.get('ngi_reports', 'ngi_node'))
 
         # Sanity check - make sure that we have some samples
         if len(self.samples) == 0:
@@ -48,8 +49,9 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.parse_picard_metrics()
 
         # Plot graphs
-        self.LOG.info('Plotting graphs')
-        self.make_plots()
+        if create_plots:
+            self.LOG.info('Plotting graphs')
+            self.make_plots()
 
 
 
@@ -71,22 +73,27 @@ class CommonReport(ngi_reports.common.BaseReport):
                     for line in fh:
                         line = line.strip()
 
+                        def get_after_equals(s):
+                            after_equal_pattern = re.compile(".*=(.*)")
+                            return after_equal_pattern.match(s).group(1).strip()
+
                         # number of reads = 908,585,160
                         if line[:17] == 'number of reads =':
-                            self.samples[sample_id]['total_reads'] = line[18:]
+                            self.samples[sample_id]['total_reads'] = get_after_equals(line)
 
                         # number of mapped reads = 903,806,933 (99.47%)
                         if line[:24] == 'number of mapped reads =':
-                            self.samples[sample_id]['percent_aligned'] = line[-7:-1]
-                            self.samples[sample_id]['aligned_reads'] = line[25:-9]
+                            pattern = re.compile(".*=(.*)\s\((.*)\)")
+                            self.samples[sample_id]['percent_aligned'] = pattern.match(line).group(1).strip()
+                            self.samples[sample_id]['aligned_reads'] = pattern.match(line).group(2).strip()
 
                         # GC percentage = 39.87%
                         if line[:15] == 'GC percentage =':
-                            self.samples[sample_id]['percent_gc'] = line[-6:]
+                            self.samples[sample_id]['percent_gc'] = get_after_equals(line)
 
                         # mean coverageData = 29.04X
                         if line[:19] == 'mean coverageData =':
-                            self.samples[sample_id]['mean_coverage'] = line[20:-1]
+                            self.samples[sample_id]['mean_coverage'] = get_after_equals(line)
 
                         # There is a 51.72% of reference with a coverageData >= 30X
                         if line[-39:] == 'of reference with a coverageData >= 30X':
