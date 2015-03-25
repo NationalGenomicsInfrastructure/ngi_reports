@@ -84,8 +84,8 @@ class CommonReport(ngi_reports.common.BaseReport):
                         # number of mapped reads = 903,806,933 (99.47%)
                         if line[:24] == 'number of mapped reads =':
                             pattern = re.compile(".*=(.*)\s\((.*)\)")
-                            self.samples[sample_id]['percent_aligned'] = pattern.match(line).group(1).strip()
-                            self.samples[sample_id]['aligned_reads'] = pattern.match(line).group(2).strip()
+                            self.samples[sample_id]['percent_aligned'] = pattern.match(line).group(2).strip()
+                            self.samples[sample_id]['aligned_reads'] = pattern.match(line).group(1).strip()
 
                         # GC percentage = 39.87%
                         if line[:15] == 'GC percentage =':
