@@ -88,10 +88,13 @@ class Report(project_summary.CommonReport):
             self.LOG.info('Processing sample {}'.format(sample_id))
             ## Basic fields from Project database
             self.samples_info[sample_id] = {'ngi_id': sample_id}
-            self.samples_info[sample_id]['customer_name'] = sample.get('customer_name')
-            self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)')
-            self.samples_info[sample_id]['seq_status'] = ['FAIL','PASS'][float(self.samples_info[sample_id]['total_reads']) > \
+            self.samples_info[sample_id]['customer_name'] = sample.get('customer_name','')
+            self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)','')
+            if self.project_info['ordered_reads']:
+                self.samples_info[sample_id]['seq_status'] = ['FAIL','PASS'][float(self.samples_info[sample_id]['total_reads']) > \
                                                                          float(self.project_info['ordered_reads'].replace('M',''))]
+            else:
+                self.samples_info[sample_id]['seq_status'] = None
             self.samples_info[sample_id]['preps'] = {}
             self.samples_info[sample_id]['flowcell'] = []
 
@@ -110,15 +113,15 @@ class Report(project_summary.CommonReport):
             for prep_id, prep in sample.get('library_prep', {}).iteritems():
                 # If we have sample_run_metrics then it should have been sequenced
                 self.samples_info[sample_id]['preps'][prep_id] = {'label': prep_id }
-                self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label')
-                self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status')
+                self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label','')
+                self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status','')
                 #get average fragment size from lastest validation step if exists
                 try:
                     lib_valids = prep['library_validation']
                     keys = sorted(lib_valids.keys(), key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
                     self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = lib_valids[keys[0]]['average_size_bp']
                 except KeyError:
-                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = None
+                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = ''
             
         ## Collect reuired information for all flowcell run for the project
         for fc in self.flowcell_info.values():
@@ -156,8 +159,11 @@ class Report(project_summary.CommonReport):
                         continue
                     ## to put in a empty dict for the first time
                     sample_qval[sample] = sample_qval.get(sample,{})
-                    sample_qval[sample]['{}_{}'.format(lane, fc_nm)] = {'qval': float(stat.get('% of >= Q30 Bases (PF)')),
+                    try:
+                        sample_qval[sample]['{}_{}'.format(lane, fc_nm)] = {'qval': float(stat.get('% of >= Q30 Bases (PF)')),
                                                                         'bases': int(stat.get('# Reads').replace(',',''))*int(run_setup.split('x')[-1])}
+                    except TypeError:
+                        pass
                     # collect lanes to proceed later
                     if lane not in self.flowcell_info[fc_name]['lanes']:
                         self.flowcell_info[fc_name]['lanes'][lane] = {'id': lane}
@@ -182,7 +188,7 @@ class Report(project_summary.CommonReport):
                 self.samples_info[sample]['qscore'] = round(sum([(qinfo[k]['qval']/100)*qinfo[k]['bases'] for k in qinfo])*100/sum([qinfo[k]['bases'] for k in qinfo]), 2)
             except TypeError:
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
-                self.samples_info[sample]['qscore'] = None
+                self.samples_info[sample]['qscore'] = ''
 
 
     #####################################################
@@ -274,4 +280,4 @@ class Report(project_summary.CommonReport):
             v = np.mean([float(lane_info.get('{} R{}'.format(key, str(r)))) for r in range(1,int(reads)+1)])
             return str(int(v/1000000)) if as_million else str(round(v,2))
         except TypeError:
-            return None
+            return ''
