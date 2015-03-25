@@ -13,23 +13,14 @@ import csv
 
 from ngi_reports.log import loggers
 from ngi_reports.common import config as report_config
-from ngi_reports.common import ign_sample_report as common_report
+from ngi_reports.common import utils
+from ngi_reports.common import basic_report
 
 LOG = loggers.minimal_logger('NGI Aggregate Reports')
 config = report_config.load_config()
 
 
-def create_aggregate_statics (output_file, working_dir=os.getcwd(), **kwargs):
-
-    def flatten(d, parent_key="", sep="."):
-        items = []
-        for k, v in d.items():
-            new_key = "{}{}{}".format(parent_key, sep, k) if parent_key else k
-            if isinstance(v, collections.MutableMapping):
-                items.extend(flatten(v, new_key, sep=sep).items())
-            else:
-                items.append((new_key, v))
-        return dict(items)
+def create_aggregate_statics (output_file="aggregate_report.csv", working_dir=os.getcwd(), **kwargs):
 
     def create_header (samples):
         all_keys = samples.values()[0].keys()
@@ -40,10 +31,10 @@ def create_aggregate_statics (output_file, working_dir=os.getcwd(), **kwargs):
             yield samples[sample].values()
 
     # Make the report object
-    report = common_report.CommonReport(config, LOG, working_dir, create_plots=False, **kwargs)
+    report = basic_report.Report(config, LOG, working_dir, **kwargs)
 
     # Flatten out the dict to make it writable as a csv
-    flattened_samples = { sample : collections.OrderedDict(flatten(report.samples[sample])) \
+    flattened_samples = { sample : collections.OrderedDict(utils.flatten_dict(report.samples[sample])) \
                             for sample in report.samples } 
   
     # Parse out the data
@@ -51,7 +42,7 @@ def create_aggregate_statics (output_file, working_dir=os.getcwd(), **kwargs):
     rows = create_rows(flattened_samples)
 
     LOG.info("Writing aggregate report to: " + output_file)
-    
+
     # Drop it to a csv
     with open(output_file, 'wb') as csvfile:
         writer = csv.writer(csvfile, delimiter="\t")
@@ -68,6 +59,8 @@ if __name__ == "__main__":
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument("-o", "--output_file", dest="output_file", default="aggregate_report.csv",
         help="The output file to write the report to. Default: aggregate_report.csv")
+    parser.add_argument("-n", "--node", dest="ngi_node", default="unknown",
+        help="The ngi node the project was run at. Default: unknown")
 
     kwargs = vars(parser.parse_args())
 

@@ -36,7 +36,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.report_dir = os.path.join('delivery', 'reports')
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
         self.info['date'] = datetime.today().strftime('%Y-%m-%d')
-        self.project['sequencing_centre'] = 'NGI {}'.format(config.get('ngi_reports', 'ngi_node'))
+        self.project['sequencing_centre'] = 'NGI {}'.format(self.ngi_node.title())
 
         # Sanity check - make sure that we have some samples
         if len(self.samples) == 0:
@@ -72,8 +72,7 @@ class CommonReport(ngi_reports.common.BaseReport):
                         line = line.strip()
 
                         def get_after_equals(s):
-                            after_equal_pattern = re.compile(".*=(.*)")
-                            return after_equal_pattern.match(s).group(1).strip()
+                            return s.split("=", 1)[1].strip()
 
                         # number of reads = 908,585,160
                         if line[:17] == 'number of reads =':
@@ -125,8 +124,8 @@ class CommonReport(ngi_reports.common.BaseReport):
                             quartiles = line[18:-5].split('/',3)
                             self.samples[sample_id]['median_insert_size'] = quartiles[1].strip()
 
-            except:
-                self.LOG.error("Something went wrong with parsing the Qualimap results for sample {}".format(sample_id))
+            except Exception as e:
+                self.LOG.error("Something went wrong with parsing the Qualimap results for sample {}:\n{}".format(sample_id, e))
 
 
 
