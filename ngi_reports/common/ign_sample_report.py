@@ -15,7 +15,7 @@ from ngi_visualizations.snpEff import snpEff_plots
 
 class CommonReport(ngi_reports.common.BaseReport):
 
-    def __init__(self, config, LOG, working_dir, create_plots=True, **kwargs):
+    def __init__(self, config, LOG, working_dir, **kwargs):
 
         # Initialise the parent class
         super(CommonReport, self).__init__(config, LOG, working_dir, **kwargs)
@@ -48,10 +48,8 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.parse_snpeff()
         self.parse_picard_metrics()
 
-        # Plot graphs
-        if create_plots:
-            self.LOG.info('Plotting graphs')
-            self.make_plots()
+        self.LOG.info('Plotting graphs')
+        self.make_plots()
 
 
 
