@@ -19,6 +19,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         # general initialization
         self.project_info = {}
         self.samples_info = {}
+        self.flowcell_info = {}
         
         # report name and directory to be created
         self.report_dir = os.path.join(working_dir, 'reports')
@@ -39,7 +40,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         
         # Parse the template
         try:
-            md = template.render(project=self.project_info, samples=self.samples_info)
+            md = template.render(project=self.project_info, samples=self.samples_info, flowcells=self.flowcell_info)
             return {output_bn: md}
         except:
             self.LOG.error('Could not parse the ign_sample_report template')
