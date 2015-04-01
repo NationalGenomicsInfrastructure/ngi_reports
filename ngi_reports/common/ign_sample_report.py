@@ -3,6 +3,8 @@
 """ Main module for dealing with fields for the IGN Sample Report
 """
 
+import csv
+import collections
 import jinja2
 import os
 import re
@@ -34,6 +36,8 @@ class CommonReport(ngi_reports.common.BaseReport):
 
         # Self-sufficient Fields
         self.report_dir = os.path.join('delivery', 'reports')
+        if not os.path.exists(self.report_dir):
+            os.makedirs(self.report_dir)
         self.info['support_email'] = config.get('ngi_reports', 'support_email')
         self.info['date'] = datetime.today().strftime('%Y-%m-%d')
         self.project['sequencing_centre'] = 'NGI {}'.format(self.ngi_node.title())
@@ -47,6 +51,8 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.parse_qualimap()
         self.parse_snpeff()
         self.parse_picard_metrics()
+
+        self.create_aggregate_statistics()
 
         self.LOG.info('Plotting graphs')
         self.make_plots()
@@ -263,6 +269,41 @@ class CommonReport(ngi_reports.common.BaseReport):
 
 
 
+    # Create CSV files with aggregate stats for samples
+    def create_aggregate_statistics (self):
+
+        def create_header (samples):
+            return samples.values()[0].keys()
+
+        def create_rows (samples):
+            for sample in samples.keys():
+                yield samples[sample].values()
+
+        output_fn = "{}_aggregate_report.csv".format(self.project['id'])
+        output_file = os.path.realpath(os.path.join(self.report_dir, output_fn))
+
+        # Flatten out the dict to make it writable as a csv
+        flattened_samples = {}
+        for sample in self.samples:
+            flattened = self.flatten_dict(self.samples[sample])
+            flattened_samples[sample] = collections.OrderedDict(flattened)
+
+        # Parse out the data
+        header = create_header(flattened_samples)
+        rows = create_rows(flattened_samples)
+
+        self.LOG.info("Writing aggregate report to: " + output_file)
+
+        # Drop it to a csv
+        with open(output_file, 'wb') as csvfile:
+            writer = csv.writer(csvfile, delimiter="\t")
+            writer.writerow(header)
+            for row in rows:
+                writer.writerow(row)
+
+
+
+    # Plot the parsed data for the reports
     def make_plots(self):
         """ Plot the visualizations for the IGN sample report
         """
