@@ -3,6 +3,7 @@ Place for code common to both Stockholm and Uppsala NGI Nodes.
 eg. Information retrieval from the filesystem or Charon
 """
 
+import collections
 import os
 import xmltodict
 from datetime import datetime
@@ -82,3 +83,20 @@ class BaseReport(object):
                     pass
 
         return {'project': project, 'samples': samples}
+
+
+    def flatten_dict(self, d, parent_key="", sep="."):
+        """
+        Flattens a dict by concatinating the keys
+        seperated by the specified separator (sep) until it finds a value.
+        Optionally it adds parent_key as a prefix.
+        E.g. {my : {nested: {key: value}}} -> "my.nested.key: value"
+        """
+        items = []
+        for k, v in d.iteritems():
+            new_key = "{}{}{}".format(parent_key, sep, k) if parent_key else k
+            if isinstance(v, collections.MutableMapping):
+                items.extend(self.flatten_dict(v, new_key, sep=sep).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
