@@ -17,6 +17,11 @@ NGI Project Name
 NGI Project ID
 :   {{ project.ngi_id }}
 
+{% if project.ngi_facility %}
+NGI Facility
+:   Genomics {{ project.ngi_facility }} Stockholm
+{% endif %}
+
 User Contact
 :   [{{ project.contact }}](mailto:{{ project.contact }})
 
@@ -49,7 +54,7 @@ Minimum ordered reads
 
 ### Library construction
 
-{{ project.library_construction }}. Clustering was done using an [Illumina cBot](http://products.illumina.com/products/cbot.html).
+{{ project.library_construction }}
 
 ### Sequencing
 {{ project.sequencing_methods }}
@@ -71,48 +76,63 @@ This means that our services are subject to highly stringent quality control pro
 so that you can be sure that your data is of excellent quality.
 
 Library preparation
-:   [cross] Not Swedac Accredited
+:   {{ project.accredit.library_preparation }}
 
 Sequencing data
-:   [tick] Swedac Accredited
+:   {{ project.accredit.sequencing }}
 
-Data flow
-:   [tick] Swedac Accredited
+Data Processing
+:   {{ project.accredit.data_processing }}
 
-Data processing
-:   [tick] Swedac Accredited
+Data Analysis
+:   {{ project.accredit.data_analysis }}
 
 # Sample Info
 
-NGI ID | User ID | Index | Lib Prep | Lib QC
--------|---------|-------|----------|--------
+NGI ID | User ID | Mreads | >=Q30(%) | Status
+-------|---------|--------|----------|--------
+{% for sample in samples.values()  -%}
+{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} | {{ sample.seq_status }}
+{%- endfor %}
+
+* _NGI ID:_ Internal id used within NGI to refer a sample
+* _User ID:_ User submitted name for a sample
+* _Mreads:_ Total million reads (or pairs) for a sample
+* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
+* _Status:_ Sequencing status of sample based on the total reads
+
+# Library Info
+
+NGI ID | Index | Lib Prep | Avg. FS | Lib QC
+-------|-------|----------|---------|--------
 {% for sample in samples.values()  -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.qc_status }}
+{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
 {%- endfor %}
 
+* _NGI ID:_ Internal id used within NGI to refer a sample
+* _Index:_ Barcode sequence used for the sample
+* _Lib Prep:_ ID (alphabatical number) of library prep made.
+* _Avg. FS:_ Average fragment size of the library.
 * _Lib QC:_ Reception control library quality control step
 
-# Yield Overview
+# Lanes Info
 
-Sample | Avg. FS | &ge; Q30 | # Reads | Status
--------|--------:|---------:|--------:|-------
-P955_101b | 350 bp | 59.34% | 105.66 M | Passed
+Date | FC id | Lane | Cluster(M) | >=Q30(%) | Phix | Method
+-----|-------|------|------------|----------|------|--------
+{% for fc in flowcells.values() -%}
+{% for lane in fc.lanes.values() -%}
+{{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | {{ fc.seq_meth }}
+{% endfor -%}
+{%- endfor %}
 
-* _Avg. FS:_ Average fragment size.
-* _&ge; Q30:_ Percentage of bases above quality score Q30 for the sample.
-* _# Reads:_ Millions of reads sequenced.
-
-# Run Info
-Date | FC id | Lane | Clusters | % PhiX | &ge; Q30| % Unique | Method
------|-------|------|---------:|-------:|--------:|---------:|--------
-2014-01-23 | `B-H8A63ADXX` | 1 | 66.88 M | 0.52% | 58.70% | 80.51% | A
-2014-01-23 | `B-H8A63ADXX` | 2 | 65.89 M | 0.56% | 57.15% | 78.32% | A
-
-* _FC id:_ Flow cell position and ID.
-* _&ge; Q30:_ Percentage of bases above quality score Q30 on the lane.
-* _Unique:_ Percentage of reads recovered after demultiplexing.
+* _Date:_ Date of sequencing
+* _FC id:_ Name/id of flowcell sequenced
+* _Lane:_ Lane id for the flowcell
+* _Clusters:_ Number of clusters in million for passed filter reads.
+* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
+* _Phix:_ Average Phix error rate for the lane
 * _Method:_ Sequencing method used. See above for description.
 
 # General Information
@@ -148,7 +168,7 @@ If you have questions regarding UPPNEX, please contact
 
 ## Acknowledgements
 
-In publications based on data from the work covered by this contract,
+In publications based on data from the work covered by this agreement,
 the authors must acknowledge SciLifeLab, NGI and Uppmax:
 
 > The authors would like to acknowledge support from Science for Life Laboratory,
