@@ -377,11 +377,11 @@ class CommonReport(ngi_reports.common.BaseReport):
         project_fields = ['id', 'sequencing_centre', 'sequencing_platform', 'ref_genome']
 
         for f in report_fields:
-            if f not in self.info.keys():
+            if not self.info.has_key(f):
                 self.LOG.error('Mandatory report field missing: {}'.format(f))
                 return False
         for f in project_fields:
-            if f not in self.project.keys():
+            if not self.project.has_key(f):
                 import json
                 print(json.dumps(self.project, indent=4))
                 self.LOG.error('Mandatory project field missing: {}'.format(f))
@@ -396,11 +396,11 @@ class CommonReport(ngi_reports.common.BaseReport):
         plot_fields = ['coverage_plot', 'cov_frac_plot', 'insert_size_plot', 'gc_dist_plot', 'snpEFf_plot']
 
         for f in sample_fields:
-            if f not in self.samples[sample_id].keys():
+            if not self.samples[sample_id].has_key(f):
                 self.LOG.error("Missing mandatory sample field '{}' for sample '{}'. Skipping sample.".format(f, sample_id))
                 return False
         for f in plot_fields:
-            if f not in self.plots[sample_id].keys():
+            if not self.plots[sample_id].has_key(f):
                 self.LOG.error("Missing mandatory plot field '{}' for sample '{}'. Skipping sample.".format(f, sample_id))
                 return False
         return True
