@@ -17,10 +17,10 @@ NGI Project Name
 NGI Project ID
 :   {{ project.ngi_id }}
 
-{% if project.ngi_facility %}
+{% if project.ngi_facility -%}
 NGI Facility
 :   Genomics {{ project.ngi_facility }} Stockholm
-{% endif %}
+{%- endif %}
 
 User Contact
 :   [{{ project.contact }}](mailto:{{ project.contact }})
@@ -28,11 +28,10 @@ User Contact
 NGI Application Type
 :   {{ project.application }} _({% if project.best_practice %}including best practice analysis{% else %}no best practice analysis{% endif %})_
 
+{% if project.num_samples -%}
 Samples &amp; Lanes
-:   {{ project.num_samples }} sample{% if project.num_samples > 1 %}s{% endif %}, {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}
-
-Project Status
-:   {{ project.status }}
+:   {{ project.num_samples }} sample{% if project.num_samples > 1 %}s{% endif %}{% if project.num_lanes -%}, {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}{% endif %}
+{%- endif %}
 
 Order Dates
 :   {{ project.dates }}
@@ -42,22 +41,28 @@ UPPMAX Project ID
 
 UPPNEX project path
 :   `{{ project.UPPMAX_path }}`
-{% if project.reference.genome %}
+
+{% if project.reference.genome -%}
 Reference Genome
 :   {{ project.reference.organism}} ({{ project.reference.genome }})
-{% endif %}{% if project.ordered_reads %}
+{%- endif %}
+
+{% if project.ordered_reads -%}
 Minimum ordered reads
 :   {{ project.ordered_reads }}
-{% endif %}
+{%- endif %}
  
 # Methods
 
+{% if project.library_construction -%}
 ### Library construction
-
 {{ project.library_construction }}
+{%- endif %}
 
+{% if project.sequencing_methods -%}
 ### Sequencing
 {{ project.sequencing_methods }}
+{%- endif %}
 
 ### Data Flow
 Raw sequencing data is demultiplexed and converted to FastQ on site before 
@@ -88,27 +93,35 @@ Data Analysis
 :   {{ project.accredit.data_analysis }}
 
 # Sample Info
-
-NGI ID | User ID | Mreads | >=Q30(%) | Status
--------|---------|--------|----------|--------
-{% for sample in samples.values()  -%}
-{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} | {{ sample.seq_status }}
-{%- endfor %}
+{% if samples %}
+NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
+-------|---------|--------|----------{% if project.ordered_reads %}|-------- {% endif %}
+{% for sample in samples.values() -%}
+{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
+{% endfor %}
 
 * _NGI ID:_ Internal id used within NGI to refer a sample
 * _User ID:_ User submitted name for a sample
 * _Mreads:_ Total million reads (or pairs) for a sample
 * _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
+{% if project.ordered_reads -%}
 * _Status:_ Sequencing status of sample based on the total reads
+{%- endif %}
+{% else %}
+No sample info to be displayed.
+{% endif %}
+
 
 # Library Info
-
+{% if project.missing_prep != samples|length %}
 NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 -------|-------|----------|---------|--------
 {% for sample in samples.values()  -%}
+{% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
 {{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
+{% endif -%}
 {%- endfor %}
 
 * _NGI ID:_ Internal id used within NGI to refer a sample
@@ -116,9 +129,13 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 * _Lib Prep:_ ID (alphabatical number) of library prep made.
 * _Avg. FS:_ Average fragment size of the library.
 * _Lib QC:_ Reception control library quality control step
+{% else %}
+No library info to be displayed.
+{% endif %}
+
 
 # Lanes Info
-
+{% if not project.missing_fc %}
 Date | FC id | Lane | Cluster(M) | >=Q30(%) | Phix | Method
 -----|-------|------|------------|----------|------|--------
 {% for fc in flowcells.values() -%}
@@ -134,6 +151,19 @@ Date | FC id | Lane | Cluster(M) | >=Q30(%) | Phix | Method
 * _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
 * _Phix:_ Average Phix error rate for the lane
 * _Method:_ Sequencing method used. See above for description.
+{% else %}
+No lanes info to be displayed
+{% endif %}
+
+{% if project.aborted_samples %}
+# Aborted/Not Sequenced samples
+
+NGI ID | User ID | Status
+-------|---------|-------
+{% for sample, info in project.aborted_samples.iteritems() -%}
+{{ sample }} | {{ info.user_id }} | {{ info.status }}
+{% endfor -%}
+{% endif %}
 
 # General Information
 
@@ -159,7 +189,6 @@ UPPNEX project, which was created for you when your order was placed:
 ```
 {{ project.UPPMAX_path }}
 ```
-
 
 If you have problems accessing your data, please contact SciLifeLab
 [genomics_support@scilifelab.se](mailto: genomics_support@scilifelab.se).

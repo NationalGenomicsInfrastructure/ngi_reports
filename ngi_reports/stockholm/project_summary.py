@@ -10,6 +10,7 @@ import os
 import re
 import numpy as np
 from datetime import datetime
+from collections import OrderedDict
 from string import ascii_uppercase as alphabets
 from ngi_reports.common import project_summary
 from statusdb.db import connections as statusdb
@@ -47,7 +48,7 @@ class Report(project_summary.CommonReport):
         scon = statusdb.SampleRunMetricsConnection(**kwargs)
         assert scon, "Could not connect to {} database in StatusDB".format("samples")
         self.LOG.info("...connected")
-
+        
         ## Get the project from statusdb
         self.proj = pcon.get_entry(self.project_name)
         if not self.proj:
@@ -60,9 +61,18 @@ class Report(project_summary.CommonReport):
             raise BaseException
 
         ## Helper vars
-        seq_methods, sample_qval = ({}, {})
+        seq_methods, sample_qval = (OrderedDict(), {})
         self.proj_details = self.proj.get('details',{})
-
+        
+        ## Check if it is an aborted project before proceding
+        if "aborted" in self.proj_details:
+            self.LOG.warn("Project {} was aborted, so not proceeding.".format(self.project_name))
+            raise SystemExit
+        
+        ## log file for testing purpose to be removed in the end
+        missing_log = open('missing_stat/{}_project_summary.log'.format(self.project_name),'w')
+        missing_log.write("project\t{}\n".format(self.project_name))
+        
         ## Get information for the reports from statusdb
         self.project_info['ngi_id'] = self.proj.get('project_id')
         self.project_info['ngi_facility'] = self.proj_details.get('type')
@@ -77,24 +87,52 @@ class Report(project_summary.CommonReport):
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
         self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id')
         self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'])
-        self.project_info['ordered_reads'] = self.get_ordered_reads()
+        self.project_info['ordered_reads'] = [] #self.get_ordered_reads()
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['status'] = "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing"
         self.project_info['library_construction'] = self.get_library_method()
         self.project_info['accredit'] = self.get_accredit_info(['library_preparation','sequencing','data_processing','data_analysis'])
+        self.project_info['missing_prep'] = 0
+        self.project_info['missing_fc'] = False
+        self.project_info['aborted_samples'] = {}
 
-        ## Collect information about the sample preps
+        ## test purpose for missing keys, to be removed at last
+        missing_log.write("application\t{}\n".format(self.project_info['application']))
+        missing_log.write("open_date\t{}\n".format(self.proj.get('open_date')))
+        missing_log.write("close_date\t{}\n".format(self.proj.get('close_date')))
+        missing_log.write("keys_project\n")
+        missing_log.write("uppmax_id\t{}\n".format("yes" if self.project_info['UPPMAX_id'] else "no"))
+        missing_log.write("library_meth\t{}\n".format("yes" if self.project_info['library_construction'] else "no"))
+        missing_log.write("accredit_lib\t{}\n".format("yes" if self.project_info['accredit'].get('library_preparation') else "no"))
+        missing_log.write("accredit_seq\t{}\n".format("yes" if self.project_info['accredit'].get('sequencing') else "no"))
+        missing_log.write("accredit_data\t{}\n".format("yes" if self.project_info['accredit'].get('data_processing') else "no"))
+        missing_log.write("accredit_analysis\t{}\n".format("yes" if self.project_info['accredit'].get('data_analysis') else "no"))
+        missing_log.write("keys_sample\n")
+        ck_cn, ck_in, ck_fs, ck_st = (0, 0, 0, 0)
+        
+        ## Collect information about the sample preps and collect aborted samples
         for sample_id, sample in sorted(self.proj.get('samples', {}).iteritems()):
             self.LOG.info('Processing sample {}'.format(sample_id))
+            ## Check if the sample is aborted before processing
+            if sample.get('details',{}).get('status_(manual)') == "Aborted":
+                self.LOG.info('Sample {} is aborted, so skipping it'.format(sample_id))
+                self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Aborted'}
+                continue
             ## Basic fields from Project database
             self.samples_info[sample_id] = {'ngi_id': sample_id}
             self.samples_info[sample_id]['customer_name'] = sample.get('customer_name','')
-            self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)','')
-            if self.project_info['ordered_reads']:
+            self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)')
+            self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
+            if self.samples_info[sample_id]['total_reads'] == None:
+                self.LOG.warn("Sample {} dont have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
+                self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Not sequenced'}
+                del self.samples_info[sample_id]
+                continue
+            if self.samples_info[sample_id]['reads_min']:
+                self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
                 self.samples_info[sample_id]['seq_status'] = ['FAIL','PASS'][float(self.samples_info[sample_id]['total_reads']) > \
-                                                                         float(self.project_info['ordered_reads'].replace('M',''))]
-            else:
-                self.samples_info[sample_id]['seq_status'] = None
+                                                                         float(self.samples_info[sample_id]['reads_min'])]
+            
             self.samples_info[sample_id]['preps'] = {}
             self.samples_info[sample_id]['flowcell'] = []
 
@@ -115,22 +153,56 @@ class Report(project_summary.CommonReport):
                 self.samples_info[sample_id]['preps'][prep_id] = {'label': prep_id }
                 self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label','')
                 self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status','')
-                #get average fragment size from lastest validation step if exists
-                try:
-                    lib_valids = prep['library_validation']
-                    keys = sorted(lib_valids.keys(), key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
-                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = lib_valids[keys[0]]['average_size_bp']
-                except KeyError:
-                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = ''
+                #get average fragment size from lastest validation step if exists not for PCR-free libs
+                if not 'pcr-free' in self.project_info['library_construction'].lower():
+                    try:
+                        lib_valids = prep['library_validation']
+                        keys = sorted(lib_valids.keys(), key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
+                        self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
+                    except KeyError:
+                        self.LOG.warn("No library validation step found or no sufficient info for sample {}".format(sample_id))
+                else:
+                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "N/A"
+                ## test purpose for missing keys, to be removed at last
+                if not ck_in and not prep.get('reagent_label',''):
+                    ck_in = 1
+                if not ck_st and not prep.get('prep_status',''):
+                    ck_st = 1
+                if not ck_fs and not self.samples_info[sample_id]['preps'][prep_id].get('avg_size',''):
+                    ck_fs = 1
+            ## test purpose for missing keys, to be removed at last
+            if not ck_cn and not sample.get('customer_name',''):
+                ck_cn = 1
+        
+            if not self.samples_info[sample_id]['preps']:
+                self.LOG.warn('No library prep information was available for sample {}'.format(sample_id))
+                self.project_info['missing_prep'] += 1
+                ck_in, ck_fs, ck_st = (1, 1, 1)
+        
+        if not self.flowcell_info:
+            self.LOG.warn('There is no flowcell to preocess for project {}'.format(self.project_name))
+            self.project_info['missing_fc'] = True
+            
+#        import pdb; pdb.set_trace()
+        ## test purpose for missing keys, to be removed at last
+        if len(self.project_info['aborted_samples']) == len(self.proj.get('samples', {})):
+            ck_in, ck_fs, ck_st = (1, 1, 1)
+        missing_log.write("customer_name\t{}\n".format("no" if ck_cn else "yes"))
+        missing_log.write("index_sequence\t{}\n".format("no" if ck_in else "yes"))
+        missing_log.write("library_qc\t{}\n".format("no" if ck_st else "yes"))
+        missing_log.write("fragment_size\t{}\n".format("no" if ck_fs else "yes"))
+        missing_log.write("keys_flowcell\n")
+        ck_qs, ck_bs, ck_cl, ck_ph, ck_aq = (0, 0, 0, 0, 0)
+        
             
         ## Collect reuired information for all flowcell run for the project
         for fc in self.flowcell_info.values():
-            fc_nm = fc['name']
+            fc_name = fc['name']
             fc_obj = fcon.get_entry(fc['run_name'])
             fc_runp = fc_obj.get('RunParameters',{})
             fc_illumina = fc_obj.get('illumina',{})
             fc_run_summary = fc_illumina.get('run_summary',{})
-            self.flowcell_info[fc_nm]['lanes'] = {}
+            self.flowcell_info[fc_name]['lanes'] = {}
             
             ## Get sequecing method for the flowcell
             seq_template = "{}) Clustering was done by '{}' and samples were sequenced on {} ({}) with a {} setup using '{}' "\
@@ -146,10 +218,11 @@ class Report(project_summary.CommonReport):
             else:
                 seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName"),fc_runp.get("ApplicationVersion"),fc_runp.get("RTAVersion"))
             tmp_method = seq_template.format("SECTION", clus_meth, seq_plat, seq_software, run_setup, fc_chem, casava)
+            
             ## to make sure the sequencing methods are uniq
             if tmp_method not in seq_methods.keys():
                 seq_methods[tmp_method] = alphabets[len(seq_methods.keys())]
-            self.flowcell_info[fc_nm]['seq_meth'] = seq_methods[tmp_method]
+            self.flowcell_info[fc_name]['seq_meth'] = seq_methods[tmp_method]
             
             ## Collect quality info for samples and collect lanes of interest
             for stat in fc_illumina.get('Demultiplex_Stats',{}).get('Barcode_lane_statistics',[]):
@@ -160,9 +233,14 @@ class Report(project_summary.CommonReport):
                     ## to put in a empty dict for the first time
                     sample_qval[sample] = sample_qval.get(sample,{})
                     try:
-                        sample_qval[sample]['{}_{}'.format(lane, fc_nm)] = {'qval': float(stat.get('% of >= Q30 Bases (PF)')),
+                        sample_qval[sample]['{}_{}'.format(lane, fc_name)] = {'qval': float(stat.get('% of >= Q30 Bases (PF)')),
                                                                         'bases': int(stat.get('# Reads').replace(',',''))*int(run_setup.split('x')[-1])}
-                    except TypeError:
+                    except (TypeError, ValueError) as e:
+                        ## test purpose for missing keys, to be removed at last
+                        if not ck_qs and not stat.get('% of >= Q30 Bases (PF)'):
+                            ck_qs = 1
+                        if not ck_bs and not stat.get('# Reads'):
+                            ck_bs = 1
                         pass
                     # collect lanes to proceed later
                     if lane not in self.flowcell_info[fc_name]['lanes']:
@@ -178,17 +256,41 @@ class Report(project_summary.CommonReport):
                 self.flowcell_info[fc_name]['lanes'][lane]['phix'] = self.get_lane_info('% Error Rate',lane_sum,run_setup[0])
                 self.flowcell_info[fc_name]['lanes'][lane]['avg_qval'] = self.get_lane_info('% Bases >=Q30',lane_sum,run_setup[0])
             
+                ## test purpose for missing keys, to be removed at last
+                if not ck_cl and not self.flowcell_info[fc_name]['lanes'][lane]['cluster']:
+                    ck_cl = 1
+                if not ck_ph and not self.flowcell_info[fc_name]['lanes'][lane]['phix']:
+                    ck_ph = 1
+                if not ck_aq and not self.flowcell_info[fc_name]['lanes'][lane]['avg_qval']:
+                    ck_aq = 1
+        
+        ## test purpose for missing keys, to be removed at last
+        if len(self.project_info['aborted_samples']) == len(self.proj.get('samples', {})):
+            ck_qs, ck_bs, ck_cl, ck_ph, ck_aq = (1, 1, 1, 1, 1)
+        missing_log.write("demulti_quality\t{}\n".format("no" if ck_qs else "yes"))
+        missing_log.write("demulti_bases\t{}\n".format("no" if ck_bs else "yes"))
+        missing_log.write("lane_cluster\t{}\n".format("no" if ck_cl else "yes"))
+        missing_log.write("lane_phix\t{}\n".format("no" if ck_ph else "yes"))
+        missing_log.write("lane_quality\t{}\n".format("no" if ck_aq else "yes"))
+        missing_log.close()
+        
         ## give proper section name for the methods
         self.project_info['sequencing_methods'] = "\n\n".join([m.replace("SECTION",seq_methods[m]) for m in seq_methods])
+        ## convert readsminimum list to a string
+        self.project_info['ordered_reads'] = ", ".join(set(self.project_info['ordered_reads']))
         
         ## calculate average Q30 over all lanes and flowcell
         for sample in sample_qval:
             try:
                 qinfo = sample_qval[sample]
-                self.samples_info[sample]['qscore'] = round(sum([(qinfo[k]['qval']/100)*qinfo[k]['bases'] for k in qinfo])*100/sum([qinfo[k]['bases'] for k in qinfo]), 2)
-            except TypeError:
+                total_qvalsbp, total_bases = (0, 0)
+                for k in qinfo:
+                    total_qvalsbp += qinfo[k]['qval'] * qinfo[k]['bases']
+                    total_bases += qinfo[k]['bases']
+                avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp) 
+                self.samples_info[sample]['qscore'] = round(avg_qval, 2)
+            except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
-                self.samples_info[sample]['qscore'] = ''
 
 
     #####################################################
@@ -238,16 +340,19 @@ class Report(project_summary.CommonReport):
             return "Library was prepared by user."
         try:
             lib_head = ['Input', 'Type', 'Option', 'Category']
-            lib_meth = re.match(r'(.*) \[[0-9]+\]',self.proj_details['library_construction_method'])
-            if lib_meth:
-                return ("\n".join(["* {}: {}".format(lib_head[c],i.strip()) for c,i in enumerate(lib_meth.group(1).split(',')) \
-                        if re.match('^[^-\s]',i.strip())]))
+            lib_meth = [i.strip() for i in re.sub("\[\d+\]$", '', self.proj_details['library_construction_method']).split(',')]
+            if len(lib_meth) == 4:
+                lib_list = []
+                for category,method in zip(lib_head,lib_meth):
+                    if method != '-':
+                        lib_list.append("* {}: {}".format(category, method))
+                return ("\n".join(lib_list))
             else:
                 self.LOG.error("Library method is not mentioned in expected format for project {}".format(self.project_name))
-                return None
+                return ''
         except KeyError:
             self.LOG.error("Could not find library construction method for project {} in statusDB".format(self.project_name))
-            return None
+            return ''
 
 
     def get_accredit_info(self,keys):
@@ -260,12 +365,14 @@ class Report(project_summary.CommonReport):
             try:
                 accredit = self.proj_details['accredited_({})'.format(k)]
                 if accredit in ['Yes','No']:
-                    accredit_info[k] = "{} Validated under ISO accreditation 17025:2005".format(["[cross]","[tick]"][accredit == "Yes"])
+                    accredit_info[k] = "{} under ISO accreditation 17025:2005".format(["[cross] Not validated","[tick] Validated"][accredit == "Yes"])
                 else:
-                    accredit_info[k] = accredit
+                    accredit_info[k] = accredit.replace("N/A","Not Applicable")
             except KeyError:
-                self.LOG.error("Could not find accreditation info for step {} for project {}".format(k,self.project_name))
-                accredit_info[k] = ''
+                if k in ['library_preparation','data_analysis'] and self.proj.get('application') == "Finished library":
+                    accredit_info[k] = "Not Applicable"
+                else:
+                    self.LOG.error("Could not find accreditation info for step {} for project {}".format(k,self.project_name))
         return accredit_info
 
 
