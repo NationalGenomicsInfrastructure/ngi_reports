@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 """ Main module for dealing with fields for the IGN Sample Report
@@ -362,7 +363,7 @@ class CommonReport(ngi_reports.common.BaseReport):
                 self.plots[sample_id]['snpEFf_plot'] = '{}_regions'.format(snpEFf_output_rel)
 
             except IOError:
-                self.LOG.error('Required plotting files not found for {} - skipping sample..'.format(sample_id))
+                self.LOG.error('Error whilst plotting {} - skipping sample..'.format(sample_id))
 
 
 
@@ -373,36 +374,38 @@ class CommonReport(ngi_reports.common.BaseReport):
     def check_project_fields(self):
         """ Check that the object has all required fields. Returns True / False.
         """
+        missing_fields = []
         report_fields = []
         project_fields = ['id', 'sequencing_centre', 'sequencing_platform', 'ref_genome']
 
         for f in report_fields:
-            if not self.info.has_key(f):
-                self.LOG.error('Mandatory report field missing: {}'.format(f))
-                return False
+            if f not in self.info:
+                missing_fields.append(f)
         for f in project_fields:
-            if not self.project.has_key(f):
-                import json
-                print(json.dumps(self.project, indent=4))
-                self.LOG.error('Mandatory project field missing: {}'.format(f))
-                return False
+            if f not in self.project:
+                missing_fields.append(f)
+        if len(missing_fields) > 0:
+            self.LOG.error('Mandatory project-level field(s) missing: {}'.format(", ".join(missing_fields)))
+            return False
         return True
 
     def check_sample_fields(self, sample_id):
         """ Check that the object has all required fields. Returns True / False.
         """
+        missing_fields = []
         sample_fields = ['total_reads',  'percent_aligned', 'aligned_reads', 'median_insert_size',
             'automsomal_coverage', 'ref_above_30X', 'percent_gc']
         plot_fields = ['coverage_plot', 'cov_frac_plot', 'insert_size_plot', 'gc_dist_plot', 'snpEFf_plot']
 
         for f in sample_fields:
-            if not self.samples[sample_id].has_key(f):
-                self.LOG.error("Missing mandatory sample field '{}' for sample '{}'. Skipping sample.".format(f, sample_id))
-                return False
+            if f not in self.samples[sample_id]:
+                missing_fields.append(f)
         for f in plot_fields:
-            if not self.plots[sample_id].has_key(f):
-                self.LOG.error("Missing mandatory plot field '{}' for sample '{}'. Skipping sample.".format(f, sample_id))
-                return False
+            if f not in self.plots[sample_id]:
+                missing_fields.append(f)
+        if len(missing_fields) > 0:
+            self.LOG.error('Mandatory sample-level field(s) missing for {}: {}'.format(sample_id, ", ".join(missing_fields)))
+            return False
         return True
 
 
