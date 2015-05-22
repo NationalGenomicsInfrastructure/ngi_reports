@@ -230,7 +230,7 @@ class CommonReport(ngi_reports.common.BaseReport):
 
 
             except:
-                self.LOG.error("Something went wrong with parsing the snpEff results")
+                self.LOG.error("Something went wrong with parsing the snpEff results for sample {}, {}".format(sample_id, snpEff_csv))
 
             if synonymous_SNPs > 0:
                 snpEff['synonymous_SNPs'] = '{:,}'.format(synonymous_SNPs)
@@ -370,14 +370,11 @@ class CommonReport(ngi_reports.common.BaseReport):
 
 
 
-    def check_fields(self):
+    def check_project_fields(self):
         """ Check that the object has all required fields. Returns True / False.
         """
         report_fields = []
         project_fields = ['id', 'sequencing_centre', 'sequencing_platform', 'ref_genome']
-        sample_fields = ['total_reads',  'percent_aligned', 'aligned_reads', 'median_insert_size',
-            'automsomal_coverage', 'ref_above_30X', 'percent_gc']
-        plot_fields = ['coverage_plot', 'cov_frac_plot', 'insert_size_plot', 'gc_dist_plot', 'snpEFf_plot']
 
         for f in report_fields:
             if f not in self.info.keys():
@@ -389,15 +386,23 @@ class CommonReport(ngi_reports.common.BaseReport):
                 print(json.dumps(self.project, indent=4))
                 self.LOG.error('Mandatory project field missing: {}'.format(f))
                 return False
-        for sample_id in self.samples.iterkeys():
-            for f in sample_fields:
-                if f not in self.samples[sample_id].keys():
-                    self.LOG.error('Mandatory sample field missing: {}'.format(f))
-                    return False
-            for f in plot_fields:
-                if f not in self.plots[sample_id].keys():
-                    self.LOG.error('Mandatory plot field missing: {}'.format(f))
-                    return False
+        return True
+
+    def check_sample_fields(self, sample_id):
+        """ Check that the object has all required fields. Returns True / False.
+        """
+        sample_fields = ['total_reads',  'percent_aligned', 'aligned_reads', 'median_insert_size',
+            'automsomal_coverage', 'ref_above_30X', 'percent_gc']
+        plot_fields = ['coverage_plot', 'cov_frac_plot', 'insert_size_plot', 'gc_dist_plot', 'snpEFf_plot']
+
+        for f in sample_fields:
+            if f not in self.samples[sample_id].keys():
+                self.LOG.error('Mandatory sample field missing: {}'.format(f))
+                return False
+        for f in plot_fields:
+            if f not in self.plots[sample_id].keys():
+                self.LOG.error('Mandatory plot field missing: {}'.format(f))
+                return False
         return True
 
 
@@ -408,16 +413,24 @@ class CommonReport(ngi_reports.common.BaseReport):
         output_mds = {}
 
         self.LOG.info('Processing reports')
+
+        # Check that we have mandatory project-level fields
+        if not self.check_project_fields():
+            self.LOG.error("Missing mandatory project-level fields, exiting..")
+            raise KeyError
+
         # Go through each sample making the report
         for sample_id, sample in sorted(self.samples.iteritems()):
+
+            self.LOG.debug("Generating report for {}".format(sample_id)))
 
             # Make the file basename
             report_fn = sample_id + '_ign_sample_report'
             output_bn = os.path.realpath(os.path.join(self.working_dir, self.report_dir, report_fn))
 
-            # check that we have everythin
-            if not self.check_fields():
-                self.LOG.error("Some mandatory fields were missing for sample {} - skipping".format(sample_id))
+            # check that we have everything
+            if not self.check_sample_fields(sample_id):
+                self.LOG.error("Missing mandatory sample-level fields for {} - skipping".format(sample_id))
                 continue
 
             # Parse the template
