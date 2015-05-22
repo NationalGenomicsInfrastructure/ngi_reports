@@ -61,7 +61,7 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
     os.chdir(report.report_dir)
 
     # Get parsed markdown and print to file(s)
-    LOG.info('Converting markdown to HTML and PDF')
+    LOG.debug('Converting markdown to HTML and PDF')
     output_mds = report.parse_template(template)
     for output_bn, output_md in output_mds.iteritems():
         try:
@@ -81,7 +81,7 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
 
         # Convert markdown to HTML using pandoc
         try:
-            html_cmd = shlex.split('{2} --standalone --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir, pandoc_cmd))
+            html_cmd = shlex.split('{2} --standalone --self-contained --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir, pandoc_cmd))
             subprocess.call(html_cmd)
         except OSError:
             LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')

@@ -223,20 +223,21 @@ $endif$
 \AtBeginEnvironment{description}{%
   \stepcounter{colordesc}%
   \begin{tikzpicture}[overlay,remember picture]
-  
+
   % Filled grey box over headers
-  \fill[gray!30] 
-    ( $$ (pic cs:start-\thecolordesc) + (-5pt,-1.85\topsep) $$ ) 
-      rectangle 
-    ( $$ ({pic cs:start-\thecolordesc}|-{pic cs:end-\thecolordesc}) + (\longestlabel-5pt,-.5\topsep) $$ );
-  
-  
+  % Looks nice, but breaks when we have page breaks. Disabling for now.
+  % \fill[gray!30]
+  %   ( $$ (pic cs:start-\thecolordesc) + (-5pt,-1.85\topsep) $$ )
+  %     rectangle
+  %   ( $$ ({pic cs:start-\thecolordesc}|-{pic cs:end-\thecolordesc}) + (\longestlabel-5pt,-.5\topsep) $$ );
+
+
   % Border along the right hand side of the definition list
-  \draw[gray!30] 
+  \draw[gray!30]
     ( $$ (current page text area.east|-{pic cs:start-\thecolordesc}) + (5pt,-1.85\topsep) $$ )
-      -- 
+      --
     ( $$ (current page text area.east|-{pic cs:end-\thecolordesc})  + (5pt,-0.45\topsep) $$ );
-  
+
   \end{tikzpicture}%
   \tikzmark{start-\thecolordesc}%
 }
@@ -247,14 +248,14 @@ $endif$
 % Border along the bottom of the definition list
 \AtEndEnvironment{description}{%
   \tikz[overlay,remember picture]\draw[gray!30]
-    ( $$ (current page text area.west|-{pic cs:end-\thecolordesc}) + (0,-.45\topsep) $$ ) 
+    ( $$ (current page text area.west|-{pic cs:end-\thecolordesc}) + (0,-.45\topsep) $$ )
     -- ++(1.01\textwidth,0);%
 }
 
 % Top borders of list items
 \renewcommand*\descriptionlabel[1]{%
   \tikz\draw[overlay,gray!30]
-    (-5pt,.8\baselineskip) -- 
+    (-5pt,.8\baselineskip) --
     (1.01\textwidth,.8\baselineskip);%
     \hspace\labelsep\normalfont\bfseries #1%
 }
