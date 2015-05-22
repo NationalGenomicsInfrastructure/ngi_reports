@@ -19,7 +19,7 @@ class Report(ign_sample_report.CommonReport):
         super(Report, self).__init__(config, LOG, working_dir, **kwargs)
 
         # Get project fields from statusdb
-        self.LOG.info('Connecting to statusDB...')
+        self.LOG.debug('Connecting to statusDB...')
         pcon = statusdb.ProjectSummaryConnection()
         assert pcon, "Could not connect to project database in StatusDB"
         proj = pcon.get_entry(self.project['id'], use_id_view=True)

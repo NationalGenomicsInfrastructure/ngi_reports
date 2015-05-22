@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 """ Main module for dealing with fields for the IGN Sample Report
@@ -47,14 +48,14 @@ class CommonReport(ngi_reports.common.BaseReport):
             raise IOError ('No samples found!')
 
         # Get more info from the filesystem
-        self.LOG.info('Parsing QC files')
+        self.LOG.debug('Parsing QC files')
         self.parse_qualimap()
         self.parse_snpeff()
         self.parse_picard_metrics()
 
         self.create_aggregate_statistics()
 
-        self.LOG.info('Plotting graphs')
+        self.LOG.debug('Plotting graphs')
         self.make_plots()
 
 
@@ -230,7 +231,7 @@ class CommonReport(ngi_reports.common.BaseReport):
 
 
             except:
-                self.LOG.error("Something went wrong with parsing the snpEff results")
+                self.LOG.error("Something went wrong with parsing the snpEff results for sample {}, {}".format(sample_id, snpEff_csv))
 
             if synonymous_SNPs > 0:
                 snpEff['synonymous_SNPs'] = '{:,}'.format(synonymous_SNPs)
@@ -292,7 +293,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         header = create_header(flattened_samples)
         rows = create_rows(flattened_samples)
 
-        self.LOG.info("Writing aggregate report to: " + output_file)
+        self.LOG.debug("Writing aggregate report to: " + output_file)
 
         # Drop it to a csv
         with open(output_file, 'wb') as csvfile:
@@ -308,54 +309,61 @@ class CommonReport(ngi_reports.common.BaseReport):
         """ Plot the visualizations for the IGN sample report
         """
         for sample_id in self.samples.iterkeys():
-            # Create plots sample dict
-            self.plots[sample_id] = {}
 
-            # Create the plots subdirectory
-            plots_dir_rel = os.path.join('plots', sample_id)
-            plots_dir = os.path.realpath(os.path.join(self.report_dir, plots_dir_rel))
-            if not os.path.exists(plots_dir):
-                os.makedirs(plots_dir)
+            # Avoid crashing the entire package for all samples if some files not found
+            try:
 
-            # Work out source directories
-            qualimap_raw_dir = os.path.realpath(os.path.join(self.working_dir, '06_final_alignment_qc',
-                '{}.clean.dedup.recal.qc'.format(sample_id), 'raw_data_qualimapReport'))
-            snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '07_variant_calls'))
+                # Create plots sample dict
+                self.plots[sample_id] = {}
 
-            # Qualimap coverage plot
-            cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
-            cov_output_rel = os.path.join(plots_dir_rel, '{}_coverage'.format(sample_id))
-            cov_output = os.path.join(plots_dir, '{}_coverage'.format(sample_id))
-            coverage_histogram.plot_coverage_histogram(cov_fn, cov_output)
-            self.plots[sample_id]['coverage_plot'] = cov_output_rel
+                # Create the plots subdirectory
+                plots_dir_rel = os.path.join('plots', sample_id)
+                plots_dir = os.path.realpath(os.path.join(self.report_dir, plots_dir_rel))
+                if not os.path.exists(plots_dir):
+                    os.makedirs(plots_dir)
 
-            # Qualimap genome fraction coverage plot
-            cov_frac_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'genome_fraction_coverage.txt'))
-            cov_frac_output_rel = os.path.join(plots_dir_rel, '{}_genome_fraction'.format(sample_id))
-            cov_frac_output = os.path.join(plots_dir, '{}_genome_fraction'.format(sample_id))
-            genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output)
-            self.plots[sample_id]['cov_frac_plot'] = cov_frac_output_rel
+                # Work out source directories
+                qualimap_raw_dir = os.path.realpath(os.path.join(self.working_dir, '06_final_alignment_qc',
+                    '{}.clean.dedup.recal.qc'.format(sample_id), 'raw_data_qualimapReport'))
+                snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '07_variant_calls'))
 
-            # Qualimap insert size plot
-            insert_size_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'insert_size_histogram.txt'))
-            insert_size_output_rel = os.path.join(plots_dir_rel, '{}_insert_size'.format(sample_id))
-            insert_size_output = os.path.join(plots_dir, '{}_insert_size'.format(sample_id))
-            insert_size.plot_insert_size_histogram(insert_size_fn, insert_size_output)
-            self.plots[sample_id]['insert_size_plot'] = insert_size_output_rel
+                # Qualimap coverage plot
+                cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
+                cov_output_rel = os.path.join(plots_dir_rel, '{}_coverage'.format(sample_id))
+                cov_output = os.path.join(plots_dir, '{}_coverage'.format(sample_id))
+                coverage_histogram.plot_coverage_histogram(cov_fn, cov_output)
+                self.plots[sample_id]['coverage_plot'] = cov_output_rel
 
-            # Qualimap GC distribution plot
-            gc_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'mapped_reads_gc-content_distribution.txt'))
-            gc_output_rel = os.path.join(plots_dir_rel, '{}_gc_distribution'.format(sample_id))
-            gc_output = os.path.join(plots_dir, '{}_gc_distribution'.format(sample_id))
-            gc_distribution.plot_genome_fraction_coverage(gc_fn, gc_output)
-            self.plots[sample_id]['gc_dist_plot'] = gc_output_rel
+                # Qualimap genome fraction coverage plot
+                cov_frac_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'genome_fraction_coverage.txt'))
+                cov_frac_output_rel = os.path.join(plots_dir_rel, '{}_genome_fraction'.format(sample_id))
+                cov_frac_output = os.path.join(plots_dir, '{}_genome_fraction'.format(sample_id))
+                genome_fraction_coverage.plot_genome_fraction_coverage(cov_frac_fn, cov_frac_output)
+                self.plots[sample_id]['cov_frac_plot'] = cov_frac_output_rel
 
-            # snpEff plot
-            snpEFf_fn = os.path.realpath(os.path.join(snpeff_data_dir, '{}.clean.dedup.recal.bam.raw.annotated.vcf.snpEff.summary.csv'.format(sample_id)))
-            snpEFf_output_rel = os.path.join(plots_dir_rel, '{}_snpEff_effect'.format(sample_id))
-            snpEFf_output = os.path.join(plots_dir, '{}_snpEff_effect'.format(sample_id))
-            snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
-            self.plots[sample_id]['snpEFf_plot'] = '{}_regions'.format(snpEFf_output_rel)
+                # Qualimap insert size plot
+                insert_size_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'insert_size_histogram.txt'))
+                insert_size_output_rel = os.path.join(plots_dir_rel, '{}_insert_size'.format(sample_id))
+                insert_size_output = os.path.join(plots_dir, '{}_insert_size'.format(sample_id))
+                insert_size.plot_insert_size_histogram(insert_size_fn, insert_size_output)
+                self.plots[sample_id]['insert_size_plot'] = insert_size_output_rel
+
+                # Qualimap GC distribution plot
+                gc_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'mapped_reads_gc-content_distribution.txt'))
+                gc_output_rel = os.path.join(plots_dir_rel, '{}_gc_distribution'.format(sample_id))
+                gc_output = os.path.join(plots_dir, '{}_gc_distribution'.format(sample_id))
+                gc_distribution.plot_genome_fraction_coverage(gc_fn, gc_output)
+                self.plots[sample_id]['gc_dist_plot'] = gc_output_rel
+
+                # snpEff plot
+                snpEFf_fn = os.path.realpath(os.path.join(snpeff_data_dir, '{}.clean.dedup.recal.bam.raw.annotated.vcf.snpEff.summary.csv'.format(sample_id)))
+                snpEFf_output_rel = os.path.join(plots_dir_rel, '{}_snpEff_effect'.format(sample_id))
+                snpEFf_output = os.path.join(plots_dir, '{}_snpEff_effect'.format(sample_id))
+                snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
+                self.plots[sample_id]['snpEFf_plot'] = '{}_regions'.format(snpEFf_output_rel)
+
+            except IOError:
+                self.LOG.error('Error whilst plotting {} - skipping sample..'.format(sample_id))
 
 
 
@@ -363,34 +371,41 @@ class CommonReport(ngi_reports.common.BaseReport):
 
 
 
-    def check_fields(self):
+    def check_project_fields(self):
         """ Check that the object has all required fields. Returns True / False.
         """
+        missing_fields = []
         report_fields = []
         project_fields = ['id', 'sequencing_centre', 'sequencing_platform', 'ref_genome']
+
+        for f in report_fields:
+            if f not in self.info:
+                missing_fields.append(f)
+        for f in project_fields:
+            if f not in self.project:
+                missing_fields.append(f)
+        if len(missing_fields) > 0:
+            self.LOG.error('Mandatory project-level field(s) missing: {}'.format(", ".join(missing_fields)))
+            return False
+        return True
+
+    def check_sample_fields(self, sample_id):
+        """ Check that the object has all required fields. Returns True / False.
+        """
+        missing_fields = []
         sample_fields = ['total_reads',  'percent_aligned', 'aligned_reads', 'median_insert_size',
             'automsomal_coverage', 'ref_above_30X', 'percent_gc']
         plot_fields = ['coverage_plot', 'cov_frac_plot', 'insert_size_plot', 'gc_dist_plot', 'snpEFf_plot']
 
-        for f in report_fields:
-            if f not in self.info.keys():
-                self.LOG.error('Mandatory report field missing: '+f)
-                return False
-        for f in project_fields:
-            if f not in self.project.keys():
-                import json
-                print(json.dumps(self.project, indent=4))
-                self.LOG.error('Mandatory project field missing: '+f)
-                return False
-        for sample_id in self.samples.iterkeys():
-            for f in sample_fields:
-                if f not in self.samples[sample_id].keys():
-                    self.LOG.error('Mandatory sample field missing: '+f)
-                    return False
-            for f in plot_fields:
-                if f not in self.plots[sample_id].keys():
-                    self.LOG.error('Mandatory plot field missing: '+f)
-                    return False
+        for f in sample_fields:
+            if f not in self.samples[sample_id]:
+                missing_fields.append(f)
+        for f in plot_fields:
+            if f not in self.plots[sample_id]:
+                missing_fields.append(f)
+        if len(missing_fields) > 0:
+            self.LOG.error('Mandatory sample-level field(s) missing for {}: {}'.format(sample_id, ", ".join(missing_fields)))
+            return False
         return True
 
 
@@ -400,17 +415,24 @@ class CommonReport(ngi_reports.common.BaseReport):
 
         output_mds = {}
 
-        self.LOG.info('Processing reports')
+        self.LOG.debug('Processing reports')
+
+        # Check that we have mandatory project-level fields
+        if not self.check_project_fields():
+            self.LOG.error("Missing mandatory project-level fields, exiting..")
+            raise KeyError
+
         # Go through each sample making the report
         for sample_id, sample in sorted(self.samples.iteritems()):
+
+            self.LOG.debug("Generating report for {}".format(sample_id))
 
             # Make the file basename
             report_fn = sample_id + '_ign_sample_report'
             output_bn = os.path.realpath(os.path.join(self.working_dir, self.report_dir, report_fn))
 
-            # check that we have everythin
-            if not self.check_fields():
-                self.LOG.error("Some mandatory fields were missing for sample {} - skipping".format(sample_id))
+            # check that we have everything (errors thrown by def)
+            if not self.check_sample_fields(sample_id):
                 continue
 
             # Parse the template
