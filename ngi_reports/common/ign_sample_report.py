@@ -47,14 +47,14 @@ class CommonReport(ngi_reports.common.BaseReport):
             raise IOError ('No samples found!')
 
         # Get more info from the filesystem
-        self.LOG.info('Parsing QC files')
+        self.LOG.debug('Parsing QC files')
         self.parse_qualimap()
         self.parse_snpeff()
         self.parse_picard_metrics()
 
         self.create_aggregate_statistics()
 
-        self.LOG.info('Plotting graphs')
+        self.LOG.debug('Plotting graphs')
         self.make_plots()
 
 
@@ -292,7 +292,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         header = create_header(flattened_samples)
         rows = create_rows(flattened_samples)
 
-        self.LOG.info("Writing aggregate report to: " + output_file)
+        self.LOG.debug("Writing aggregate report to: " + output_file)
 
         # Drop it to a csv
         with open(output_file, 'wb') as csvfile:
@@ -397,11 +397,11 @@ class CommonReport(ngi_reports.common.BaseReport):
 
         for f in sample_fields:
             if f not in self.samples[sample_id].keys():
-                self.LOG.error('Mandatory sample field missing: {}'.format(f))
+                self.LOG.error("Missing mandatory sample field '{}' for sample '{}'. Skipping sample.".format(f, sample_id))
                 return False
         for f in plot_fields:
             if f not in self.plots[sample_id].keys():
-                self.LOG.error('Mandatory plot field missing: {}'.format(f))
+                self.LOG.error("Missing mandatory plot field '{}' for sample '{}'. Skipping sample.".format(f, sample_id))
                 return False
         return True
 
@@ -412,7 +412,7 @@ class CommonReport(ngi_reports.common.BaseReport):
 
         output_mds = {}
 
-        self.LOG.info('Processing reports')
+        self.LOG.debug('Processing reports')
 
         # Check that we have mandatory project-level fields
         if not self.check_project_fields():
@@ -422,15 +422,14 @@ class CommonReport(ngi_reports.common.BaseReport):
         # Go through each sample making the report
         for sample_id, sample in sorted(self.samples.iteritems()):
 
-            self.LOG.debug("Generating report for {}".format(sample_id)))
+            self.LOG.debug("Generating report for {}".format(sample_id))
 
             # Make the file basename
             report_fn = sample_id + '_ign_sample_report'
             output_bn = os.path.realpath(os.path.join(self.working_dir, self.report_dir, report_fn))
 
-            # check that we have everything
+            # check that we have everything (errors thrown by def)
             if not self.check_sample_fields(sample_id):
-                self.LOG.error("Missing mandatory sample-level fields for {} - skipping".format(sample_id))
                 continue
 
             # Parse the template
