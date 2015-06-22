@@ -33,7 +33,8 @@ class CommonReport(ngi_reports.common.BaseReport):
         # This function is in the common BaseReport class in __init__.py
         xml = self.parse_piper_xml()
         self.project = xml['project']
-        self.samples = xml['samples']
+        self.samples = {k:v for k,v in xml['samples'].items() \
+            if not kwargs.get('samples') or v['id'] in kwargs.get('samples')}
 
         # Self-sufficient Fields
         self.report_dir = os.path.join('delivery', 'reports')
