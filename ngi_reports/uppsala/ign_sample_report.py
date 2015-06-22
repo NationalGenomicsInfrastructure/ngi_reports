@@ -16,7 +16,7 @@ class Report(ign_sample_report.CommonReport):
         self.ngi_node = 'uppsala'
 
         # Initialise the parent class
-        super(Report, self).__init__(config, LOG, working_dir)
+        super(Report, self).__init__(config, LOG, working_dir, **kwargs)
 
         #### Missing Fields
         # self.info['recipient']
