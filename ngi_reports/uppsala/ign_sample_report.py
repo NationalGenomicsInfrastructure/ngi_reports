@@ -5,7 +5,6 @@
 
 import os
 from ngi_reports.common import ign_sample_report
-from statusdb.db import connections as statusdb
 
 class Report(ign_sample_report.CommonReport):
 
