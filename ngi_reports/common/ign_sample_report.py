@@ -284,7 +284,8 @@ class CommonReport(ngi_reports.common.BaseReport):
                         for key in sample.keys()])))
 
         def create_rows (samples):
-            for sample in samples.keys():
+            # return the samples sorted alphabetically on the keys
+            for sample in sorted(samples.keys()):
                 yield samples[sample]
 
         output_fn = "{}_aggregate_report.csv".format(self.project['id'])
