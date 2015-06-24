@@ -33,7 +33,8 @@ class CommonReport(ngi_reports.common.BaseReport):
         # This function is in the common BaseReport class in __init__.py
         xml = self.parse_piper_xml()
         self.project = xml['project']
-        self.samples = xml['samples']
+        self.samples = {k:v for k,v in xml['samples'].items() \
+            if not kwargs.get('samples') or v['id'] in kwargs.get('samples')}
 
         # Self-sufficient Fields
         self.report_dir = os.path.join('delivery', 'reports')
@@ -283,7 +284,8 @@ class CommonReport(ngi_reports.common.BaseReport):
                         for key in sample.keys()])))
 
         def create_rows (samples):
-            for sample in samples.keys():
+            # return the samples sorted alphabetically on the keys
+            for sample in sorted(samples.keys()):
                 yield samples[sample]
 
         output_fn = "{}_aggregate_report.csv".format(self.project['id'])
