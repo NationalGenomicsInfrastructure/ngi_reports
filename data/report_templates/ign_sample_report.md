@@ -76,7 +76,7 @@ statistics.
 {% if sample.duplication_rate %}Note that the duplication rate above is calculated using
 [Picard Mark Duplicates](http://broadinstitute.github.io/picard/command-line-overview.html#MarkDuplicates).
 Qualimap calculates duplicates differently and the figure in
-the report will be different to the Picard result..
+the report will be different to the Picard result.
 {% endif %}
 
 ## Distribution of sequencing coverage
