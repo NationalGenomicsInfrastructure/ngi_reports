@@ -36,6 +36,13 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.samples = {k:v for k,v in xml['samples'].items() \
             if not kwargs.get('samples') or v['id'] in kwargs.get('samples')}
 
+        # Append any extra sample information passed on the command line
+        for sampleid, extrainfo in kwargs.get('samples_extra',{}).items():
+            try:
+                self.samples[sampleid].update(extrainfo)
+            except KeyError as e:
+                self.samples[sampleid] = extrainfo
+
         # Self-sufficient Fields
         self.report_dir = os.path.join('delivery', 'reports')
         if not os.path.exists(self.report_dir):

@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import argparse
 import jinja2
+import json
 import os
 import shlex
 import shutil
@@ -151,6 +152,7 @@ if __name__ == "__main__":
     parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>', help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
     parser.add_argument('--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('--samples', default=None, action="store", nargs="*", help="Limit the samples to include in reports")
+    parser.add_argument('--samples_extra', default=None, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key")
 
     kwargs = vars(parser.parse_args())
 
