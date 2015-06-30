@@ -29,6 +29,19 @@ class BaseReport(object):
     def parse_piper_xml(self):
         """ Parses the XML setup files that Piper uses
         """
+        
+        def _nextitem(xml):
+            # One sample
+            if isinstance(xml, dict):
+                yield xml
+            # Many samples
+            elif isinstance(xml, list):
+                for i in xml:
+                    yield i
+            else:
+                # This is passed below so doesn't halt execution
+                raise KeyError("Could not parse run['inputs']['sample']")
+                
         project = {}
         samples = {}
         xml_files = []
@@ -58,18 +71,16 @@ class BaseReport(object):
                 try:
                     project['id'] = run['metadata']['name']
                     project['ngi_name'] = run['metadata']['name']
-                    # One sample
-                    if isinstance(run['inputs']['sample'], dict):
-                        sid = run['inputs']['sample']['samplename']
-                        samples[sid] = {'id': sid}
-                    # Many samples
-                    elif isinstance(run['inputs']['sample'], list):
-                        for sample in run['inputs']['sample']:
-                            sid = sample['samplename']
-                            samples[sid] = {'id': sid}
-                    else:
-                        # This is passed below so doesn't halt execution
-                        raise KeyError("Could not parse run['inputs']['sample']")
+                    for sample in _nextitem(run['inputs']['sample']):
+                        try:
+                            fcid = [pfu['unitinfo'].split('.')[0][1:] \
+                                for library in _nextitem(sample['library']) \
+                                for pfu in _nextitem(library['platformunit'])]
+                        except (IndexError, KeyError) as e:
+                            self.LOG.warning('Could not parse platform unit info in sample XML file: {}'.format(e.message))
+                            fcid = 'N/A'
+                        sid = sample['samplename']
+                        samples[sid] = {'id': sid, 'flowcells': ';'.join(set(fcid))}
                 except KeyError as e:
                     self.LOG.warning('Could not find essential key in sample XML file: '+e.message)
                     pass
