@@ -92,17 +92,11 @@ Data Analysis
 
 # Sample Information
 {% if not samples %}
-No sample info to be displayed.
+No sample information to be displayed.
 {% elif samples|length > project.display_limit %}
 There are too many samples to display, please click [here]({{ project.ngi_name }}_sample_info.txt) to view the table from tab-separated text file. Below you can find an explanation of the header column used in the table.
 
-* _NGI ID:_ Internal NGI sample indentifier
-* _User ID:_ User submitted name for a sample
-* _Mreads:_ Total million reads (or pairs) for a sample
-* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
-{% if project.ordered_reads -%}
-* _Status:_ Sequencing status of sample based on the total reads
-{%- endif %}
+{{ tables.sample_info }}
 {% else %}
 NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
 -------|---------|--------|----------{% if project.ordered_reads %}|-------- {% endif %}
@@ -110,27 +104,17 @@ NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% e
 {{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
 {% endfor %}
 
-* _NGI ID:_ Internal NGI sample indentifier
-* _User ID:_ User submitted name for a sample
-* _Mreads:_ Total million reads (or pairs) for a sample
-* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
-{% if project.ordered_reads -%}
-* _Status:_ Sequencing status of sample based on the total reads
-{%- endif %}
+{{ tables.sample_info }}
 {% endif %}
 
 
 # Library Information
 {% if project.missing_prep == samples|length %}
-No library info to be displayed.
+No library information to be displayed.
 {% elif samples|length > project.display_limit %}
 There are too many samples to display, please click [here]({{ project.ngi_name }}_library_info.txt) to download the table from tab-separated text file. Below you can find the abbrevations for the header column used in the table.
 
-* _NGI ID:_ Internal NGI sample indentifier
-* _Index:_ Barcode sequence used for the sample
-* _Lib Prep:_ NGI library indentifier
-* _Avg. FS:_ Average fragment size of the library
-* _Lib QC:_ Reception control library quality control step status
+{{ tables.library_info }}
 {% else %}
 NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 -------|-------|----------|---------|--------
@@ -142,27 +126,17 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 {% endif -%}
 {%- endfor %}
 
-* _NGI ID:_ Internal NGI sample indentifier
-* _Index:_ Barcode sequence used for the sample
-* _Lib Prep:_ NGI library indentifier
-* _Avg. FS:_ Average fragment size of the library
-* _Lib QC:_ Reception control library quality control step status
+{{ tables.library_info }}
 {% endif %}
 
 
 # Lanes Information
 {% if project.missing_fc %}
-No lanes info to be displayed.
+No lanes information to be displayed.
 {% elif project.total_lanes > project.display_limit %}
 There are too many lanes to display, please click [here]({{ project.ngi_name }}_lanes_info.txt) to download the table from tab-separated text file. Below you can find the abbrevations for the header column used in the table.
 
-* _Date:_ Date of sequencing
-* _Flowcell:_ Flowcell identifier
-* _Lane:_ Flowcell lane number
-* _Clusters:_ Number of clusters that passed the read filters (millions)
-* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30
-* _PhiX:_ Average PhiX error rate for the lane
-* _Method:_ Sequencing method used. See above for description
+{{ tables.lanes_info }}
 {% else %}
 Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 -----|----------|------|-------------|------|----------|--------
@@ -172,13 +146,7 @@ Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 {% endfor -%}
 {%- endfor %}
 
-* _Date:_ Date of sequencing
-* _Flowcell:_ Flowcell identifier
-* _Lane:_ Flowcell lane number
-* _Clusters:_ Number of clusters that passed the read filters (millions)
-* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30
-* _PhiX:_ Average PhiX error rate for the lane
-* _Method:_ Sequencing method used. See above for description
+{{ tables.lanes_info }}
 {% endif %}
 
 {% if project.aborted_samples %}

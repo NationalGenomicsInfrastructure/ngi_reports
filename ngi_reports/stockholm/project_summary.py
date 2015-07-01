@@ -84,7 +84,7 @@ class Report(project_summary.CommonReport):
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
         self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id')
         self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'])
-        self.project_info['ordered_reads'] = [] #self.get_ordered_reads()
+        self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['status'] = "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing"
         self.project_info['library_construction'] = self.get_library_method()
@@ -229,15 +229,26 @@ class Report(project_summary.CommonReport):
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
         
-        ## Create table text based upon collected information
+
+    ###############################################################################
+    ##### Create table text and header explanation from collected information #####
+    ###############################################################################
+
         ## sample_info table
         sample_header = ['NGI ID', 'User ID', 'Mreads', '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
         if self.proj.get('application') != "Finished library":
             sample_header.append('Status')
             sample_filter.append('seq_status')
-        self.tables_info['sample_info'] = self.create_table_text(self.samples_info, filter_keys=sample_filter, header=sample_header)
-
+        self.tables_info['tables']['sample_info'] = self.create_table_text(self.samples_info, filter_keys=sample_filter, header=sample_header)
+        self.tables_info['header_explanation']['sample_info'] = "* _NGI ID:_ Internal NGI sample indentifier\n"\
+                                                                "* _User ID:_ User submitted name for a sample\n"\
+                                                                "* _Mreads:_ Total million reads (or pairs) for a sample\n"\
+                                                                "* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30\n"\
+                                                                "* _Status:_ Sequencing status of sample based on the total reads"
+        if not self.project_info['ordered_reads']:
+            self.tables_info['header_explanation']['sample_info'] = re.sub(r'\n\* _Status\:_ .*$','',self.tables_info['header_explanation']['sample_info'])
+        
         ## library_info table
         library_header = ['NGI ID', 'Index', 'Lib Prep', 'Avg. FS', 'Lib QC']
         library_filter = ['ngi_id', 'barcode', 'label', 'avg_size', 'qc_status']
@@ -246,7 +257,12 @@ class Report(project_summary.CommonReport):
             for p in v.get('preps',{}).values():
                 p['ngi_id'] = s
                 library_list.append(p)
-        self.tables_info['library_info'] = self.create_table_text(library_list, filter_keys=library_filter, header=library_header)
+        self.tables_info['tables']['library_info'] = self.create_table_text(library_list, filter_keys=library_filter, header=library_header)
+        self.tables_info['header_explanation']['library_info'] = "* _NGI ID:_ Internal NGI sample indentifier\n"\
+                                                                 "* _Index:_ Barcode sequence used for the sample\n"\
+                                                                 "* _Lib Prep:_ NGI library indentifier\n"\
+                                                                 "* _Avg. FS:_ Average fragment size of the library\n"\
+                                                                 "* _Lib QC:_ Reception control library quality control step status\n"
         
         ## lanes_info table
         lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', 'Phix', '>=Q30(%)', 'Method']
@@ -259,7 +275,14 @@ class Report(project_summary.CommonReport):
                 l['seq_meth'] = v.get('seq_meth')
                 lanes_list.append(l)
                 self.project_info['total_lanes'] += 1
-        self.tables_info['lanes_info'] = self.create_table_text(lanes_list, filter_keys=lanes_filter, header=lanes_header)
+        self.tables_info['tables']['lanes_info'] = self.create_table_text(lanes_list, filter_keys=lanes_filter, header=lanes_header)
+        self.tables_info['header_explanation']['lanes_info'] = "* _Date:_ Date of sequencing\n"\
+                                                               "* _Flowcell:_ Flowcell identifier\n"\
+                                                               "* _Lane:_ Flowcell lane number\n"\
+                                                               "* _Clusters:_ Number of clusters that passed the read filters (millions)\n"\
+                                                               "* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30\n"\
+                                                               "* _PhiX:_ Average PhiX error rate for the lane\n"\
+                                                               "* _Method:_ Sequencing method used. See above for description\n"
         
     #####################################################
     ##### Helper methods to get certain information #####
@@ -291,22 +314,6 @@ class Report(project_summary.CommonReport):
             row = map(str, row)
             op_string.append(sep.join(row))
         return "\n".join(op_string)
-            
-    def get_ordered_reads(self):
-        """ Get the minimum ordered reads for this project or return None
-        """
-        reads_min = []
-        # in rare cases there might be different amounts ordered
-        # for different pools
-        for sample in self.proj.get('samples',{}):
-            try:
-                reads_min.append("{}M".format(self.proj['samples'][sample]['details']['reads_min']))
-            except KeyError:
-                continue
-        if len(reads_min) > 0:
-            return ", ".join(list(set(reads_min)))
-        else:
-            return None
 
 
     def get_order_dates(self):
