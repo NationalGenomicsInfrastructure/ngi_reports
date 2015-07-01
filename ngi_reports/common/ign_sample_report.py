@@ -33,7 +33,15 @@ class CommonReport(ngi_reports.common.BaseReport):
         # This function is in the common BaseReport class in __init__.py
         xml = self.parse_piper_xml()
         self.project = xml['project']
-        self.samples = xml['samples']
+        self.samples = {k:v for k,v in xml['samples'].items() \
+            if not kwargs.get('samples') or v['id'] in kwargs.get('samples')}
+
+        # Append any extra sample information passed on the command line
+        for sampleid, extrainfo in kwargs.get('samples_extra',{}).items():
+            try:
+                self.samples[sampleid].update(extrainfo)
+            except KeyError as e:
+                self.samples[sampleid] = extrainfo
 
         # Self-sufficient Fields
         self.report_dir = os.path.join('delivery', 'reports')
@@ -274,11 +282,18 @@ class CommonReport(ngi_reports.common.BaseReport):
     def create_aggregate_statistics (self):
 
         def create_header (samples):
-            return samples.values()[0].keys()
+            # take the union of all keys for the header row
+            return sorted(
+                list(
+                    set(
+                        [key \
+                        for sample in samples.values() \
+                        for key in sample.keys()])))
 
         def create_rows (samples):
-            for sample in samples.keys():
-                yield samples[sample].values()
+            # return the samples sorted alphabetically on the keys
+            for sample in sorted(samples.keys()):
+                yield samples[sample]
 
         output_fn = "{}_aggregate_report.csv".format(self.project['id'])
         output_file = os.path.realpath(os.path.join(self.report_dir, output_fn))
@@ -297,12 +312,13 @@ class CommonReport(ngi_reports.common.BaseReport):
 
         # Drop it to a csv
         with open(output_file, 'wb') as csvfile:
-            writer = csv.writer(csvfile, delimiter="\t")
-            writer.writerow(header)
+            writer = csv.DictWriter(
+                csvfile,
+                fieldnames=header,
+                delimiter="\t")
+            writer.writeheader()
             for row in rows:
                 writer.writerow(row)
-
-
 
     # Plot the parsed data for the reports
     def make_plots(self):

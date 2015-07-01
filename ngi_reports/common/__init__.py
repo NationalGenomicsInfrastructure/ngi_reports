@@ -5,6 +5,7 @@ eg. Information retrieval from the filesystem or Charon
 
 import collections
 import os
+import re
 import xmltodict
 from datetime import datetime
 
@@ -29,6 +30,26 @@ class BaseReport(object):
     def parse_piper_xml(self):
         """ Parses the XML setup files that Piper uses
         """
+        
+        def _nextitem(xml):
+            # One sample
+            if isinstance(xml, dict):
+                yield xml
+            # Many samples
+            elif isinstance(xml, list):
+                for i in xml:
+                    yield i
+            else:
+                # This is passed below so doesn't halt execution
+                raise KeyError("Could not parse run['inputs']['sample']")
+
+        def _getfcid(str):
+            pat = r'^[AB]?([a-zA-Z0-9\-]{8,20})'
+            m = re.match(pat,str)
+            if m is not None:
+                return m.group(1)
+            return str
+
         project = {}
         samples = {}
         xml_files = []
@@ -58,18 +79,16 @@ class BaseReport(object):
                 try:
                     project['id'] = run['metadata']['name']
                     project['ngi_name'] = run['metadata']['name']
-                    # One sample
-                    if isinstance(run['inputs']['sample'], dict):
-                        sid = run['inputs']['sample']['samplename']
-                        samples[sid] = {'id': sid}
-                    # Many samples
-                    elif isinstance(run['inputs']['sample'], list):
-                        for sample in run['inputs']['sample']:
-                            sid = sample['samplename']
-                            samples[sid] = {'id': sid}
-                    else:
-                        # This is passed below so doesn't halt execution
-                        raise KeyError("Could not parse run['inputs']['sample']")
+                    for sample in _nextitem(run['inputs']['sample']):
+                        try:
+                            fcid = [_getfcid(pfu['unitinfo']) \
+                                for library in _nextitem(sample['library']) \
+                                for pfu in _nextitem(library['platformunit'])]
+                        except (IndexError, KeyError) as e:
+                            self.LOG.warning('Could not parse platform unit info in sample XML file: {}'.format(e.message))
+                            fcid = ['N/A']
+                        sid = sample['samplename']
+                        samples[sid] = {'id': sid, 'run_id': ';'.join(set(fcid))}
                 except KeyError as e:
                     self.LOG.warning('Could not find essential key in sample XML file: '+e.message)
                     pass
