@@ -86,9 +86,9 @@ class BaseReport(object):
                                 for pfu in _nextitem(library['platformunit'])]
                         except (IndexError, KeyError) as e:
                             self.LOG.warning('Could not parse platform unit info in sample XML file: {}'.format(e.message))
-                            fcid = 'N/A'
+                            fcid = ['N/A']
                         sid = sample['samplename']
-                        samples[sid] = {'id': sid, 'flowcells': ';'.join(set(fcid))}
+                        samples[sid] = {'id': sid, 'run_id': ';'.join(set(fcid))}
                 except KeyError as e:
                     self.LOG.warning('Could not find essential key in sample XML file: '+e.message)
                     pass
