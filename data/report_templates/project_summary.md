@@ -2,7 +2,7 @@
 title: Project Overview
 subtitle: {{ project.ngi_name }}
 date: {{ project.report_date }}
-support_email: genomics_support@scilifelab.se
+support_email: {{ project.support_email }}
 swedac: true
 ---
 
@@ -19,7 +19,7 @@ NGI Project ID
 
 {% if project.ngi_facility -%}
 NGI Facility
-:   Genomics {{ project.ngi_facility }} Stockholm
+:   {{ project.ngi_facility }}
 {%- endif %}
 
 User Contact
@@ -67,8 +67,6 @@ Minimum ordered reads
 ### Data Flow
 Raw sequencing data is demultiplexed and converted to FastQ on site before 
 being transferred securely to [UPPMAX](http://www.uppmax.uu.se/) for delivery.
-Raw data is also transferred to [SNIC SweStore](http://www.snic.vr.se/projects/swestore)
-for long term data security.
 
 ### Data Processing
 To ensure that all sequenced data meets our guarantee of data quality and quantity,
@@ -83,7 +81,7 @@ so that you can be sure that your data is of excellent quality.
 Library preparation
 :   {{ project.accredit.library_preparation }}
 
-Sequencing data
+Sequencing
 :   {{ project.accredit.sequencing }}
 
 Data Processing
@@ -92,15 +90,13 @@ Data Processing
 Data Analysis
 :   {{ project.accredit.data_analysis }}
 
-# Sample Info
-{% if samples %}
-NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
--------|---------|--------|----------{% if project.ordered_reads %}|-------- {% endif %}
-{% for sample in samples.values() -%}
-{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
-{% endfor %}
+# Sample Information
+{% if not samples %}
+No sample info to be displayed.
+{% elif samples|length > project.display_limit %}
+There are too many samples to display, please click [here]({{ project.ngi_name }}_sample_info.txt) to view the table from tab-separated text file. Below you can find an explanation of the header column used in the table.
 
-* _NGI ID:_ Internal id used within NGI to refer a sample
+* _NGI ID:_ Internal NGI sample indentifier
 * _User ID:_ User submitted name for a sample
 * _Mreads:_ Total million reads (or pairs) for a sample
 * _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
@@ -108,12 +104,34 @@ NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% e
 * _Status:_ Sequencing status of sample based on the total reads
 {%- endif %}
 {% else %}
-No sample info to be displayed.
+NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
+-------|---------|--------|----------{% if project.ordered_reads %}|-------- {% endif %}
+{% for sample in samples.values() -%}
+{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
+{% endfor %}
+
+* _NGI ID:_ Internal NGI sample indentifier
+* _User ID:_ User submitted name for a sample
+* _Mreads:_ Total million reads (or pairs) for a sample
+* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
+{% if project.ordered_reads -%}
+* _Status:_ Sequencing status of sample based on the total reads
+{%- endif %}
 {% endif %}
 
 
-# Library Info
-{% if project.missing_prep != samples|length %}
+# Library Information
+{% if project.missing_prep == samples|length %}
+No library info to be displayed.
+{% elif samples|length > project.display_limit %}
+There are too many samples to display, please click [here]({{ project.ngi_name }}_library_info.txt) to download the table from tab-separated text file. Below you can find the abbrevations for the header column used in the table.
+
+* _NGI ID:_ Internal NGI sample indentifier
+* _Index:_ Barcode sequence used for the sample
+* _Lib Prep:_ NGI library indentifier
+* _Avg. FS:_ Average fragment size of the library
+* _Lib QC:_ Reception control library quality control step status
+{% else %}
 NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 -------|-------|----------|---------|--------
 {% for sample in samples.values()  -%}
@@ -124,20 +142,30 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 {% endif -%}
 {%- endfor %}
 
-* _NGI ID:_ Internal id used within NGI to refer a sample
+* _NGI ID:_ Internal NGI sample indentifier
 * _Index:_ Barcode sequence used for the sample
-* _Lib Prep:_ ID (alphabatical number) of library prep made.
-* _Avg. FS:_ Average fragment size of the library.
-* _Lib QC:_ Reception control library quality control step
-{% else %}
-No library info to be displayed.
+* _Lib Prep:_ NGI library indentifier
+* _Avg. FS:_ Average fragment size of the library
+* _Lib QC:_ Reception control library quality control step status
 {% endif %}
 
 
-# Lanes Info
-{% if not project.missing_fc %}
-Date | FC id | Lane | Cluster(M) | >=Q30(%) | Phix | Method
------|-------|------|------------|----------|------|--------
+# Lanes Information
+{% if project.missing_fc %}
+No lanes info to be displayed.
+{% elif project.total_lanes > project.display_limit %}
+There are too many lanes to display, please click [here]({{ project.ngi_name }}_lanes_info.txt) to download the table from tab-separated text file. Below you can find the abbrevations for the header column used in the table.
+
+* _Date:_ Date of sequencing
+* _Flowcell:_ Flowcell identifier
+* _Lane:_ Flowcell lane number
+* _Clusters:_ Number of clusters that passed the read filters (millions)
+* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30
+* _PhiX:_ Average PhiX error rate for the lane
+* _Method:_ Sequencing method used. See above for description
+{% else %}
+Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
+-----|----------|------|-------------|------|----------|--------
 {% for fc in flowcells.values() -%}
 {% for lane in fc.lanes.values() -%}
 {{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | {{ fc.seq_meth }}
@@ -145,14 +173,12 @@ Date | FC id | Lane | Cluster(M) | >=Q30(%) | Phix | Method
 {%- endfor %}
 
 * _Date:_ Date of sequencing
-* _FC id:_ Name/id of flowcell sequenced
-* _Lane:_ Lane id for the flowcell
-* _Clusters:_ Number of clusters in million for passed filter reads.
-* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
-* _Phix:_ Average Phix error rate for the lane
-* _Method:_ Sequencing method used. See above for description.
-{% else %}
-No lanes info to be displayed
+* _Flowcell:_ Flowcell identifier
+* _Lane:_ Flowcell lane number
+* _Clusters:_ Number of clusters that passed the read filters (millions)
+* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30
+* _PhiX:_ Average PhiX error rate for the lane
+* _Method:_ Sequencing method used. See above for description
 {% endif %}
 
 {% if project.aborted_samples %}
@@ -190,8 +216,8 @@ UPPNEX project, which was created for you when your order was placed:
 {{ project.UPPMAX_path }}
 ```
 
-If you have problems accessing your data, please contact SciLifeLab
-[genomics_support@scilifelab.se](mailto: genomics_support@scilifelab.se).
+If you have problems accessing your data, please contact NGI
+[{{ project.support_email }}](mailto: {{ project.support_email }}).
 If you have questions regarding UPPNEX, please contact
 [support@uppmax.uu.se](mailto:support@uppmax.uu.se).
 
@@ -206,4 +232,4 @@ the authors must acknowledge SciLifeLab, NGI and Uppmax:
 
 # Further Help
 If you have any queries, please get in touch at
-[genomics_support@scilifelab.se](mailto: genomics_support@scilifelab.se).
+[{{ project.support_email }}](mailto: {{ project.support_email }}).
