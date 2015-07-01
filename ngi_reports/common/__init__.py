@@ -5,6 +5,7 @@ eg. Information retrieval from the filesystem or Charon
 
 import collections
 import os
+import re
 import xmltodict
 from datetime import datetime
 
@@ -41,7 +42,14 @@ class BaseReport(object):
             else:
                 # This is passed below so doesn't halt execution
                 raise KeyError("Could not parse run['inputs']['sample']")
-                
+
+        def _getfcid(str):
+            pat = r'^[AB]?([a-zA-Z0-9\-]{8,20})'
+            m = re.match(pat,str)
+            if m is not None:
+                return m.group(1)
+            return str
+
         project = {}
         samples = {}
         xml_files = []
@@ -73,7 +81,7 @@ class BaseReport(object):
                     project['ngi_name'] = run['metadata']['name']
                     for sample in _nextitem(run['inputs']['sample']):
                         try:
-                            fcid = [pfu['unitinfo'].split('.')[0][1:] \
+                            fcid = [_getfcid(pfu['unitinfo']) \
                                 for library in _nextitem(sample['library']) \
                                 for pfu in _nextitem(library['platformunit'])]
                         except (IndexError, KeyError) as e:
