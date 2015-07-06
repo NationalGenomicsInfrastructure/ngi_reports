@@ -2,7 +2,7 @@
 title: Project Overview
 subtitle: {{ project.ngi_name }}
 date: {{ project.report_date }}
-support_email: genomics_support@scilifelab.se
+support_email: {{ project.support_email }}
 swedac: true
 ---
 
@@ -17,10 +17,10 @@ NGI Project Name
 NGI Project ID
 :   {{ project.ngi_id }}
 
-{% if project.ngi_facility %}
+{% if project.ngi_facility -%}
 NGI Facility
-:   Genomics {{ project.ngi_facility }} Stockholm
-{% endif %}
+:   {{ project.ngi_facility }}
+{%- endif %}
 
 User Contact
 :   [{{ project.contact }}](mailto:{{ project.contact }})
@@ -28,11 +28,10 @@ User Contact
 NGI Application Type
 :   {{ project.application }} _({% if project.best_practice %}including best practice analysis{% else %}no best practice analysis{% endif %})_
 
+{% if project.num_samples -%}
 Samples &amp; Lanes
-:   {{ project.num_samples }} sample{% if project.num_samples > 1 %}s{% endif %}, {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}
-
-Project Status
-:   {{ project.status }}
+:   {{ project.num_samples }} sample{% if project.num_samples > 1 %}s{% endif %}{% if project.num_lanes -%}, {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}{% endif %}
+{%- endif %}
 
 Order Dates
 :   {{ project.dates }}
@@ -42,28 +41,32 @@ UPPMAX Project ID
 
 UPPNEX project path
 :   `{{ project.UPPMAX_path }}`
-{% if project.reference.genome %}
+
+{% if project.reference.genome -%}
 Reference Genome
 :   {{ project.reference.organism}} ({{ project.reference.genome }})
-{% endif %}{% if project.ordered_reads %}
+{%- endif %}
+
+{% if project.ordered_reads -%}
 Minimum ordered reads
 :   {{ project.ordered_reads }}
-{% endif %}
+{%- endif %}
  
 # Methods
 
+{% if project.library_construction -%}
 ### Library construction
-
 {{ project.library_construction }}
+{%- endif %}
 
+{% if project.sequencing_methods -%}
 ### Sequencing
 {{ project.sequencing_methods }}
+{%- endif %}
 
 ### Data Flow
 Raw sequencing data is demultiplexed and converted to FastQ on site before 
 being transferred securely to [UPPMAX](http://www.uppmax.uu.se/) for delivery.
-Raw data is also transferred to [SNIC SweStore](http://www.snic.vr.se/projects/swestore)
-for long term data security.
 
 ### Data Processing
 To ensure that all sequenced data meets our guarantee of data quality and quantity,
@@ -78,7 +81,7 @@ so that you can be sure that your data is of excellent quality.
 Library preparation
 :   {{ project.accredit.library_preparation }}
 
-Sequencing data
+Sequencing
 :   {{ project.accredit.sequencing }}
 
 Data Processing
@@ -87,53 +90,77 @@ Data Processing
 Data Analysis
 :   {{ project.accredit.data_analysis }}
 
-# Sample Info
+# Sample Information
+{% if not samples %}
+No sample information to be displayed.
+{% elif samples|length > project.display_limit %}
+Sample information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_sample_info.txt) (table hidden due to number of samples). Below you can find an explanation of the header column used in the table.
 
-NGI ID | User ID | Mreads | >=Q30(%) | Status
--------|---------|--------|----------|--------
-{% for sample in samples.values()  -%}
-{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} | {{ sample.seq_status }}
-{%- endfor %}
+{{ tables.sample_info }}
+{% else %}
+NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
+-------|---------|--------|----------{% if project.ordered_reads %}|-------- {% endif %}
+{% for sample in samples.values() -%}
+{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
+{% endfor %}
 
-* _NGI ID:_ Internal id used within NGI to refer a sample
-* _User ID:_ User submitted name for a sample
-* _Mreads:_ Total million reads (or pairs) for a sample
-* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
-* _Status:_ Sequencing status of sample based on the total reads
+The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_sample_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+{{ tables.sample_info }}
+{% endif %}
 
-# Library Info
 
+# Library Information
+{% if project.missing_prep == samples|length %}
+No library information to be displayed.
+{% elif samples|length > project.display_limit %}
+Library information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_library_info.txt) (table hidden due to number of samples). Below you can find an explanation of the header column used in the table.
+
+{{ tables.library_info }}
+{% else %}
 NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 -------|-------|----------|---------|--------
 {% for sample in samples.values()  -%}
+{% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
 {{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
+{% endif -%}
 {%- endfor %}
 
-* _NGI ID:_ Internal id used within NGI to refer a sample
-* _Index:_ Barcode sequence used for the sample
-* _Lib Prep:_ ID (alphabatical number) of library prep made.
-* _Avg. FS:_ Average fragment size of the library.
-* _Lib QC:_ Reception control library quality control step
+The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_library_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+{{ tables.library_info }}
+{% endif %}
 
-# Lanes Info
 
-Date | FC id | Lane | Cluster(M) | >=Q30(%) | Phix | Method
------|-------|------|------------|----------|------|--------
+# Lanes Information
+{% if project.missing_fc %}
+No lanes information to be displayed.
+{% elif project.total_lanes > project.display_limit %}
+Lanes information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_lanes_info.txt) (table hidden due to number of lanes). Below you can find an explanation of the header column used in the table.
+
+{{ tables.lanes_info }}
+{% else %}
+Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
+-----|----------|------|-------------|------|----------|--------
 {% for fc in flowcells.values() -%}
 {% for lane in fc.lanes.values() -%}
 {{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | {{ fc.seq_meth }}
 {% endfor -%}
 {%- endfor %}
 
-* _Date:_ Date of sequencing
-* _FC id:_ Name/id of flowcell sequenced
-* _Lane:_ Lane id for the flowcell
-* _Clusters:_ Number of clusters in million for passed filter reads.
-* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30
-* _Phix:_ Average Phix error rate for the lane
-* _Method:_ Sequencing method used. See above for description.
+The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_lanes_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+{{ tables.lanes_info }}
+{% endif %}
+
+{% if project.aborted_samples %}
+# Aborted/Not Sequenced samples
+
+NGI ID | User ID | Status
+-------|---------|-------
+{% for sample, info in project.aborted_samples.iteritems() -%}
+{{ sample }} | {{ info.user_id }} | {{ info.status }}
+{% endfor -%}
+{% endif %}
 
 # General Information
 
@@ -160,9 +187,8 @@ UPPNEX project, which was created for you when your order was placed:
 {{ project.UPPMAX_path }}
 ```
 
-
-If you have problems accessing your data, please contact SciLifeLab
-[genomics_support@scilifelab.se](mailto: genomics_support@scilifelab.se).
+If you have problems accessing your data, please contact NGI
+[{{ project.support_email }}](mailto:{{ project.support_email }}).
 If you have questions regarding UPPNEX, please contact
 [support@uppmax.uu.se](mailto:support@uppmax.uu.se).
 
@@ -177,4 +203,4 @@ the authors must acknowledge SciLifeLab, NGI and Uppmax:
 
 # Further Help
 If you have any queries, please get in touch at
-[genomics_support@scilifelab.se](mailto: genomics_support@scilifelab.se).
+[{{ project.support_email }}](mailto:{{ project.support_email }}).

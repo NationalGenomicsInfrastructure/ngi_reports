@@ -66,6 +66,8 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
     output_mds = report.parse_template(template)
     for output_bn, output_md in output_mds.iteritems():
         try:
+            # Ignore special character in the sring, panda might fail because of that
+            output_md = output_md.encode('ascii', 'ignore')
             with open('{}.md'.format(output_bn), 'w') as fh:
                 print(output_md, file=fh)
         except IOError as e:
@@ -91,6 +93,14 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
             subprocess.call(pdf_cmd)
         except OSError:
             LOG.error('Could not convert markdown to PDF - pandoc error. Skipping HTML report generation...')
+    
+    # Generate CSV files for project_summary reports
+    if report_type == 'project_summary' and not kwargs['no_txt']:
+        try:
+            report.create_txt_files()
+            LOG.info('Generated TXT files...')
+        except:
+            LOG.error('Could not generate TXT files...')
 
     # Change back to previous working dir
     os.chdir(old_cwd)
@@ -143,14 +153,18 @@ def is_valid_ngi_node (ngi_node):
 # calling main method to generate report
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Make an NGI Report")
+    parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>', 
+        help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
     parser.add_argument("-n", "--ngi_node", dest="ngi_node", default='unknown', choices=['unknown', 'stockholm', 'uppsala'],
         help="NGI Node. Default: attempts to find out from config file or setup XML files.")
     parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument("-l", "--pandoc_binary", dest="pandoc_binary", action='store_true',
         help="Use the linux RPM x86_64 pandoc binary bundled with the repository. UPPMAX bash script uses this flag. Default: False.")
-    parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>', help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
     parser.add_argument('--project', default=None, action="store", help="Project name to generate 'project_summary' report")
+    parser.add_argument('-u', '--uppmax_id', default=None, action="store", help="Given UPPMAX id will be used while generating report")
+    parser.add_argument('--display_limit', default=10, action="store", type=int, help="Threshold for not showing table in the report")
+    parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
     parser.add_argument('--samples', default=None, action="store", nargs="*", help="Limit the samples to include in reports")
     parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
 
