@@ -46,7 +46,7 @@ class CommonReport(ngi_reports.common.BaseReport):
                                  flowcells=self.flowcell_info, tables=self.tables_info['header_explanation'])
             return {output_bn: md}
         except:
-            self.LOG.error('Could not parse the ign_sample_report template')
+            self.LOG.error('Could not parse the project_summary template')
             raise
     
     # Generate CSV files for the tables

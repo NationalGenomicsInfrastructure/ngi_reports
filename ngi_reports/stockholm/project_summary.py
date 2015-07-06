@@ -111,7 +111,7 @@ class Report(project_summary.CommonReport):
             
             ## Check if a non-aborted sample is sequenced
             if self.samples_info[sample_id]['total_reads'] == None:
-                self.LOG.warn("Sample {} dont have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
+                self.LOG.warn("Sample {} doesn't have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Not sequenced'}
                 del self.samples_info[sample_id]
                 continue
@@ -120,9 +120,9 @@ class Report(project_summary.CommonReport):
             if self.samples_info[sample_id]['reads_min']:
                 self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
                 if float(self.samples_info[sample_id]['total_reads']) > float(self.samples_info[sample_id]['reads_min']):
-                    self.samples_info[sample_id]['seq_status'] = 'PASS'
+                    self.samples_info[sample_id]['seq_status'] = 'Passed'
                 else:
-                    self.samples_info[sample_id]['seq_status'] = 'FAIL'
+                    self.samples_info[sample_id]['seq_status'] = 'Failed'
             
             self.samples_info[sample_id]['preps'] = {}
             self.samples_info[sample_id]['flowcell'] = []
@@ -366,9 +366,12 @@ class Report(project_summary.CommonReport):
                 accredit = self.proj_details['accredited_({})'.format(k)]
                 if accredit in ['Yes','No']:
                     accredit_info[k] = "{} under ISO accreditation 17025:2005".format(["[cross] Not validated","[tick] Validated"][accredit == "Yes"])
+                elif accredit == 'N/A':
+                    accredit_info[k] = "Not Applicable"
                 else:
-                    accredit_info[k] = accredit.replace("N/A","Not Applicable")
+                    self.LOG.error("Accreditation step {} for project {} is found, but any value is not set".format(k,self.project_name))
             except KeyError:
+                ## For "finished library" projects, set certain accredation steps as "NA" even if not set by default
                 if k in ['library_preparation','data_analysis'] and self.proj.get('application') == "Finished library":
                     accredit_info[k] = "Not Applicable"
                 else:

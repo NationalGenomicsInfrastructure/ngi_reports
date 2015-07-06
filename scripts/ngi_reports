@@ -66,7 +66,7 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
     output_mds = report.parse_template(template)
     for output_bn, output_md in output_mds.iteritems():
         try:
-            ####### Temp fix, need a clean solution ########
+            # Ignore special character in the sring, panda might fail because of that
             output_md = output_md.encode('ascii', 'ignore')
             with open('{}.md'.format(output_bn), 'w') as fh:
                 print(output_md, file=fh)

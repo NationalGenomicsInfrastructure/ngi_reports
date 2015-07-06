@@ -94,7 +94,7 @@ Data Analysis
 {% if not samples %}
 No sample information to be displayed.
 {% elif samples|length > project.display_limit %}
-There are too many samples to display, please click [here]({{ project.ngi_name }}_sample_info.txt) to view the table from tab-separated text file. Below you can find an explanation of the header column used in the table.
+Sample information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_sample_info.txt) (table hidden due to number of samples). Below you can find an explanation of the header column used in the table.
 
 {{ tables.sample_info }}
 {% else %}
@@ -104,6 +104,7 @@ NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% e
 {{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
 {% endfor %}
 
+The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_sample_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
 {{ tables.sample_info }}
 {% endif %}
 
@@ -112,7 +113,7 @@ NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% e
 {% if project.missing_prep == samples|length %}
 No library information to be displayed.
 {% elif samples|length > project.display_limit %}
-There are too many samples to display, please click [here]({{ project.ngi_name }}_library_info.txt) to download the table from tab-separated text file. Below you can find the abbrevations for the header column used in the table.
+Library information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_library_info.txt) (table hidden due to number of samples). Below you can find an explanation of the header column used in the table.
 
 {{ tables.library_info }}
 {% else %}
@@ -126,6 +127,7 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 {% endif -%}
 {%- endfor %}
 
+The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_library_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
 {{ tables.library_info }}
 {% endif %}
 
@@ -134,7 +136,7 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 {% if project.missing_fc %}
 No lanes information to be displayed.
 {% elif project.total_lanes > project.display_limit %}
-There are too many lanes to display, please click [here]({{ project.ngi_name }}_lanes_info.txt) to download the table from tab-separated text file. Below you can find the abbrevations for the header column used in the table.
+Lanes information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_lanes_info.txt) (table hidden due to number of lanes). Below you can find an explanation of the header column used in the table.
 
 {{ tables.lanes_info }}
 {% else %}
@@ -146,6 +148,7 @@ Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 {% endfor -%}
 {%- endfor %}
 
+The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_lanes_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
 {{ tables.lanes_info }}
 {% endif %}
 
@@ -185,7 +188,7 @@ UPPNEX project, which was created for you when your order was placed:
 ```
 
 If you have problems accessing your data, please contact NGI
-[{{ project.support_email }}](mailto: {{ project.support_email }}).
+[{{ project.support_email }}](mailto:{{ project.support_email }}).
 If you have questions regarding UPPNEX, please contact
 [support@uppmax.uu.se](mailto:support@uppmax.uu.se).
 
@@ -200,4 +203,4 @@ the authors must acknowledge SciLifeLab, NGI and Uppmax:
 
 # Further Help
 If you have any queries, please get in touch at
-[{{ project.support_email }}](mailto: {{ project.support_email }}).
+[{{ project.support_email }}](mailto:{{ project.support_email }}).
