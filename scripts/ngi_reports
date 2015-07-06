@@ -166,7 +166,7 @@ if __name__ == "__main__":
     parser.add_argument('--display_limit', default=10, action="store", type=int, help="Threshold for not showing table in the report")
     parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
     parser.add_argument('--samples', default=None, action="store", nargs="*", help="Limit the samples to include in reports")
-    parser.add_argument('--samples_extra', default=None, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
+    parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
 
     kwargs = vars(parser.parse_args())
 
