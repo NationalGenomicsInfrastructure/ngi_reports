@@ -37,7 +37,7 @@ class CommonReport(ngi_reports.common.BaseReport):
             if not kwargs.get('samples') or v['id'] in kwargs.get('samples')}
 
         # Append any extra sample information passed on the command line
-        for sampleid, extrainfo in kwargs.get('samples_extra',{}).items():
+        for sampleid, extrainfo in kwargs.get('samples_extra').items():
             try:
                 self.samples[sampleid].update(extrainfo)
             except KeyError as e:
@@ -60,6 +60,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.parse_qualimap()
         self.parse_snpeff()
         self.parse_picard_metrics()
+        self.parse_deliveries()
 
         self.create_aggregate_statistics()
 
@@ -67,7 +68,25 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.make_plots()
 
 
-
+    def parse_deliveries(self):
+        """ Parse the delivery acknowledgements to get information about 
+            delivery times
+        """
+        for sample_id in self.samples.iterkeys():
+            # expected file name
+            ackfile = os.path.join(
+                self.working_dir,
+                '08_misc',
+                '{}_delivered.ack'.format(sample_id))
+            try:
+                # the acknowledgement should only contain the timestamp, so grab it
+                with open(ackfile,'r') as fh:
+                    self.samples[sample_id]['delivered'] = fh.read().strip()
+            # catch all exceptions
+            except (IOError, Exception) as e:
+                self.LOG.error("Something went wrong with parsing the "\
+                    "delivery acknowledgement for sample {}:\n{}".format(
+                    sample_id, e))
 
     def parse_qualimap(self):
         """ Looks for qualimap results files and adds to class
