@@ -18,6 +18,10 @@ class Report(ign_sample_report.CommonReport):
         # Initialise the parent class
         super(Report, self).__init__(config, LOG, working_dir, **kwargs)
 
+        # Create the plots
+        self.LOG.debug('Plotting graphs')
+        self.make_plots()
+
         # Get project fields from statusdb
         self.LOG.debug('Connecting to statusDB...')
         pcon = statusdb.ProjectSummaryConnection()

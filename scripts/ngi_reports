@@ -21,7 +21,7 @@ config = report_config.load_config()
 
 ## CONSTANTS
 # create choices for report type based on available report template
-allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ]
+allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ] + ['ign_aggregate_report']
 
 def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pandoc_binary=False, **kwargs):
 
@@ -37,6 +37,10 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
 
     # Make the report object
     report = report_mod.Report(config, LOG, working_dir, **kwargs)
+
+    # If we're creating the aggregate report, we're done now and can return
+    if report_type == 'ign_aggregate_report':
+        return
 
     # Work out all of the directory names
     output_dir = os.path.realpath(os.path.join(working_dir, report.report_dir))

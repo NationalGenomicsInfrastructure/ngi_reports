@@ -17,6 +17,10 @@ class Report(ign_sample_report.CommonReport):
         # Initialise the parent class
         super(Report, self).__init__(config, LOG, working_dir, **kwargs)
 
+        # Create the plots
+        self.LOG.debug('Plotting graphs')
+        self.make_plots()
+
         #### Missing Fields
         # self.info['recipient']
         # self.project['prep']
