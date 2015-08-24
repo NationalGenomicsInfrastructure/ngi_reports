@@ -105,6 +105,7 @@ NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% e
 {% endfor %}
 
 The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_sample_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+
 {{ tables.sample_info }}
 {% endif %}
 
@@ -128,6 +129,7 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 {%- endfor %}
 
 The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_library_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+
 {{ tables.library_info }}
 {% endif %}
 
@@ -149,6 +151,7 @@ Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 {%- endfor %}
 
 The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_lanes_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+
 {{ tables.lanes_info }}
 {% endif %}
 
