@@ -165,7 +165,7 @@ if __name__ == "__main__":
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument("-l", "--pandoc_binary", dest="pandoc_binary", action='store_true',
         help="Use the linux RPM x86_64 pandoc binary bundled with the repository. UPPMAX bash script uses this flag. Default: False.")
-    parser.add_argument('--project', default=None, action="store", help="Project name to generate 'project_summary' report")
+    parser.add_argument('-p', '--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('-u', '--uppmax_id', default=None, action="store", help="Given UPPMAX id will be used while generating report")
     parser.add_argument('--display_limit', default=10, action="store", type=int, help="Threshold for not showing table in the report")
     parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
