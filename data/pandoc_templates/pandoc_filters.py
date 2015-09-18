@@ -10,10 +10,6 @@ at the (very very long) JSON output.
 import os
 from pandocfilters import toJSONFilter, Image, Str, RawInline
 
-swe_lat = """\vspace{1cm}
-\centering
-\includegraphics[height=2.5cm]{"""+os.path.realpath(os.path.dirname(__file__))+"""/assets/swedac.pdf}"""
- 
 
 # Replace [tick] or [cross] with different icons in PDF and HTML
 def tick_cross_images (key, value, format, meta):
