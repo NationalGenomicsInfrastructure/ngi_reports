@@ -69,12 +69,19 @@ class Report(project_summary.CommonReport):
             self.LOG.warn("Project {} was aborted, so not proceeding.".format(self.project_name))
             raise SystemExit
         
+        ## Assign person creating the report
+        if kwargs.get('signature'):
+            self.project_info['signature'] = kwargs.get('signature')
+        else:
+            self.LOG.warn("Signature not given while generating report.")
+        
         ## Get information for the reports from statusdb
         self.project_info['ngi_id'] = self.proj.get('project_id')
         self.project_info['ngi_facility'] = "Genomics {} Stockholm".format(self.proj_details.get('type')) if self.proj_details.get('type') else None 
         self.project_info['contact'] = self.proj.get('contact')
         self.project_info['support_email'] = config.get('ngi_reports','support_email')
         self.project_info['dates'] = self.get_order_dates()
+        self.project_info['report_date'] = datetime.now().strftime("%Y-%m-%d")
         self.project_info['application'] = self.proj.get('application')
         self.project_info['num_samples'] = self.proj.get('no_of_samples')
         self.project_info['reference'] = {}
@@ -105,7 +112,8 @@ class Report(project_summary.CommonReport):
             
             ## Basic fields from Project database
             self.samples_info[sample_id] = {'ngi_id': sample_id}
-            self.samples_info[sample_id]['customer_name'] = sample.get('customer_name','')
+            ## special characters should be removed 
+            self.samples_info[sample_id]['customer_name'] = sample.get('customer_name','').encode('ascii', 'ignore')
             self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)')
             self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             
@@ -120,9 +128,9 @@ class Report(project_summary.CommonReport):
             if self.samples_info[sample_id]['reads_min']:
                 self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
                 if float(self.samples_info[sample_id]['total_reads']) > float(self.samples_info[sample_id]['reads_min']):
-                    self.samples_info[sample_id]['seq_status'] = 'Passed'
+                    self.samples_info[sample_id]['seq_status'] = 'PASSED'
                 else:
-                    self.samples_info[sample_id]['seq_status'] = 'Failed'
+                    self.samples_info[sample_id]['seq_status'] = 'FAILED'
             
             self.samples_info[sample_id]['preps'] = {}
             self.samples_info[sample_id]['flowcell'] = []
@@ -226,6 +234,9 @@ class Report(project_summary.CommonReport):
                     total_bases += qinfo[k]['bases']
                 avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp) 
                 self.samples_info[sample]['qscore'] = round(avg_qval, 2)
+                ## Samples with avyg Q30 less than 80 should be failed according to our routines
+                if int(self.samples_info[sample]['qscore']) < 80:
+                    self.samples_info[sample]['seq_status'] = 'FAILED'
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
         

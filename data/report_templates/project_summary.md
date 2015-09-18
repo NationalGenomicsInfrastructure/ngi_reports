@@ -1,9 +1,8 @@
 ---
 title: Project Overview
-subtitle: {{ project.ngi_name }}
+subtitle: {{ project.ngi_name }}_project_summary
 date: {{ project.report_date }}
 support_email: {{ project.support_email }}
-swedac: true
 ---
 
 # Project Information
@@ -51,6 +50,11 @@ Reference Genome
 Minimum ordered reads
 :   {{ project.ordered_reads }}
 {%- endif %}
+
+Report generated
+:   {{ project.signature }}, {{ project.report_date }}
+
+[swedac]
  
 # Methods
 
@@ -100,7 +104,7 @@ Sample information table can be viewed tab-separated text file, please click [he
 {% else %}
 NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
 -------|---------|--------|----------{% if project.ordered_reads %}|-------- {% endif %}
-{% for sample in samples.values() -%}
+{% for sample in samples.values()|sort(attribute='ngi_id') -%}
 {{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
 {% endfor %}
 
@@ -120,7 +124,7 @@ Library information table can be viewed tab-separated text file, please click [h
 {% else %}
 NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 -------|-------|----------|---------|--------
-{% for sample in samples.values()  -%}
+{% for sample in samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
 {{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
@@ -144,7 +148,7 @@ Lanes information table can be viewed tab-separated text file, please click [her
 {% else %}
 Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 -----|----------|------|-------------|------|----------|--------
-{% for fc in flowcells.values() -%}
+{% for fc in flowcells.values()|sort(attribute='date') -%}
 {% for lane in fc.lanes.values() -%}
 {{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | {{ fc.seq_meth }}
 {% endfor -%}
