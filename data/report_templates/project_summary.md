@@ -77,10 +77,7 @@ To ensure that all sequenced data meets our guarantee of data quality and quanti
 a number of standardised bioinformatics quality control checks are performed before
 delivery. These include checking the yield, sequence read quality and cross-sample contamination.
 
-### Swedac Accreditation
-The National Genomics Infrastructure is accredited by [Swedac](http://www.swedac.se).
-This means that our services are subject to highly stringent quality control procedures,
-so that you can be sure that your data is of excellent quality.
+### Accreditated workflow
 
 Library preparation
 :   {{ project.accredit.library_preparation }}
