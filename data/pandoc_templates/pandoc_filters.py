@@ -10,13 +10,14 @@ at the (very very long) JSON output.
 import os
 from pandocfilters import toJSONFilter, Image, Str, RawInline
 
-swedac_latex_text = r"""\section{Swedac Accreditation}
-\begin{minipage}{0.8\textwidth}
+swedac_latex_text = r"""\subsection{Swedac Accreditation}
+\begin{minipage}{0.82\textwidth}
 The National Genomics Infrastructure is accredited by \href{http://www.swedac.se}{Swedac}. This means that our services are subject to highly stringent quality control procedures, so that you can be sure that your data is of excellent quality.
 \end{minipage} \hfill
 \begin{minipage}{0.15\textwidth}
-\includegraphics[height=3cm]{"""+os.path.realpath(os.path.dirname(__file__))+"""/assets/swedac.pdf}
-\end{minipage}"""
+\includegraphics[height=2.5cm]{"""+os.path.realpath(os.path.dirname(__file__))+"""/assets/swedac.pdf}
+\end{minipage}
+\pagebreak"""
 
 swedac_html_text = r"""<h1>Swedac Accreditation
 <a href="http://search.swedac.se/en/accreditations/1850"
