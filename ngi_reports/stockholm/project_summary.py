@@ -9,6 +9,7 @@ https://github.com/senthil10/scilifelab/blob/edit_report/scilifelab/report/seque
 import os
 import re
 import numpy as np
+import unicodedata
 from datetime import datetime
 from collections import OrderedDict
 from string import ascii_uppercase as alphabets
@@ -35,6 +36,13 @@ class Report(project_summary.CommonReport):
             except KeyError:
                 self.LOG.error("No project name found - please specify using '--project'")
                 raise KeyError("No project name found - please specify using '--project'")
+        
+        ## Check and exit if signature not provided
+        if not kwargs.get('signature'):
+            self.LOG.error("It is required to provide Signature/Name generating 'project_summary' report")
+            raise SystemExit
+        else:
+            self.project_info['signature'] = kwargs.get('signature')
         
         ## Report filename
         self.report_fn = "{}_project_summary".format(self.project_name)
@@ -69,12 +77,6 @@ class Report(project_summary.CommonReport):
             self.LOG.warn("Project {} was aborted, so not proceeding.".format(self.project_name))
             raise SystemExit
         
-        ## Assign person creating the report
-        if kwargs.get('signature'):
-            self.project_info['signature'] = kwargs.get('signature')
-        else:
-            self.LOG.warn("Signature not given while generating report.")
-        
         ## Get information for the reports from statusdb
         self.project_info['ngi_id'] = self.proj.get('project_id')
         self.project_info['ngi_facility'] = "Genomics {} Stockholm".format(self.proj_details.get('type')) if self.proj_details.get('type') else None 
@@ -87,7 +89,7 @@ class Report(project_summary.CommonReport):
         self.project_info['reference'] = {}
         self.project_info['reference']['genome'] = None if self.proj.get('reference_genome') == 'other' else self.proj.get('reference_genome')
         self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], '')
-        self.project_info['user_ID'] = self.proj_details.get('customer_project_reference')
+        self.project_info['user_ID'] = self.to_ascii(self.proj_details.get('customer_project_reference',''))
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
         self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id')
         self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'])
@@ -113,7 +115,7 @@ class Report(project_summary.CommonReport):
             ## Basic fields from Project database
             self.samples_info[sample_id] = {'ngi_id': sample_id}
             ## special characters should be removed 
-            self.samples_info[sample_id]['customer_name'] = sample.get('customer_name','').encode('ascii', 'ignore')
+            self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name',''))
             self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)')
             self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             
@@ -402,3 +404,12 @@ class Report(project_summary.CommonReport):
             return str(int(v/1000000)) if as_million else str(round(v,2))
         except TypeError:
             return
+
+    def to_ascii(self,value):
+        """Convert any non-ASCII character to its closest ASCII equivalent
+        
+        :param string value: a 'str' or 'unicode' string 
+        """
+        if not isinstance(value, unicode):
+            value = unicode(value, 'utf-8')
+        return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
