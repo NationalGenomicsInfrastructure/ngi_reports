@@ -4,7 +4,8 @@
 """
 
 import os
-from ngi_reports.common import ign_sample_report, statusdb
+from ngi_reports.common import ign_sample_report
+from ngi_reports.utils import statusdb
 
 class Report(ign_sample_report.CommonReport):
 

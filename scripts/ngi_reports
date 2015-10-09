@@ -14,7 +14,7 @@ import shutil
 import subprocess
 
 from ngi_reports.log import loggers
-from ngi_reports.common import config as report_config
+from ngi_reports.utils import config as report_config
 
 LOG = loggers.minimal_logger('NGI Reports')
 config = report_config.load_config()
