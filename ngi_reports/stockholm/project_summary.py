@@ -13,7 +13,8 @@ import unicodedata
 from datetime import datetime
 from collections import OrderedDict
 from string import ascii_uppercase as alphabets
-from ngi_reports.common import project_summary, statusdb
+from ngi_reports.common import project_summary
+from ngi_reports.utils import statusdb
 from ConfigParser import NoSectionError, NoOptionError
 
 class Report(project_summary.CommonReport):
