@@ -13,8 +13,7 @@ import unicodedata
 from datetime import datetime
 from collections import OrderedDict
 from string import ascii_uppercase as alphabets
-from ngi_reports.common import project_summary
-from statusdb.db import connections as statusdb
+from ngi_reports.common import project_summary, statusdb
 from ConfigParser import NoSectionError, NoOptionError
 
 class Report(project_summary.CommonReport):
@@ -50,12 +49,10 @@ class Report(project_summary.CommonReport):
 
         ## Get connections to the databases in StatusDB
         self.LOG.info("Connecting to statusDB...")
-        pcon = statusdb.ProjectSummaryConnection(**kwargs)
+        pcon = statusdb.ProjectSummaryConnection()
         assert pcon, "Could not connect to {} database in StatusDB".format("project")
-        fcon = statusdb.FlowcellRunMetricsConnection(**kwargs)
+        fcon = statusdb.FlowcellRunMetricsConnection()
         assert fcon, "Could not connect to {} database in StatusDB".format("flowcell")
-        scon = statusdb.SampleRunMetricsConnection(**kwargs)
-        assert scon, "Could not connect to {} database in StatusDB".format("samples")
         self.LOG.info("...connected")
         
         ## Get the project from statusdb
@@ -123,6 +120,7 @@ class Report(project_summary.CommonReport):
             self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name',''))
             self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)')
             self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
+            self.samples_info[sample_id]['preps'] = {}
             
             ## Check if a non-aborted sample is sequenced
             if self.samples_info[sample_id]['total_reads'] == None:
@@ -139,17 +137,6 @@ class Report(project_summary.CommonReport):
                 else:
                     self.samples_info[sample_id]['seq_status'] = 'FAILED'
             
-            self.samples_info[sample_id]['preps'] = {}
-            self.samples_info[sample_id]['flowcell'] = []
-            ## Get sample objects from statusdb
-            for sample_run_doc in scon.get_project_sample(sample_id, sample_prj=self.project_name):
-                fc_name = sample_run_doc.get('flowcell')
-                fc_run_name = "{}_{}".format(sample_run_doc.get('date'), fc_name)
-                if fc_name not in self.flowcell_info.keys():
-                    self.flowcell_info[fc_name] = {'name':fc_name,'run_name':fc_run_name, 'date': sample_run_doc.get('date')}
-                if fc_run_name not in self.samples_info[sample_id]['flowcell']:
-                    self.samples_info[sample_id]['flowcell'].append(fc_run_name)
-
             ## Go through each prep for each sample in the Projects database
             for prep_id, prep in sample.get('library_prep', {}).iteritems():
                 self.samples_info[sample_id]['preps'][prep_id] = {'label': prep_id }
@@ -177,6 +164,8 @@ class Report(project_summary.CommonReport):
             if not self.samples_info[sample_id]['preps']:
                 self.LOG.warn('No library prep information was available for sample {}'.format(sample_id))
         
+        ## collect all the flowcell this project was run
+        self.get_project_flowcell(fcon.proj_list)
         if not self.flowcell_info:
             self.LOG.warn('There is no flowcell to process for project {}'.format(self.project_name))
             self.project_info['missing_fc'] = True
@@ -453,9 +442,9 @@ class Report(project_summary.CommonReport):
         try:
             read_length = self.project_info['seq_setup'].split('x')[-1]
         except:
-            self.LOG.warn("Some problem with fetching setup from db, using default 80% as thershold. But kindly check the sequencing methods in gerated report")
+            self.LOG.warn("Some problem with fetching setup from db, using default 80% as thershold. But kindly check the sequencing methods in generated report")
             return default
-        ## Its rare a project sun on both hiseq and miseq, if it was HiSeq threshold will be considered
+        ## Its rare a project run on both hiseq and miseq, if it happened HiSeq threshold will be considered
         if self.proj_has_hiseq:
             q_section = "quality_thershold_hiseq"
         elif self.proj_has_miseq:
@@ -465,7 +454,7 @@ class Report(project_summary.CommonReport):
             elif int(read_length) >= 250:
                 read_length = ">250"
         else:
-            self.LOG.warn("Couldn't find runtype as Hiseq or Miseq, will use 80% for threshold. But kindly check the sequencing methods in gerated report")
+            self.LOG.warn("Couldn't find runtype as Hiseq or Miseq, will use 80% for threshold. But kindly check the sequencing methods in generated report")
             return default
         ## Log warning if the section missing in config file and use default
         if not config.has_section(q_section):
@@ -477,3 +466,17 @@ class Report(project_summary.CommonReport):
         except NoOptionError:
             self.LOG.warn("Could not find pre-defined thershold for length {} in section {} in config file, using default 80% as threshold".format(read_length, q_section))
             return default
+
+    def get_project_flowcell(self, fc_proj_list):
+        """From information available in flowcell db connection collect the flowcell this project was sequenced"""
+        proj_id = self.project_info['ngi_id']
+        ## check only flowcell run after project opendate to save time, if open date not available
+        ## check flowcell sequenced after 2015, the year this new report implemented 
+        proj_open_date = datetime.strptime(self.proj.get('open_date','2015-01-01'),'%Y-%m-%d')
+        sort_fcs = sorted(fc_proj_list.keys(), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)[1:10]
+        for fc in sort_fcs:
+            fc_date, fc_name = fc.split('_') 
+            if datetime.strptime(fc_date,'%y%m%d') < proj_open_date:
+                break
+            if proj_id in fc_proj_list[fc]:
+                self.flowcell_info[fc_name] = {'name':fc_name,'run_name':fc, 'date': fc_date}
