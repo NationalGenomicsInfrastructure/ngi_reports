@@ -6,7 +6,7 @@ import sys
 
 from ConfigParser import NoOptionError, NoSectionError
 
-from ngi_reports.common import config as cl
+from ngi_reports.utils import config as cl
 
 
 def minimal_logger(namespace, config_file=None, to_file=True, debug=False):

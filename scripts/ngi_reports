@@ -14,7 +14,7 @@ import shutil
 import subprocess
 
 from ngi_reports.log import loggers
-from ngi_reports.common import config as report_config
+from ngi_reports.utils import config as report_config
 
 LOG = loggers.minimal_logger('NGI Reports')
 config = report_config.load_config()
@@ -96,7 +96,7 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
             pdf_cmd = shlex.split('{2} --standalone {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter {1}/pandoc_filters.py -V template_dir={1}'.format(output_bn, pandoc_dir, pandoc_cmd))
             subprocess.call(pdf_cmd)
         except OSError:
-            LOG.error('Could not convert markdown to PDF - pandoc error. Skipping HTML report generation...')
+            LOG.error('Could not convert markdown to PDF - pandoc error. Skipping PDF report generation...')
     
     # Generate CSV files for project_summary reports
     if report_type == 'project_summary' and not kwargs['no_txt']:
@@ -168,6 +168,7 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('-s', '--signature', default=None, action="store", help="Signature/Name for person who generates 'project_summary' report")
     parser.add_argument('-u', '--uppmax_id', default=None, action="store", help="Given UPPMAX id will be used while generating report")
+    parser.add_argument('-q', '--quality', default=None, action="store", type=int, help="Q30(%) threshold for samples to set status")
     parser.add_argument('--display_limit', default=10, action="store", type=int, help="Threshold for not showing table in the report")
     parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
     parser.add_argument('--samples', default=None, action="store", nargs="*", help="Limit the samples to include in reports")
