@@ -240,7 +240,7 @@ class Report(project_summary.CommonReport):
               
         ## Evaluate threshold for Q30 to set sample status, priority given to user mentioned value
         ## if not duduce from the run setup, only very basic assumptions made for deduction
-        q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_thershold(config)
+        q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_threshold(config)
         
 
         ## calculate average Q30 over all lanes and flowcell
@@ -435,7 +435,7 @@ class Report(project_summary.CommonReport):
         return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
     
     
-    def get_q30_thershold(self, config, default=80):
+    def get_q30_threshold(self, config, default=80):
         """Set the Q30 percentage based upon run setup and pre-defined Q30 from config
         
         :param config: A config parser instance returned after loading the config file
@@ -443,13 +443,13 @@ class Report(project_summary.CommonReport):
         try:
             read_length = self.project_info['seq_setup'].split('x')[-1]
         except:
-            self.LOG.warn("Some problem with fetching setup from db, using default 80% as thershold. But kindly check the sequencing methods in generated report")
+            self.LOG.warn("Some problem with fetching setup from db, using default 80% as threshold. But kindly check the sequencing methods in generated report")
             return default
         ## Its rare a project run on both hiseq and miseq, if it happened HiSeq threshold will be considered
         if self.proj_has_hiseq:
-            q_section = "quality_thershold_hiseq"
+            q_section = "quality_threshold_hiseq"
         elif self.proj_has_miseq:
-            q_section = "quality_thershold_miseq"
+            q_section = "quality_threshold_miseq"
             if int(read_length) < 100:
                 read_length = "<100"
             elif int(read_length) >= 250:
@@ -465,7 +465,7 @@ class Report(project_summary.CommonReport):
         try:
             return int(config.get(q_section, read_length))
         except NoOptionError:
-            self.LOG.warn("Could not find pre-defined thershold for length {} in section {} in config file, using default 80% as threshold".format(read_length, q_section))
+            self.LOG.warn("Could not find pre-defined threshold for length {} in section {} in config file, using default 80% as threshold".format(read_length, q_section))
             return default
 
     def get_project_flowcell(self, fc_proj_list):
