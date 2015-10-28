@@ -211,7 +211,6 @@ class Report(project_summary.CommonReport):
 
             ## Collect quality info for samples and collect lanes of interest
             for stat in fc_illumina.get('Demultiplex_Stats',{}).get('Barcode_lane_statistics',[]):
-#                import pdb; pdb.set_trace()
                 try:
                     if re.sub('_+','.',stat['Project'],1) != self.project_name and stat['Project'] != self.project_name:
                         continue
