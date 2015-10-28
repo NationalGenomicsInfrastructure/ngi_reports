@@ -28,8 +28,13 @@ NGI Application Type
 :   {{ project.application }} _({% if project.best_practice %}including best practice analysis{% else %}no best practice analysis{% endif %})_
 
 {% if project.num_samples -%}
-Samples &amp; Lanes
-:   {{ project.num_samples }} sample{% if project.num_samples > 1 %}s{% endif %}{% if project.num_lanes -%}, {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}{% endif %}
+Submitted samples
+:   {{ project.num_samples }} sample{% if project.num_samples > 1 %}s{% endif %}
+{%- endif %}
+
+{% if project.num_lanes -%}
+Ordered lanes
+:   {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}
 {%- endif %}
 
 Order Dates
