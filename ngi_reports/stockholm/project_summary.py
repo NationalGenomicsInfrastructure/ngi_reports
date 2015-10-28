@@ -120,7 +120,7 @@ class Report(project_summary.CommonReport):
 
             ## get total reads if avialable or mark sample as not sequenced
             try:
-                self.samples_info[sample_id]['total_reads'] = str(round(float(sample.get('details',{})['total_reads_(m)']), 2))
+                self.samples_info[sample_id]['total_reads'] = "{:.2f}".format(float(sample['details']['total_reads_(m)']))
             except KeyError:
                 self.LOG.warn("Sample {} doesn't have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Not sequenced'}
@@ -173,17 +173,17 @@ class Report(project_summary.CommonReport):
             self.LOG.warn('There is no flowcell to process for project {}'.format(self.project_name))
             self.project_info['missing_fc'] = True
 
-        ## different FC db have different key names, this will be changed when merging the dbs for X and 2500 FC
-        sample_qstat_keys = dict.fromkeys(['HiSeq2500','MiSeq'], {'qval':'% of >= Q30 Bases (PF)', 'bases':'# Reads'})
-        sample_qstat_keys['HiSeqX'] = {'qval':'% >= Q30bases', 'bases':'PF Clusters'}
-
         ## Collect required information for all flowcell run for the project
         for fc in self.flowcell_info.values():
             fc_name = fc['name']
-            fc_obj = xcon.get_entry(fc['run_name']) if fc['type'] == 'HiSeqX' else fcon.get_entry(fc['run_name'])
-            fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{}) if fc['type'] == 'HiSeqX' else fc_obj.get('RunParameters',{})
+            if fc['type'] == 'HiSeqX':
+                fc_obj = xcon.get_entry(fc['run_name'])
+                fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
+            else:
+                fc_obj = fcon.get_entry(fc['run_name'])
+                fc_runp = fc_obj.get('RunParameters',{})
             fc_illumina = fc_obj.get('illumina',{})
-            fc_lane_summary = fc_obj.get('lims_data', '').get('run_summary', {})
+            fc_lane_summary = fc_obj.get('lims_data', {}).get('run_summary', {})
             self.flowcell_info[fc_name]['lanes'] = OrderedDict()
 
             ## Get sequecing method for the flowcell
@@ -195,8 +195,8 @@ class Report(project_summary.CommonReport):
             seq_plat = fc['type']
             clus_meth = ["cBot","onboard clustering"][seq_plat == "MiSeq" or fc_runp.get("ClusteringChoice","") == "OnBoardClustering"]
             try:
-                casava = fc_obj.get('DemultiplexConfig',{}).values()[0].get('Software',{}).get('Version')
-            except:
+                casava = fc_obj['DemultiplexConfig'].values()[0]['Software']['Version']
+            except KeyError, IndexError:
                 casava = None
             if seq_plat == "MiSeq":
                 seq_software = "MSC {}/RTA {}".format(fc_runp.get("MCSVersion"),fc_runp.get("RTAVersion"))
@@ -213,12 +213,18 @@ class Report(project_summary.CommonReport):
             for stat in fc_illumina.get('Demultiplex_Stats',{}).get('Barcode_lane_statistics',[]):
 #                import pdb; pdb.set_trace()
                 try:
-                    if re.sub('__|_','.',stat['Project'],1) != self.project_name and stat['Project'] != self.project_name:
+                    if re.sub('_+','.',stat['Project'],1) != self.project_name and stat['Project'] != self.project_name:
                         continue
                     sample, lane = (stat['Sample'] if seq_plat == "HiSeqX" else stat['Sample ID'], stat['Lane'])
                     try:
-                        self.sample_qval[sample]['{}_{}'.format(lane, fc_name)] = {'qval': float(stat.get(sample_qstat_keys[seq_plat]['qval'])),
-                                                                        'bases': int(stat.get(sample_qstat_keys[seq_plat]['bases']).replace(',',''))*int(run_setup.split('x')[-1])}
+                        if seq_plat in ["HiSeq2500", "MiSeq"]:
+                            qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
+                        elif seq_plat == "HiSeqX":
+                            qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
+                        r_idx = '{}_{}'.format(lane, fc_name)
+                        qval = float(stat.get(qval_key))
+                        base = int(stat.get(base_key).replace(',','')) * int(run_setup.split('x')[-1])
+                        self.sample_qval[sample][r_idx] = {'qval': qval, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
                         self.LOG.warn("Someting went wonrg while fetching Q30 for sample {} in FV {} at lane {}".format(sample, fc_name, lane))
                         pass
