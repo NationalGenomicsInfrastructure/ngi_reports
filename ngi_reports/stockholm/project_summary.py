@@ -37,14 +37,14 @@ class Report(project_summary.CommonReport):
             except KeyError:
                 self.LOG.error("No project name found - please specify using '--project'")
                 raise KeyError("No project name found - please specify using '--project'")
-        
+
         ## Check and exit if signature not provided
         if not kwargs.get('signature'):
             self.LOG.error("It is required to provide Signature/Name generating 'project_summary' report")
             raise SystemExit
         else:
             self.project_info['signature'] = kwargs.get('signature')
-        
+
         ## Report filename
         self.report_fn = "{}_project_summary".format(self.project_name)
 
@@ -57,7 +57,7 @@ class Report(project_summary.CommonReport):
         xcon = statusdb.X_FlowcellRunMetricsConnection()
         assert xcon, "Could not connect to {} database in StatusDB".format("x_flowcell")
         self.LOG.info("...connected")
-        
+
         ## Get the project from statusdb
         self.proj = pcon.get_entry(self.project_name)
         if not self.proj:
@@ -72,15 +72,15 @@ class Report(project_summary.CommonReport):
         ## Helper vars
         self.seq_methods, self.sample_qval = (OrderedDict(), defaultdict(dict))
         self.proj_details = self.proj.get('details',{})
-        
+
         ## Check if it is an aborted project before proceding
         if "aborted" in self.proj_details:
             self.LOG.warn("Project {} was aborted, so not proceeding.".format(self.project_name))
             raise SystemExit
-        
+
         ## Get information for the reports from statusdb
         self.project_info['ngi_id'] = self.proj.get('project_id')
-        self.project_info['ngi_facility'] = "Genomics {} Stockholm".format(self.proj_details.get('type')) if self.proj_details.get('type') else None 
+        self.project_info['ngi_facility'] = "Genomics {} Stockholm".format(self.proj_details.get('type')) if self.proj_details.get('type') else None
         self.project_info['contact'] = self.proj.get('contact')
         self.project_info['support_email'] = config.get('ngi_reports','support_email')
         self.project_info['dates'] = self.get_order_dates()
@@ -105,7 +105,7 @@ class Report(project_summary.CommonReport):
         self.project_info['missing_fc'] = False
         self.project_info['aborted_samples'] = OrderedDict()
         self.project_info['seq_setup'] = self.proj_details.get('sequencing_setup')
-        
+
         ## Collect information about the sample preps and collect aborted samples
         for sample_id, sample in sorted(self.proj.get('samples', {}).iteritems()):
             self.LOG.info('Processing sample {}'.format(sample_id))
@@ -114,10 +114,10 @@ class Report(project_summary.CommonReport):
                 self.LOG.info('Sample {} is aborted, so skipping it'.format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Aborted'}
                 continue
-            
+
             ## Basic fields from Project database
             self.samples_info[sample_id] = {'ngi_id': sample_id}
-            
+
             ## get total reads if avialable or mark sample as not sequenced
             try:
                 self.samples_info[sample_id]['total_reads'] = str(round(float(sample.get('details',{})['total_reads_(m)']), 2))
@@ -127,11 +127,11 @@ class Report(project_summary.CommonReport):
                 del self.samples_info[sample_id]
                 continue
 
-            ## special characters should be removed 
+            ## special characters should be removed
             self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name',''))
             self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             self.samples_info[sample_id]['preps'] = {}
-            
+
             ## Check if reads minimum set for sample and the status if it does
             if self.samples_info[sample_id]['reads_min']:
                 self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
@@ -139,7 +139,7 @@ class Report(project_summary.CommonReport):
                     self.samples_info[sample_id]['seq_status'] = 'PASSED'
                 else:
                     self.samples_info[sample_id]['seq_status'] = 'FAILED'
-            
+
             ## Go through each prep for each sample in the Projects database
             for prep_id, prep in sample.get('library_prep', {}).iteritems():
                 self.samples_info[sample_id]['preps'][prep_id] = {'label': prep_id }
@@ -151,7 +151,7 @@ class Report(project_summary.CommonReport):
                     self.LOG.warn("Could not fetch prep-status for sample {} in prep {}".format(sample_id, prep_id))
                 else:
                     self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status')
-                
+
                 #get average fragment size from lastest validation step if exists not for PCR-free libs
                 if not 'pcr-free' in self.project_info['library_construction'].lower():
                     try:
@@ -163,10 +163,10 @@ class Report(project_summary.CommonReport):
                 else:
                     self.LOG.info("PCR-free library was used, so setting fragment size as N/A")
                     self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "N/A"
-        
+
             if not self.samples_info[sample_id]['preps']:
                 self.LOG.warn('No library prep information was available for sample {}'.format(sample_id))
-        
+
         ## collect all the flowcell this project was run
         self.get_project_flowcell({'HiSeq2500':fcon.proj_list, 'HiSeqX':xcon.proj_list})
         if not self.flowcell_info:
@@ -176,7 +176,7 @@ class Report(project_summary.CommonReport):
         ## different FC db have different key names, this will be changed when merging the dbs for X and 2500 FC
         sample_qstat_keys = dict.fromkeys(['HiSeq2500','MiSeq'], {'qval':'% of >= Q30 Bases (PF)', 'bases':'# Reads'})
         sample_qstat_keys['HiSeqX'] = {'qval':'% >= Q30bases', 'bases':'PF Clusters'}
-    
+
         ## Collect required information for all flowcell run for the project
         for fc in self.flowcell_info.values():
             fc_name = fc['name']
@@ -185,7 +185,7 @@ class Report(project_summary.CommonReport):
             fc_illumina = fc_obj.get('illumina',{})
             fc_lane_summary = fc_obj.get('lims_data', '').get('run_summary', {})
             self.flowcell_info[fc_name]['lanes'] = OrderedDict()
-        
+
             ## Get sequecing method for the flowcell
             seq_template = "{}) Clustering was done by '{}' and samples were sequenced on {} ({}) with a {} setup using '{}' "\
                            "chemistry. The Bcl to FastQ conversion was performed using {} from the CASAVA software suite. The "\
@@ -203,7 +203,7 @@ class Report(project_summary.CommonReport):
             else:
                 seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName"),fc_runp.get("ApplicationVersion"),fc_runp.get("RTAVersion"))
             tmp_method = seq_template.format("SECTION", clus_meth, seq_plat, seq_software, run_setup, fc_chem, casava)
-        
+
             ## to make sure the sequencing methods are unique
             if tmp_method not in self.seq_methods.keys():
                 self.seq_methods[tmp_method] = alphabets[len(self.seq_methods.keys())]
@@ -234,8 +234,8 @@ class Report(project_summary.CommonReport):
                             if not v:
                                 self.LOG.warn("Could not fetch {} for FC {} at lane {}".format(k, fc_name, lane))
                 except KeyError:
-                    continue            
-        
+                    continue
+
         ## give proper section name for the methods
         self.project_info['sequencing_methods'] = "\n\n".join([m.replace("SECTION",self.seq_methods[m]) for m in self.seq_methods])
         ## Check if sequencing info is complete
@@ -243,11 +243,11 @@ class Report(project_summary.CommonReport):
             self.LOG.warn("Sequencing methods have some missing information, kindly check.")
         ## convert readsminimum list to a string
         self.project_info['ordered_reads'] = ", ".join(set(self.project_info['ordered_reads']))
-              
+
         ## Evaluate threshold for Q30 to set sample status, priority given to user mentioned value
         ## if not duduce from the run setup, only very basic assumptions made for deduction
         q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_threshold(config)
-        
+
         ## calculate average Q30 over all lanes and flowcell
         for sample in self.sample_qval:
             try:
@@ -256,13 +256,13 @@ class Report(project_summary.CommonReport):
                 for k in qinfo:
                     total_qvalsbp += qinfo[k]['qval'] * qinfo[k]['bases']
                     total_bases += qinfo[k]['bases']
-                avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp) 
+                avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp)
                 self.samples_info[sample]['qscore'] = round(avg_qval, 2)
                 if int(self.samples_info[sample]['qscore']) < q30_threshold:
                     self.samples_info[sample]['seq_status'] = 'FAILED'
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
-        
+
 
     ###############################################################################
     ##### Create table text and header explanation from collected information #####
@@ -282,7 +282,7 @@ class Report(project_summary.CommonReport):
                                                                 "* _Status:_ Sequencing status of sample based on the total reads"
         if not self.project_info['ordered_reads']:
             self.tables_info['header_explanation']['sample_info'] = re.sub(r'\n\* _Status\:_ .*$','',self.tables_info['header_explanation']['sample_info'])
-        
+
         ## library_info table
         library_header = ['NGI ID', 'Index', 'Lib Prep', 'Avg. FS', 'Lib QC']
         library_filter = ['ngi_id', 'barcode', 'label', 'avg_size', 'qc_status']
@@ -297,7 +297,7 @@ class Report(project_summary.CommonReport):
                                                                  "* _Lib Prep:_ NGI library indentifier\n"\
                                                                  "* _Avg. FS:_ Average fragment size of the library\n"\
                                                                  "* _Lib QC:_ Reception control library quality control step status\n"
-        
+
         ## lanes_info table
         lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', 'Phix', '>=Q30(%)', 'Method']
         lanes_filter = ['date', 'name', 'id', 'cluster', 'phix', 'avg_qval', 'seq_meth']
@@ -317,7 +317,7 @@ class Report(project_summary.CommonReport):
                                                                "* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30\n"\
                                                                "* _PhiX:_ Average PhiX error rate for the lane\n"\
                                                                "* _Method:_ Sequencing method used. See above for description\n"
-        
+
     #####################################################
     ##### Helper methods to get certain information #####
     #####################################################
@@ -325,7 +325,7 @@ class Report(project_summary.CommonReport):
     def create_table_text(self, ip, filter_keys=None, header=None, sep='\t'):
         """ Create a single text string that will be saved in a file in TABLE format
             from given dict and filtered based upon mentioned header.
-            
+
             :param dict/list ip: Input dictionary/list to be convertead as table string
             :param list filter: A list of keys that will be used to filter the ip_dict
             :param list header: A list that will be used as header
@@ -395,7 +395,7 @@ class Report(project_summary.CommonReport):
 
     def get_accredit_info(self,keys):
         """Get swedac accreditation info for given step 'k'
-        
+
         :param list keys: step names which are keys in project database
         """
         accredit_info = {}
@@ -419,7 +419,7 @@ class Report(project_summary.CommonReport):
 
     def get_lane_info(self, key, lane_info, reads, as_million=False):
         """Get the average value of gives key from given lane info
-        
+
         :param str key: key to be fetched
         :param dict lane_info: a dictionary with required lane info
         :param str reads: number of reads for keys to be fetched
@@ -432,17 +432,17 @@ class Report(project_summary.CommonReport):
 
     def to_ascii(self,value):
         """Convert any non-ASCII character to its closest ASCII equivalent
-        
-        :param string value: a 'str' or 'unicode' string 
+
+        :param string value: a 'str' or 'unicode' string
         """
         if not isinstance(value, unicode):
             value = unicode(value, 'utf-8')
         return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-    
-    
+
+
     def get_q30_threshold(self, config, default=80):
         """Set the Q30 percentage based upon run setup and pre-defined Q30 from config
-        
+
         :param config: A config parser instance returned after loading the config file
         """
         try:
@@ -484,7 +484,7 @@ class Report(project_summary.CommonReport):
         """From information available in flowcell db connection collect the flowcell this project was sequenced"""
         proj_id = self.project_info['ngi_id']
         ## check only flowcell run after project opendate to save time, if open date not available
-        ## check flowcell sequenced after 2015, the year this new report implemented 
+        ## check flowcell sequenced after 2015, the year this new report implemented
         proj_open_date = datetime.strptime(self.proj.get('open_date','2015-01-01'),'%Y-%m-%d')
         for fc_type, proj_list in fc_dict.iteritems():
             sort_fcs = sorted(proj_list.keys(), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
