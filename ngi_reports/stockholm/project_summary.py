@@ -169,13 +169,13 @@ class Report(project_summary.CommonReport):
 
         ## collect all the flowcell this project was run
         self.get_project_flowcell({'HiSeq2500':fcon.proj_list, 'HiSeqX':xcon.proj_list})
-        if not self.flowcell_info:
-            self.LOG.warn('There is no flowcell to process for project {}'.format(self.project_name))
-            self.project_info['missing_fc'] = True
 
         ## Collect required information for all flowcell run for the project
         for fc in self.flowcell_info.values():
             fc_name = fc['name']
+            if fc_name in kwargs.get('exclude_fc'):
+                del self.flowcell_info[fc_name]
+                continue
             if fc['type'] == 'HiSeqX':
                 fc_obj = xcon.get_entry(fc['run_name'])
                 fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
@@ -221,9 +221,11 @@ class Report(project_summary.CommonReport):
                         elif seq_plat == "HiSeqX":
                             qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
                         r_idx = '{}_{}'.format(lane, fc_name)
+                        r_num, r_len = map(int, run_setup.split('x'))
                         qval = float(stat.get(qval_key))
-                        base = int(stat.get(base_key).replace(',','')) * int(run_setup.split('x')[-1])
-                        self.sample_qval[sample][r_idx] = {'qval': qval, 'bases': base}
+                        pfrd = int(stat.get(base_key).replace(',',''))/r_num 
+                        base = pfrd * r_num * r_len
+                        self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
                         self.LOG.warn("Someting went wonrg while fetching Q30 for sample {} in FV {} at lane {}".format(sample, fc_name, lane))
                         pass
@@ -240,6 +242,11 @@ class Report(project_summary.CommonReport):
                                 self.LOG.warn("Could not fetch {} for FC {} at lane {}".format(k, fc_name, lane))
                 except KeyError:
                     continue
+        
+        ## Check if there are FCs processed
+        if not self.flowcell_info:
+            self.LOG.warn('There is no flowcell to process for project {}'.format(self.project_name))
+            self.project_info['missing_fc'] = True
 
         ## give proper section name for the methods
         self.project_info['sequencing_methods'] = "\n\n".join([m.replace("SECTION",self.seq_methods[m]) for m in self.seq_methods])
@@ -257,14 +264,20 @@ class Report(project_summary.CommonReport):
         for sample in self.sample_qval:
             try:
                 qinfo = self.sample_qval[sample]
-                total_qvalsbp, total_bases = (0, 0)
+                total_qvalsbp, total_bases, total_reads = (0, 0, 0)
                 for k in qinfo:
                     total_qvalsbp += qinfo[k]['qval'] * qinfo[k]['bases']
                     total_bases += qinfo[k]['bases']
+                    total_reads += qinfo[k]['reads']
                 avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp)
                 self.samples_info[sample]['qscore'] = round(avg_qval, 2)
                 if int(self.samples_info[sample]['qscore']) < q30_threshold:
                     self.samples_info[sample]['seq_status'] = 'FAILED'
+                ## Get/overwrite yield from the FCs computed instead of statusDB value
+                if kwargs.get('yield_from_fc') and total_reads:
+                    self.samples_info[sample]['total_reads'] = "{:.2f}".format(total_reads/float(1000000))
+                    if sample in self.project_info['aborted_samples']:
+                        del self.project_info['aborted_samples'][sample]
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
 
