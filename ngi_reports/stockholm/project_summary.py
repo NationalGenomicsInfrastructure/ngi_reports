@@ -121,24 +121,25 @@ class Report(project_summary.CommonReport):
             ## get total reads if avialable or mark sample as not sequenced
             try:
                 self.samples_info[sample_id]['total_reads'] = "{:.2f}".format(float(sample['details']['total_reads_(m)']))
+                ## Check if reads minimum set for sample and the status if it does
+                if self.samples_info[sample_id]['reads_min']:
+                    self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
+                    if float(self.samples_info[sample_id]['total_reads']) > float(self.samples_info[sample_id]['reads_min']):
+                        self.samples_info[sample_id]['seq_status'] = 'PASSED'
+                    else:
+                        self.samples_info[sample_id]['seq_status'] = 'FAILED'
             except KeyError:
                 self.LOG.warn("Sample {} doesn't have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Not sequenced'}
-                del self.samples_info[sample_id]
-                continue
+                ## dont gather unnecessary information if not going to be looked up
+                if not kwargs.get('yield_from_fc'):
+                    del self.samples_info[sample_id]
+                    continue
 
             ## special characters should be removed
             self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name',''))
             self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             self.samples_info[sample_id]['preps'] = {}
-
-            ## Check if reads minimum set for sample and the status if it does
-            if self.samples_info[sample_id]['reads_min']:
-                self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
-                if float(self.samples_info[sample_id]['total_reads']) > float(self.samples_info[sample_id]['reads_min']):
-                    self.samples_info[sample_id]['seq_status'] = 'PASSED'
-                else:
-                    self.samples_info[sample_id]['seq_status'] = 'FAILED'
 
             ## Go through each prep for each sample in the Projects database
             for prep_id, prep in sample.get('library_prep', {}).iteritems():
@@ -259,9 +260,12 @@ class Report(project_summary.CommonReport):
         ## Evaluate threshold for Q30 to set sample status, priority given to user mentioned value
         ## if not duduce from the run setup, only very basic assumptions made for deduction
         q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_threshold(config)
+        
+        if self.sample_qval and kwargs.get('yield_from_fc'):
+            self.LOG.info("'yield_from_fc' option was given so will compute the yield from collected flowcells")
 
         ## calculate average Q30 over all lanes and flowcell
-        for sample in self.sample_qval:
+        for sample in sorted(self.sample_qval.keys()):
             try:
                 qinfo = self.sample_qval[sample]
                 total_qvalsbp, total_bases, total_reads = (0, 0, 0)
@@ -277,6 +281,7 @@ class Report(project_summary.CommonReport):
                 if kwargs.get('yield_from_fc') and total_reads:
                     self.samples_info[sample]['total_reads'] = "{:.2f}".format(total_reads/float(1000000))
                     if sample in self.project_info['aborted_samples']:
+                        self.LOG.info("Sample {} was sequenced, so removing it from NOT sequenced samples list".format(sample))
                         del self.project_info['aborted_samples'][sample]
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
@@ -476,7 +481,7 @@ class Report(project_summary.CommonReport):
                 read_length = "<150"
             else:
                 read_length = ">150"
-        if "HiSeq2500" in fc_platforms:
+        elif "HiSeq2500" in fc_platforms:
             q_section = "quality_threshold_hiseq"
         elif "MiSeq" in fc_platforms:
             q_section = "quality_threshold_miseq"
@@ -485,7 +490,7 @@ class Report(project_summary.CommonReport):
             elif int(read_length) >= 250:
                 read_length = ">250"
         else:
-            self.LOG.warn("Couldn't find runtype as Hiseq or Miseq, will use 80% for threshold. But kindly check the sequencing methods in generated report")
+            self.LOG.warn("Couldn't find runtype as HiseqX/Hiseq/Miseq, will use 80% for threshold. But kindly check the sequencing methods in generated report")
             return default
         ## Log warning if the section missing in config file and use default
         if not config.has_section(q_section):
