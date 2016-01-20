@@ -11,6 +11,7 @@ from datetime import datetime
 import re
 
 import ngi_reports.common
+from ngi_reports.utils import config as report_config
 from ngi_visualizations.qualimap import coverage_histogram, genome_fraction_coverage, insert_size, gc_distribution
 from ngi_visualizations.snpEff import snpEff_plots
 
@@ -60,6 +61,11 @@ class CommonReport(ngi_reports.common.BaseReport):
         self.parse_picard_metrics()
         self.parse_deliveries()
 
+    def _tool_output_path(self, path_key, substitutions):
+        path_pattern = self.config.get('paths', path_key)
+        return os.path.realpath(
+            os.path.join(self.working_dir,
+                         report_config.expand_path(path_pattern, substitutions)))
 
     def parse_deliveries(self):
         """ Parse the delivery acknowledgements to get information about 
@@ -67,10 +73,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         """
         for sample_id in self.samples.iterkeys():
             # expected file name
-            ackfile = os.path.join(
-                self.working_dir,
-                '08_misc',
-                '{}_delivered.ack'.format(sample_id))
+            ackfile = self._tool_output_path('delivery', {'sample_id': sample_id})
             try:
                 # the acknowledgement should only contain the timestamp, so grab it
                 with open(ackfile,'r') as fh:
@@ -86,8 +89,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         """
         for sample_id in self.samples.iterkeys():
             # Build the expected filenames
-            qualimap_data_dir = os.path.join(self.working_dir, '06_final_alignment_qc',
-                '{}.clean.dedup.recal.qc'.format(sample_id))
+            qualimap_data_dir = self._tool_output_path('qualimap', {'sample_id': sample_id})
             genome_results = os.path.join(qualimap_data_dir, 'genome_results.txt')
             qualimap_report = os.path.join(qualimap_data_dir, 'qualimapReport.html')
             try:
@@ -154,20 +156,14 @@ class CommonReport(ngi_reports.common.BaseReport):
             except Exception as e:
                 self.LOG.error("Something went wrong with parsing the Qualimap results for sample {}:\n{}".format(sample_id, e))
 
-
-
-
-
     def parse_snpeff(self):
         """ Parse the snpEff output to get information about SNPs
         """
-
         for sample_id in self.samples.iterkeys():
 
             snpEff = {}
             # Build the expected filenames
-            snpEff_csv = os.path.realpath(os.path.join(self.working_dir, '07_variant_calls',
-                '{}.clean.dedup.recal.bam.raw.annotated.vcf.snpEff.summary.csv'.format(sample_id)))
+            snpEff_csv = self._tool_output_path('snpeff', {'sample_id': sample_id})
             try:
                 synonymous_SNPs = 0
                 nonsynonymous_SNPs = 0
@@ -268,8 +264,7 @@ class CommonReport(ngi_reports.common.BaseReport):
         for sample_id in self.samples.iterkeys():
 
             # Build the expected filenames
-            picard_metrics_fn = os.path.realpath(os.path.join(self.working_dir,
-                '05_processed_alignments', '{}.metrics'.format(sample_id)))
+            picard_metrics_fn = self._tool_output_path('picard_metrics', {'sample_id': sample_id})
             try:
                 with open(os.path.realpath(picard_metrics_fn), 'r') as fh:
                     nextLine = False
@@ -308,9 +303,8 @@ class CommonReport(ngi_reports.common.BaseReport):
                     os.makedirs(plots_dir)
 
                 # Work out source directories
-                qualimap_raw_dir = os.path.realpath(os.path.join(self.working_dir, '06_final_alignment_qc',
-                    '{}.clean.dedup.recal.qc'.format(sample_id), 'raw_data_qualimapReport'))
-                snpeff_data_dir = os.path.realpath(os.path.join(self.working_dir, '07_variant_calls'))
+                qualimap_raw_dir = os.path.join(self._tool_output_path('qualimap', {'sample_id': sample_id}),
+                                                'raw_data_qualimapReport')
 
                 # Qualimap coverage plot
                 cov_fn = os.path.realpath(os.path.join(qualimap_raw_dir, 'coverage_histogram.txt'))
@@ -341,7 +335,7 @@ class CommonReport(ngi_reports.common.BaseReport):
                 self.plots[sample_id]['gc_dist_plot'] = gc_output_rel
 
                 # snpEff plot
-                snpEFf_fn = os.path.realpath(os.path.join(snpeff_data_dir, '{}.clean.dedup.recal.bam.raw.annotated.vcf.snpEff.summary.csv'.format(sample_id)))
+                snpEFf_fn = self._tool_output_path('snpeff', {'sample_id': sample_id})
                 snpEFf_output_rel = os.path.join(plots_dir_rel, '{}_snpEff_effect'.format(sample_id))
                 snpEFf_output = os.path.join(plots_dir, '{}_snpEff_effect'.format(sample_id))
                 snpEff_plots.plot_snpEff(snpEFf_fn, snpEFf_output)
