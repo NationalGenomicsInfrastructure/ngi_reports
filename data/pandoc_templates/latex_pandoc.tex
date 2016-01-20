@@ -211,6 +211,8 @@ $endif$
 % Double dollar signs are for pandoc
 \usepackage{enumitem}
 \usepackage{etoolbox}
+\usepackage{ragged2e}
+\usepackage{float}
 \usepackage{tikzpagenodes}
 \usetikzlibrary{tikzmark,calc}
 
@@ -291,12 +293,6 @@ $if(lof)$
 $endif$
 
 $body$
-
-$if(swedac)$
-\vspace{1cm}
-\centering
-\includegraphics[height=2.5cm]{$template_dir$/assets/swedac.pdf}
-$endif$
 
 $if(natbib)$x
 $if(biblio-files)$

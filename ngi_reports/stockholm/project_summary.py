@@ -9,11 +9,13 @@ https://github.com/senthil10/scilifelab/blob/edit_report/scilifelab/report/seque
 import os
 import re
 import numpy as np
+import unicodedata
 from datetime import datetime
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from string import ascii_uppercase as alphabets
 from ngi_reports.common import project_summary
-from statusdb.db import connections as statusdb
+from ngi_reports.utils import statusdb
+from ConfigParser import NoSectionError, NoOptionError
 
 class Report(project_summary.CommonReport):
 
@@ -35,20 +37,27 @@ class Report(project_summary.CommonReport):
             except KeyError:
                 self.LOG.error("No project name found - please specify using '--project'")
                 raise KeyError("No project name found - please specify using '--project'")
-        
+
+        ## Check and exit if signature not provided
+        if not kwargs.get('signature'):
+            self.LOG.error("It is required to provide Signature/Name generating 'project_summary' report")
+            raise SystemExit
+        else:
+            self.project_info['signature'] = kwargs.get('signature')
+
         ## Report filename
         self.report_fn = "{}_project_summary".format(self.project_name)
 
         ## Get connections to the databases in StatusDB
         self.LOG.info("Connecting to statusDB...")
-        pcon = statusdb.ProjectSummaryConnection(**kwargs)
+        pcon = statusdb.ProjectSummaryConnection()
         assert pcon, "Could not connect to {} database in StatusDB".format("project")
-        fcon = statusdb.FlowcellRunMetricsConnection(**kwargs)
+        fcon = statusdb.FlowcellRunMetricsConnection()
         assert fcon, "Could not connect to {} database in StatusDB".format("flowcell")
-        scon = statusdb.SampleRunMetricsConnection(**kwargs)
-        assert scon, "Could not connect to {} database in StatusDB".format("samples")
+        xcon = statusdb.X_FlowcellRunMetricsConnection()
+        assert xcon, "Could not connect to {} database in StatusDB".format("x_flowcell")
         self.LOG.info("...connected")
-        
+
         ## Get the project from statusdb
         self.proj = pcon.get_entry(self.project_name)
         if not self.proj:
@@ -61,39 +70,42 @@ class Report(project_summary.CommonReport):
             raise BaseException
 
         ## Helper vars
-        seq_methods, sample_qval = (OrderedDict(), {})
+        self.seq_methods, self.sample_qval = (OrderedDict(), defaultdict(dict))
         self.proj_details = self.proj.get('details',{})
-        
+
         ## Check if it is an aborted project before proceding
         if "aborted" in self.proj_details:
             self.LOG.warn("Project {} was aborted, so not proceeding.".format(self.project_name))
             raise SystemExit
-        
+
         ## Get information for the reports from statusdb
         self.project_info['ngi_id'] = self.proj.get('project_id')
-        self.project_info['ngi_facility'] = "Genomics {} Stockholm".format(self.proj_details.get('type')) if self.proj_details.get('type') else None 
+        self.project_info['ngi_facility'] = "Genomics {} Stockholm".format(self.proj_details.get('type')) if self.proj_details.get('type') else None
         self.project_info['contact'] = self.proj.get('contact')
         self.project_info['support_email'] = config.get('ngi_reports','support_email')
         self.project_info['dates'] = self.get_order_dates()
+        self.project_info['report_date'] = datetime.now().strftime("%Y-%m-%d")
         self.project_info['application'] = self.proj.get('application')
         self.project_info['num_samples'] = self.proj.get('no_of_samples')
         self.project_info['reference'] = {}
         self.project_info['reference']['genome'] = None if self.proj.get('reference_genome') == 'other' else self.proj.get('reference_genome')
         self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], '')
-        self.project_info['user_ID'] = self.proj_details.get('customer_project_reference')
+        self.project_info['user_ID'] = self.to_ascii(self.proj_details.get('customer_project_reference',''))
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
-        self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id')
+        self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id').lower()
+        if not self.project_info['UPPMAX_id']:
+            self.LOG.warn("UPPMAX id missing in status db, provide with option '-u' if known or contact project co-ordinater")
         self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'])
         self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
-        self.project_info['status'] = "Sequencing done" if self.proj.get('project_summary', {}).get('all_samples_sequenced') else "Sequencing ongoing"
         self.project_info['library_construction'] = self.get_library_method()
         self.project_info['accredit'] = self.get_accredit_info(['library_preparation','sequencing','data_processing','data_analysis'])
         self.project_info['total_lanes'] = 0
         self.project_info['display_limit'] = kwargs.get('display_limit')
         self.project_info['missing_fc'] = False
-        self.project_info['aborted_samples'] = {}
-        
+        self.project_info['aborted_samples'] = OrderedDict()
+        self.project_info['seq_setup'] = self.proj_details.get('sequencing_setup')
+
         ## Collect information about the sample preps and collect aborted samples
         for sample_id, sample in sorted(self.proj.get('samples', {}).iteritems()):
             self.LOG.info('Processing sample {}'.format(sample_id))
@@ -102,45 +114,45 @@ class Report(project_summary.CommonReport):
                 self.LOG.info('Sample {} is aborted, so skipping it'.format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Aborted'}
                 continue
-            
+
             ## Basic fields from Project database
             self.samples_info[sample_id] = {'ngi_id': sample_id}
-            self.samples_info[sample_id]['customer_name'] = sample.get('customer_name','')
-            self.samples_info[sample_id]['total_reads'] = sample.get('details',{}).get('total_reads_(m)')
-            self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
-            
-            ## Check if a non-aborted sample is sequenced
-            if self.samples_info[sample_id]['total_reads'] == None:
+
+            ## get total reads if avialable or mark sample as not sequenced
+            try:
+                self.samples_info[sample_id]['total_reads'] = "{:.2f}".format(float(sample['details']['total_reads_(m)']))
+                ## Check if reads minimum set for sample and the status if it does
+                if self.samples_info[sample_id]['reads_min']:
+                    self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
+                    if float(self.samples_info[sample_id]['total_reads']) > float(self.samples_info[sample_id]['reads_min']):
+                        self.samples_info[sample_id]['seq_status'] = 'PASSED'
+                    else:
+                        self.samples_info[sample_id]['seq_status'] = 'FAILED'
+            except KeyError:
                 self.LOG.warn("Sample {} doesn't have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Not sequenced'}
-                del self.samples_info[sample_id]
-                continue
-            
-            ## Check if reads minimum set for sample and the status if it does
-            if self.samples_info[sample_id]['reads_min']:
-                self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
-                if float(self.samples_info[sample_id]['total_reads']) > float(self.samples_info[sample_id]['reads_min']):
-                    self.samples_info[sample_id]['seq_status'] = 'Passed'
-                else:
-                    self.samples_info[sample_id]['seq_status'] = 'Failed'
-            
+                ## dont gather unnecessary information if not going to be looked up
+                if not kwargs.get('yield_from_fc'):
+                    del self.samples_info[sample_id]
+                    continue
+
+            ## special characters should be removed
+            self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name',''))
+            self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             self.samples_info[sample_id]['preps'] = {}
-            self.samples_info[sample_id]['flowcell'] = []
-            ## Get sample objects from statusdb
-            for sample_run_doc in scon.get_project_sample(sample_id, sample_prj=self.project_name):
-                fc_name = sample_run_doc.get('flowcell')
-                fc_run_name = "{}_{}".format(sample_run_doc.get('date'), fc_name)
-                if fc_name not in self.flowcell_info.keys():
-                    self.flowcell_info[fc_name] = {'name':fc_name,'run_name':fc_run_name, 'date': sample_run_doc.get('date')}
-                if fc_run_name not in self.samples_info[sample_id]['flowcell']:
-                    self.samples_info[sample_id]['flowcell'].append(fc_run_name)
 
             ## Go through each prep for each sample in the Projects database
             for prep_id, prep in sample.get('library_prep', {}).iteritems():
                 self.samples_info[sample_id]['preps'][prep_id] = {'label': prep_id }
-                self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label','')
-                self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status','')
-                
+                if not prep.get('reagent_label'):
+                    self.LOG.warn("Could not fetch barcode for sample {} in prep {}".format(sample_id, prep_id))
+                else:
+                    self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label')
+                if not prep.get('prep_status'):
+                    self.LOG.warn("Could not fetch prep-status for sample {} in prep {}".format(sample_id, prep_id))
+                else:
+                    self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status')
+
                 #get average fragment size from lastest validation step if exists not for PCR-free libs
                 if not 'pcr-free' in self.project_info['library_construction'].lower():
                     try:
@@ -150,85 +162,130 @@ class Report(project_summary.CommonReport):
                     except KeyError:
                         self.LOG.warn("No library validation step found or no sufficient info for sample {}".format(sample_id))
                 else:
+                    self.LOG.info("PCR-free library was used, so setting fragment size as N/A")
                     self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "N/A"
-        
+
             if not self.samples_info[sample_id]['preps']:
                 self.LOG.warn('No library prep information was available for sample {}'.format(sample_id))
-        
-        if not self.flowcell_info:
-            self.LOG.warn('There is no flowcell to process for project {}'.format(self.project_name))
-            self.project_info['missing_fc'] = True
-            
-        ## Collect reuired information for all flowcell run for the project
+
+        ## collect all the flowcell this project was run
+        self.get_project_flowcell({'HiSeq2500':fcon.proj_list, 'HiSeqX':xcon.proj_list})
+
+        ## Collect required information for all flowcell run for the project
         for fc in self.flowcell_info.values():
             fc_name = fc['name']
-            fc_obj = fcon.get_entry(fc['run_name'])
-            fc_runp = fc_obj.get('RunParameters',{})
+            if fc_name in kwargs.get('exclude_fc'):
+                del self.flowcell_info[fc_name]
+                continue
+            if fc['type'] == 'HiSeqX':
+                fc_obj = xcon.get_entry(fc['run_name'])
+                fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
+            else:
+                fc_obj = fcon.get_entry(fc['run_name'])
+                fc_runp = fc_obj.get('RunParameters',{})
             fc_illumina = fc_obj.get('illumina',{})
-            fc_run_summary = fc_illumina.get('run_summary',{})
-            self.flowcell_info[fc_name]['lanes'] = {}
-            
+            fc_lane_summary = fc_obj.get('lims_data', {}).get('run_summary', {})
+            self.flowcell_info[fc_name]['lanes'] = OrderedDict()
+
             ## Get sequecing method for the flowcell
             seq_template = "{}) Clustering was done by '{}' and samples were sequenced on {} ({}) with a {} setup using '{}' "\
                            "chemistry. The Bcl to FastQ conversion was performed using {} from the CASAVA software suite. The "\
                            "quality scale used is Sanger / phred33 / Illumina 1.8+."
             run_setup = fc_obj.get("run_setup")
             fc_chem = fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs'))
-            seq_plat = ["HiSeq2500","MiSeq"]["MCSVersion" in fc_runp.keys()]
+            seq_plat = fc['type']
             clus_meth = ["cBot","onboard clustering"][seq_plat == "MiSeq" or fc_runp.get("ClusteringChoice","") == "OnBoardClustering"]
-            casava = fc_obj.get('DemultiplexConfig',{}).values()[0].get('Software',{}).get('Version')
+            try:
+                casava = fc_obj['DemultiplexConfig'].values()[0]['Software']['Version']
+            except KeyError, IndexError:
+                casava = None
             if seq_plat == "MiSeq":
                 seq_software = "MSC {}/RTA {}".format(fc_runp.get("MCSVersion"),fc_runp.get("RTAVersion"))
             else:
                 seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName"),fc_runp.get("ApplicationVersion"),fc_runp.get("RTAVersion"))
             tmp_method = seq_template.format("SECTION", clus_meth, seq_plat, seq_software, run_setup, fc_chem, casava)
-            
+
             ## to make sure the sequencing methods are unique
-            if tmp_method not in seq_methods.keys():
-                seq_methods[tmp_method] = alphabets[len(seq_methods.keys())]
-            self.flowcell_info[fc_name]['seq_meth'] = seq_methods[tmp_method]
-            
+            if tmp_method not in self.seq_methods.keys():
+                self.seq_methods[tmp_method] = alphabets[len(self.seq_methods.keys())]
+            self.flowcell_info[fc_name]['seq_meth'] = self.seq_methods[tmp_method]
+
             ## Collect quality info for samples and collect lanes of interest
             for stat in fc_illumina.get('Demultiplex_Stats',{}).get('Barcode_lane_statistics',[]):
                 try:
-                    sample, lane = (stat['Sample ID'], stat['Lane'])
-                    if stat['Project'].replace('__','.') != self.project_name:
+                    if re.sub('_+','.',stat['Project'],1) != self.project_name and stat['Project'] != self.project_name:
                         continue
-                    ## to put in a empty dict for the first time
-                    sample_qval[sample] = sample_qval.get(sample,{})
+                    sample, lane = (stat['Sample'] if seq_plat == "HiSeqX" else stat['Sample ID'], stat['Lane'])
                     try:
-                        sample_qval[sample]['{}_{}'.format(lane, fc_name)] = {'qval': float(stat.get('% of >= Q30 Bases (PF)')),
-                                                                        'bases': int(stat.get('# Reads').replace(',',''))*int(run_setup.split('x')[-1])}
-                    except (TypeError, ValueError) as e:
+                        if seq_plat in ["HiSeq2500", "MiSeq"]:
+                            qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
+                        elif seq_plat == "HiSeqX":
+                            qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
+                        r_idx = '{}_{}'.format(lane, fc_name)
+                        r_num, r_len = map(int, run_setup.split('x'))
+                        qval = float(stat.get(qval_key))
+                        pfrd = int(stat.get(base_key).replace(',',''))/r_num 
+                        base = pfrd * r_num * r_len
+                        self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
+                    except (TypeError, ValueError, AttributeError) as e:
+                        self.LOG.warn("Someting went wonrg while fetching Q30 for sample {} in FV {} at lane {}".format(sample, fc_name, lane))
                         pass
-                    ## collect lanes to proceed later
+                    ## collect lanes of interest to proceed later
                     if lane not in self.flowcell_info[fc_name]['lanes']:
-                        lane_sum = fc_run_summary.get(lane, fc_run_summary.get('A',{}))
+                        lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                         self.flowcell_info[fc_name]['lanes'][lane] = {'id': lane,
                                                                       'cluster': self.get_lane_info('Clusters PF',lane_sum,run_setup[0],True),
                                                                       'phix': self.get_lane_info('% Error Rate',lane_sum,run_setup[0]),
                                                                       'avg_qval': self.get_lane_info('% Bases >=Q30',lane_sum,run_setup[0])}
+                        ## Check if the above created dictionay have all info needed
+                        for k,v in self.flowcell_info[fc_name]['lanes'][lane].iteritems():
+                            if not v:
+                                self.LOG.warn("Could not fetch {} for FC {} at lane {}".format(k, fc_name, lane))
                 except KeyError:
                     continue
         
+        ## Check if there are FCs processed
+        if not self.flowcell_info:
+            self.LOG.warn('There is no flowcell to process for project {}'.format(self.project_name))
+            self.project_info['missing_fc'] = True
+
         ## give proper section name for the methods
-        self.project_info['sequencing_methods'] = "\n\n".join([m.replace("SECTION",seq_methods[m]) for m in seq_methods])
+        self.project_info['sequencing_methods'] = "\n\n".join([m.replace("SECTION",self.seq_methods[m]) for m in self.seq_methods])
+        ## Check if sequencing info is complete
+        if "None" in self.project_info['sequencing_methods']:
+            self.LOG.warn("Sequencing methods have some missing information, kindly check.")
         ## convert readsminimum list to a string
         self.project_info['ordered_reads'] = ", ".join(set(self.project_info['ordered_reads']))
+
+        ## Evaluate threshold for Q30 to set sample status, priority given to user mentioned value
+        ## if not duduce from the run setup, only very basic assumptions made for deduction
+        q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_threshold(config)
         
+        if self.sample_qval and kwargs.get('yield_from_fc'):
+            self.LOG.info("'yield_from_fc' option was given so will compute the yield from collected flowcells")
+
         ## calculate average Q30 over all lanes and flowcell
-        for sample in sample_qval:
+        for sample in sorted(self.sample_qval.keys()):
             try:
-                qinfo = sample_qval[sample]
-                total_qvalsbp, total_bases = (0, 0)
+                qinfo = self.sample_qval[sample]
+                total_qvalsbp, total_bases, total_reads = (0, 0, 0)
                 for k in qinfo:
                     total_qvalsbp += qinfo[k]['qval'] * qinfo[k]['bases']
                     total_bases += qinfo[k]['bases']
-                avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp) 
+                    total_reads += qinfo[k]['reads']
+                avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp)
                 self.samples_info[sample]['qscore'] = round(avg_qval, 2)
+                if int(self.samples_info[sample]['qscore']) < q30_threshold:
+                    self.samples_info[sample]['seq_status'] = 'FAILED'
+                ## Get/overwrite yield from the FCs computed instead of statusDB value
+                if kwargs.get('yield_from_fc') and total_reads:
+                    self.samples_info[sample]['total_reads'] = "{:.2f}".format(total_reads/float(1000000))
+                    if sample in self.project_info['aborted_samples']:
+                        self.LOG.info("Sample {} was sequenced, so removing it from NOT sequenced samples list".format(sample))
+                        del self.project_info['aborted_samples'][sample]
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
-        
+
 
     ###############################################################################
     ##### Create table text and header explanation from collected information #####
@@ -237,7 +294,7 @@ class Report(project_summary.CommonReport):
         ## sample_info table
         sample_header = ['NGI ID', 'User ID', 'Mreads', '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
-        if self.proj.get('application') != "Finished library":
+        if self.project_info['library_construction'] != "Library was prepared by user.":
             sample_header.append('Status')
             sample_filter.append('seq_status')
         self.tables_info['tables']['sample_info'] = self.create_table_text(self.samples_info, filter_keys=sample_filter, header=sample_header)
@@ -248,7 +305,7 @@ class Report(project_summary.CommonReport):
                                                                 "* _Status:_ Sequencing status of sample based on the total reads"
         if not self.project_info['ordered_reads']:
             self.tables_info['header_explanation']['sample_info'] = re.sub(r'\n\* _Status\:_ .*$','',self.tables_info['header_explanation']['sample_info'])
-        
+
         ## library_info table
         library_header = ['NGI ID', 'Index', 'Lib Prep', 'Avg. FS', 'Lib QC']
         library_filter = ['ngi_id', 'barcode', 'label', 'avg_size', 'qc_status']
@@ -257,13 +314,13 @@ class Report(project_summary.CommonReport):
             for p in v.get('preps',{}).values():
                 p['ngi_id'] = s
                 library_list.append(p)
-        self.tables_info['tables']['library_info'] = self.create_table_text(library_list, filter_keys=library_filter, header=library_header)
+        self.tables_info['tables']['library_info'] = self.create_table_text(sorted(library_list, key=lambda d: d['ngi_id']), filter_keys=library_filter, header=library_header)
         self.tables_info['header_explanation']['library_info'] = "* _NGI ID:_ Internal NGI sample indentifier\n"\
                                                                  "* _Index:_ Barcode sequence used for the sample\n"\
                                                                  "* _Lib Prep:_ NGI library indentifier\n"\
                                                                  "* _Avg. FS:_ Average fragment size of the library\n"\
                                                                  "* _Lib QC:_ Reception control library quality control step status\n"
-        
+
         ## lanes_info table
         lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', 'Phix', '>=Q30(%)', 'Method']
         lanes_filter = ['date', 'name', 'id', 'cluster', 'phix', 'avg_qval', 'seq_meth']
@@ -275,7 +332,7 @@ class Report(project_summary.CommonReport):
                 l['seq_meth'] = v.get('seq_meth')
                 lanes_list.append(l)
                 self.project_info['total_lanes'] += 1
-        self.tables_info['tables']['lanes_info'] = self.create_table_text(lanes_list, filter_keys=lanes_filter, header=lanes_header)
+        self.tables_info['tables']['lanes_info'] = self.create_table_text(sorted(lanes_list, key=lambda d: "{}_{}".format(d['date'],d['id'])), filter_keys=lanes_filter, header=lanes_header)
         self.tables_info['header_explanation']['lanes_info'] = "* _Date:_ Date of sequencing\n"\
                                                                "* _Flowcell:_ Flowcell identifier\n"\
                                                                "* _Lane:_ Flowcell lane number\n"\
@@ -283,7 +340,7 @@ class Report(project_summary.CommonReport):
                                                                "* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30\n"\
                                                                "* _PhiX:_ Average PhiX error rate for the lane\n"\
                                                                "* _Method:_ Sequencing method used. See above for description\n"
-        
+
     #####################################################
     ##### Helper methods to get certain information #####
     #####################################################
@@ -291,7 +348,7 @@ class Report(project_summary.CommonReport):
     def create_table_text(self, ip, filter_keys=None, header=None, sep='\t'):
         """ Create a single text string that will be saved in a file in TABLE format
             from given dict and filtered based upon mentioned header.
-            
+
             :param dict/list ip: Input dictionary/list to be convertead as table string
             :param list filter: A list of keys that will be used to filter the ip_dict
             :param list header: A list that will be used as header
@@ -346,18 +403,22 @@ class Report(project_summary.CommonReport):
             if len(lib_meth) == 4:
                 lib_list = []
                 for category,method in zip(lib_head,lib_meth):
+                    if method == 'By user':
+                        return "Library was prepared by user."
                     if method != '-':
                         lib_list.append("* {}: {}".format(category, method))
                 return ("\n".join(lib_list))
             else:
                 self.LOG.error("Library method is not mentioned in expected format for project {}".format(self.project_name))
+                return None
         except KeyError:
             self.LOG.error("Could not find library construction method for project {} in statusDB".format(self.project_name))
+            return None
 
 
     def get_accredit_info(self,keys):
         """Get swedac accreditation info for given step 'k'
-        
+
         :param list keys: step names which are keys in project database
         """
         accredit_info = {}
@@ -372,7 +433,7 @@ class Report(project_summary.CommonReport):
                     self.LOG.error("Accreditation step {} for project {} is found, but any value is not set".format(k,self.project_name))
             except KeyError:
                 ## For "finished library" projects, set certain accredation steps as "NA" even if not set by default
-                if k in ['library_preparation','data_analysis'] and self.proj.get('application') == "Finished library":
+                if k in ['library_preparation','data_analysis'] and self.project_info['library_construction'] == "Library was prepared by user.":
                     accredit_info[k] = "Not Applicable"
                 else:
                     self.LOG.error("Could not find accreditation info for step {} for project {}".format(k,self.project_name))
@@ -381,7 +442,7 @@ class Report(project_summary.CommonReport):
 
     def get_lane_info(self, key, lane_info, reads, as_million=False):
         """Get the average value of gives key from given lane info
-        
+
         :param str key: key to be fetched
         :param dict lane_info: a dictionary with required lane info
         :param str reads: number of reads for keys to be fetched
@@ -390,4 +451,70 @@ class Report(project_summary.CommonReport):
             v = np.mean([float(lane_info.get('{} R{}'.format(key, str(r)))) for r in range(1,int(reads)+1)])
             return str(int(v/1000000)) if as_million else str(round(v,2))
         except TypeError:
-            return
+            return None
+
+    def to_ascii(self,value):
+        """Convert any non-ASCII character to its closest ASCII equivalent
+
+        :param string value: a 'str' or 'unicode' string
+        """
+        if not isinstance(value, unicode):
+            value = unicode(value, 'utf-8')
+        return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
+
+
+    def get_q30_threshold(self, config, default=80):
+        """Set the Q30 percentage based upon run setup and pre-defined Q30 from config
+
+        :param config: A config parser instance returned after loading the config file
+        """
+        try:
+            read_length = self.project_info['seq_setup'].split('x')[-1]
+        except:
+            self.LOG.warn("Some problem with fetching setup from db, using default 80% as threshold. But kindly check the sequencing methods in generated report")
+            return default
+        fc_platforms = [fc_vals.get('type') for fc_vals in self.flowcell_info.values()]
+        ## Its rare a project run on multiple platforms, if it happened priority given as HiSeX, HiSeq and Miseq
+        if "HiSeqX" in fc_platforms:
+            q_section = "quality_threshold_hiseqx"
+            if int(read_length) < 150:
+                read_length = "<150"
+            else:
+                read_length = ">150"
+        elif "HiSeq2500" in fc_platforms:
+            q_section = "quality_threshold_hiseq"
+        elif "MiSeq" in fc_platforms:
+            q_section = "quality_threshold_miseq"
+            if int(read_length) < 100:
+                read_length = "<100"
+            elif int(read_length) >= 250:
+                read_length = ">250"
+        else:
+            self.LOG.warn("Couldn't find runtype as HiseqX/Hiseq/Miseq, will use 80% for threshold. But kindly check the sequencing methods in generated report")
+            return default
+        ## Log warning if the section missing in config file and use default
+        if not config.has_section(q_section):
+            self.LOG.warn("Couldn't find section {} in the config file, using default 80% as threshold".format(q_section))
+            return default
+        ## Get approprite threshold based on runtype
+        try:
+            return int(config.get(q_section, read_length))
+        except NoOptionError:
+            self.LOG.warn("Could not find pre-defined threshold for length {} in section {} in config file, using default 80% as threshold".format(read_length, q_section))
+            return default
+
+    def get_project_flowcell(self, fc_dict):
+        """From information available in flowcell db connection collect the flowcell this project was sequenced"""
+        proj_id = self.project_info['ngi_id']
+        ## check only flowcell run after project opendate to save time, if open date not available
+        ## check flowcell sequenced after 2015, the year this new report implemented
+        proj_open_date = datetime.strptime(self.proj.get('open_date','2015-01-01'),'%Y-%m-%d')
+        for fc_type, proj_list in fc_dict.iteritems():
+            sort_fcs = sorted(proj_list.keys(), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
+            for fc in sort_fcs:
+                fc_date, fc_name = fc.split('_')
+                if datetime.strptime(fc_date,'%y%m%d') < proj_open_date:
+                    break
+                if proj_id in proj_list[fc]:
+                    self.flowcell_info[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date, 'type':'MiSeq' if '-' in fc_name else fc_type}
+
