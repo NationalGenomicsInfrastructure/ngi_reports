@@ -8,6 +8,7 @@ import csv
 import os
 from ngi_reports.common import ign_sample_report
 
+# The ign_aggregate_report.CommonReport class extends the ign_sample_report.CommonReport class
 class CommonReport(ign_sample_report.CommonReport):
 
     # Initialise the report

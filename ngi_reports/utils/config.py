@@ -2,6 +2,7 @@
 """
 import ConfigParser
 import os
+from string import Template
 
 def load_config(config_file=None):
     """Loads a configuration file.
@@ -19,3 +20,9 @@ def load_config(config_file=None):
         raise IOError(("There was a problem loading the configuration file. "
                 "Please make sure that ~/.ngi_config/ngi_reports.conf exists "
                 "and that you have read permissions"))
+
+def expand_path(input_path, substitutions):
+    """Use python's string templates to replace substitution patterns in
+        the input path for those available in the substitution dict
+    """
+    return Template(input_path).substitute(substitutions)
