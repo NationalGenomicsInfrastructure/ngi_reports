@@ -17,20 +17,22 @@ from ngi_reports.log import loggers
 from ngi_reports.utils import config as report_config
 
 LOG = loggers.minimal_logger('NGI Reports')
-config = report_config.load_config()
 
 ## CONSTANTS
 # create choices for report type based on available report template
 allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ] + ['ign_aggregate_report']
 
-def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pandoc_binary=False, **kwargs):
+def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pandoc_binary=False, config_file=None, **kwargs):
 
     # Setup
     template_fn = '{}.md'.format(report_type)
     LOG.info('Report type: {}'.format(report_type))
 
+    # use default config or override it if file is specified
+    config = report_config.load_config(config_file)
+
     # Figure out the sequencing node
-    ngi_node = find_ngi_node(ngi_node, working_dir)
+    ngi_node = find_ngi_node(config, ngi_node, working_dir)
 
     # Import the modules for this report type
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
@@ -110,7 +112,7 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
     os.chdir(old_cwd)
 
 
-def find_ngi_node(ngi_node='unknown', working_dir=os.getcwd()):
+def find_ngi_node(config, ngi_node='unknown', working_dir=os.getcwd()):
 
     # 1. Start with the command line variable that overwrites everything
     if is_valid_ngi_node(ngi_node):
@@ -165,6 +167,7 @@ if __name__ == "__main__":
         help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument("-l", "--pandoc_binary", dest="pandoc_binary", action='store_true',
         help="Use the linux RPM x86_64 pandoc binary bundled with the repository. UPPMAX bash script uses this flag. Default: False.")
+    parser.add_argument('-c', '--config_file', default=None, action="store", help="Configuration file to use instead of default (~/.ngi_config/ngi_reports.conf)")
     parser.add_argument('-p', '--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('-s', '--signature', default=None, action="store", help="Signature/Name for person who generates 'project_summary' report")
     parser.add_argument('-u', '--uppmax_id', default=None, action="store", help="Given UPPMAX id will be used while generating report")
