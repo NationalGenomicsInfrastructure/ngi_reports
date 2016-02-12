@@ -121,6 +121,7 @@ class Report(project_summary.CommonReport):
             ## get total reads if avialable or mark sample as not sequenced
             try:
                 self.samples_info[sample_id]['total_reads'] = "{:.2f}".format(float(sample['details']['total_reads_(m)']))
+                self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
                 ## Check if reads minimum set for sample and the status if it does
                 if self.samples_info[sample_id]['reads_min']:
                     self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
@@ -224,7 +225,7 @@ class Report(project_summary.CommonReport):
                         r_idx = '{}_{}'.format(lane, fc_name)
                         r_num, r_len = map(int, run_setup.split('x'))
                         qval = float(stat.get(qval_key))
-                        pfrd = int(stat.get(base_key).replace(',',''))/r_num 
+                        pfrd = int(stat.get(base_key).replace(',',''))
                         base = pfrd * r_num * r_len
                         self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
@@ -386,7 +387,7 @@ class Report(project_summary.CommonReport):
         if self.proj_details.get('queue_date'):
             dates.append("_Queue date:_ {}".format(self.proj_details.get('queue_date')))
         if self.proj.get('project_summary',{}).get('all_samples_sequenced'):
-            dates.append("_All data delivered:_ {}".format(self.proj.get('project_summary',{}).get('all_samples_sequenced')))
+            dates.append("_All samples sequenced:_ {}".format(self.proj.get('project_summary',{}).get('all_samples_sequenced')))
         if self.creation_date:
             dates.append("_Report date:_ {}".format(self.creation_date))
         return ", ".join(dates)
