@@ -27,26 +27,17 @@ class Report(project_summary.CommonReport):
         super(Report, self).__init__(config, LOG, working_dir, **kwargs)
 
         ## Project name - collect from the command line if we have it
-        if kwargs.get('project') is not None:
-            self.project_info['ngi_name'] = kwargs['project']
-            self.project_name = self.project_info['ngi_name']
-        else:
-            ## Check to see if we have the project ID yet
-            try:
-                self.project_name = self.project_info['ngi_name']
-            except KeyError:
-                self.LOG.error("No project name found - please specify using '--project'")
-                raise KeyError("No project name found - please specify using '--project'")
+        self.project_name = kwargs.get('project', self.project_info.get('ngi_name'))
+        if not self.project_name:
+            self.LOG.error("No project name/id provided - please specify using '--project'")
+            raise SystemExit
 
         ## Check and exit if signature not provided
         if not kwargs.get('signature'):
-            self.LOG.error("It is required to provide Signature/Name generating 'project_summary' report")
+            self.LOG.error("It is required to provide Signature/Name while generating 'project_summary' report, see -s opition in help")
             raise SystemExit
         else:
             self.project_info['signature'] = kwargs.get('signature')
-
-        ## Report filename
-        self.report_fn = "{}_project_summary".format(self.project_name)
 
         ## Get connections to the databases in StatusDB
         self.LOG.info("Connecting to statusDB...")
@@ -58,17 +49,21 @@ class Report(project_summary.CommonReport):
         assert xcon, "Could not connect to {} database in StatusDB".format("x_flowcell")
         self.LOG.info("...connected")
 
-        ## Get the project from statusdb
-        self.proj = pcon.get_entry(self.project_name)
+        ## Get the project from statusdb, make call according to id or name
+        id_view = True if re.match('^P\d+$', self.project_name) else False
+        self.proj = pcon.get_entry(self.project_name, use_id_view=id_view)
         if not self.proj:
-            self.LOG.error("No such project '{}'".format(self.project_name))
+            self.LOG.error("No such project name/id '{}', check if provided information is right".format(self.project_name))
             raise KeyError
-
+        self.project_name = self.proj.get('project_name')
+        
+        ## Report filename
+        self.report_fn = "{}_project_summary".format(self.project_name)
         ## Bail If the data source is not lims (old projects)
         if self.proj.get('source') != 'lims':
             self.LOG.error("The source for data for project {} is not LIMS.".format(self.project_name))
             raise BaseException
-
+        
         ## Helper vars
         self.seq_methods, self.sample_qval = (OrderedDict(), defaultdict(dict))
         self.proj_details = self.proj.get('details',{})
@@ -79,6 +74,7 @@ class Report(project_summary.CommonReport):
             raise SystemExit
 
         ## Get information for the reports from statusdb
+        self.project_info['ngi_name'] = self.project_name
         self.project_info['ngi_id'] = self.proj.get('project_id')
         self.project_info['ngi_facility'] = "Genomics {} Stockholm".format(self.proj_details.get('type')) if self.proj_details.get('type') else None
         self.project_info['contact'] = self.proj.get('contact')
@@ -92,7 +88,7 @@ class Report(project_summary.CommonReport):
         self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], '')
         self.project_info['user_ID'] = self.to_ascii(self.proj_details.get('customer_project_reference',''))
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
-        self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id').lower()
+        self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id','').lower()
         if not self.project_info['UPPMAX_id']:
             self.LOG.warn("UPPMAX id missing in status db, provide with option '-u' if known or contact project co-ordinater")
         self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'])
@@ -103,6 +99,7 @@ class Report(project_summary.CommonReport):
         self.project_info['total_lanes'] = 0
         self.project_info['display_limit'] = kwargs.get('display_limit')
         self.project_info['missing_fc'] = False
+        self.project_info['is_hiseqx'] = False
         self.project_info['aborted_samples'] = OrderedDict()
         self.project_info['seq_setup'] = self.proj_details.get('sequencing_setup')
 
@@ -121,14 +118,7 @@ class Report(project_summary.CommonReport):
             ## get total reads if avialable or mark sample as not sequenced
             try:
                 self.samples_info[sample_id]['total_reads'] = "{:.2f}".format(float(sample['details']['total_reads_(m)']))
-                self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
-                ## Check if reads minimum set for sample and the status if it does
-                if self.samples_info[sample_id]['reads_min']:
-                    self.project_info['ordered_reads'].append("{}M".format(self.samples_info[sample_id]['reads_min']))
-                    if float(self.samples_info[sample_id]['total_reads']) > float(self.samples_info[sample_id]['reads_min']):
-                        self.samples_info[sample_id]['seq_status'] = 'PASSED'
-                    else:
-                        self.samples_info[sample_id]['seq_status'] = 'FAILED'
+                self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')                    
             except KeyError:
                 self.LOG.warn("Sample {} doesn't have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Not sequenced'}
@@ -181,6 +171,7 @@ class Report(project_summary.CommonReport):
             if fc['type'] == 'HiSeqX':
                 fc_obj = xcon.get_entry(fc['run_name'])
                 fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
+                self.project_info['is_hiseqx'] = True
             else:
                 fc_obj = fcon.get_entry(fc['run_name'])
                 fc_runp = fc_obj.get('RunParameters',{})
@@ -236,8 +227,9 @@ class Report(project_summary.CommonReport):
                         lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                         self.flowcell_info[fc_name]['lanes'][lane] = {'id': lane,
                                                                       'cluster': self.get_lane_info('Clusters PF',lane_sum,run_setup[0],True),
-                                                                      'phix': self.get_lane_info('% Error Rate',lane_sum,run_setup[0]),
-                                                                      'avg_qval': self.get_lane_info('% Bases >=Q30',lane_sum,run_setup[0])}
+                                                                      'avg_qval': self.get_lane_info('% Bases >=Q30',lane_sum,run_setup[0]),
+                                                                      'phix': kwargs.get('fc_phix',{}).get(fc_name, {}).get(lane, self.get_lane_info('% Error Rate',lane_sum,run_setup[0]))}
+
                         ## Check if the above created dictionay have all info needed
                         for k,v in self.flowcell_info[fc_name]['lanes'][lane].iteritems():
                             if not v:
@@ -255,12 +247,10 @@ class Report(project_summary.CommonReport):
         ## Check if sequencing info is complete
         if "None" in self.project_info['sequencing_methods']:
             self.LOG.warn("Sequencing methods have some missing information, kindly check.")
-        ## convert readsminimum list to a string
-        self.project_info['ordered_reads'] = ", ".join(set(self.project_info['ordered_reads']))
 
         ## Evaluate threshold for Q30 to set sample status, priority given to user mentioned value
         ## if not duduce from the run setup, only very basic assumptions made for deduction
-        q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_threshold(config)
+        self.q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_threshold(config)
         
         if self.sample_qval and kwargs.get('yield_from_fc'):
             self.LOG.info("'yield_from_fc' option was given so will compute the yield from collected flowcells")
@@ -276,16 +266,19 @@ class Report(project_summary.CommonReport):
                     total_reads += qinfo[k]['reads']
                 avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp)
                 self.samples_info[sample]['qscore'] = round(avg_qval, 2)
-                if int(self.samples_info[sample]['qscore']) < q30_threshold:
-                    self.samples_info[sample]['seq_status'] = 'FAILED'
                 ## Get/overwrite yield from the FCs computed instead of statusDB value
                 if kwargs.get('yield_from_fc') and total_reads:
+                    total_reads = total_reads if self.project_info['is_hiseqx'] else total_reads/2
                     self.samples_info[sample]['total_reads'] = "{:.2f}".format(total_reads/float(1000000))
                     if sample in self.project_info['aborted_samples']:
                         self.LOG.info("Sample {} was sequenced, so removing it from NOT sequenced samples list".format(sample))
                         del self.project_info['aborted_samples'][sample]
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
+        
+        self.set_sample_status()
+        ## convert readsminimum list to a string
+        self.project_info['ordered_reads'] = ", ".join(set(self.project_info['ordered_reads']))
 
 
     ###############################################################################
@@ -298,7 +291,7 @@ class Report(project_summary.CommonReport):
         if self.project_info['library_construction'] != "Library was prepared by user.":
             sample_header.append('Status')
             sample_filter.append('seq_status')
-        self.tables_info['tables']['sample_info'] = self.create_table_text(self.samples_info, filter_keys=sample_filter, header=sample_header)
+        self.tables_info['tables']['sample_info'] = self.create_table_text(sorted(self.samples_info.values(), key=lambda d: d['ngi_id']), filter_keys=sample_filter, header=sample_header)
         self.tables_info['header_explanation']['sample_info'] = "* _NGI ID:_ Internal NGI sample indentifier\n"\
                                                                 "* _User ID:_ User submitted name for a sample\n"\
                                                                 "* _Mreads:_ Total million reads (or pairs) for a sample\n"\
@@ -504,6 +497,7 @@ class Report(project_summary.CommonReport):
             self.LOG.warn("Could not find pre-defined threshold for length {} in section {} in config file, using default 80% as threshold".format(read_length, q_section))
             return default
 
+
     def get_project_flowcell(self, fc_dict):
         """From information available in flowcell db connection collect the flowcell this project was sequenced"""
         proj_id = self.project_info['ngi_id']
@@ -516,6 +510,17 @@ class Report(project_summary.CommonReport):
                 fc_date, fc_name = fc.split('_')
                 if datetime.strptime(fc_date,'%y%m%d') < proj_open_date:
                     break
-                if proj_id in proj_list[fc]:
+                if proj_id in proj_list[fc] and fc_name not in self.flowcell_info.keys():
                     self.flowcell_info[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date, 'type':'MiSeq' if '-' in fc_name else fc_type}
 
+
+    def set_sample_status(self):
+        """Set sequencing status of samples based upon reads and quality"""
+        for sample, sam_info in self.samples_info.items():
+            if not sam_info['reads_min']:
+                continue
+            self.project_info['ordered_reads'].append("{}M".format(sam_info['reads_min']))
+            if float(sam_info['total_reads']) > float(sam_info['reads_min']) and int(sam_info['qscore']) > self.q30_threshold:
+                self.samples_info[sample]['seq_status'] = 'PASSED'
+            else:
+                self.samples_info[sample]['seq_status'] = 'FAILED'
