@@ -172,6 +172,7 @@ class Report(project_summary.CommonReport):
                 fc_obj = xcon.get_entry(fc['run_name'])
                 fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
                 self.project_info['is_hiseqx'] = True
+                self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_id'])
             else:
                 fc_obj = fcon.get_entry(fc['run_name'])
                 fc_runp = fc_obj.get('RunParameters',{})
