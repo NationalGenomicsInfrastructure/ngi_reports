@@ -171,14 +171,15 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('-s', '--signature', default=None, action="store", help="Signature/Name for person who generates 'project_summary' report")
     parser.add_argument('-u', '--uppmax_id', default=None, action="store", help="Given UPPMAX id will be used while generating report")
-    parser.add_argument('-q', '--quality', default=None, action="store", type=int, help="Q30(%) threshold for samples to set status")
+    parser.add_argument('-q', '--quality', default=None, action="store", type=int, help="Q30 threshold for samples to set status")
     parser.add_argument('-y', '--yield_from_fc', default=False, action="store_true", help="Compute the total for each sample from the retrived FC directly")
     parser.add_argument('--exclude_fc', nargs="*", default=[], action="store", help="Exclude these FCs while processing, Format should be BH3JLWCCXX/000000000-AEUUP.")
     parser.add_argument('--display_limit', default=10, action="store", type=int, help="Threshold for not showing table in the report")
     parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
     parser.add_argument('--samples', default=None, action="store", nargs="*", help="Limit the samples to include in reports")
     parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
-
+    parser.add_argument('--fc_phix', default={}, action="store", type=json.loads, help="Overwrite or use Phix values for mentioned flowcells/lanes provided as a json string, having each flowcell as a key. Example: --fc_phix '{\"BH3JLWCCXX\": {\"1\": \"0.42\", \"3\": \"0.46\"}}'")
+    
     kwargs = vars(parser.parse_args())
 
     make_reports(**kwargs)
