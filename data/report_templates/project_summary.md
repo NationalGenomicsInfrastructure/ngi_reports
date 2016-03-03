@@ -117,7 +117,7 @@ The table is also saved as parseable tab-separated text [file]({{ project.ngi_na
 
 
 # Library Information
-{% if project.missing_prep == samples|length %}
+{% if not samples %}
 No library information to be displayed.
 {% elif samples|length > project.display_limit %}
 Library information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_library_info.txt) (table hidden due to number of samples). Below you can find an explanation of the header column used in the table.

@@ -255,7 +255,10 @@ class Report(project_summary.CommonReport):
         
         if self.sample_qval and kwargs.get('yield_from_fc'):
             self.LOG.info("'yield_from_fc' option was given so will compute the yield from collected flowcells")
-
+            for sample in self.samples_info.keys():
+                if sample not in self.sample_qval.keys():
+                    del self.samples_info[sample]
+        
         ## calculate average Q30 over all lanes and flowcell
         for sample in sorted(self.sample_qval.keys()):
             try:
@@ -276,7 +279,7 @@ class Report(project_summary.CommonReport):
                         del self.project_info['aborted_samples'][sample]
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
-        
+
         self.set_sample_status()
         ## convert readsminimum list to a string
         self.project_info['ordered_reads'] = ", ".join(set(self.project_info['ordered_reads']))
