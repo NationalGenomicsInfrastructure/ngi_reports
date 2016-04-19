@@ -14,6 +14,9 @@ class statusdb_connection(object):
     def __init__(self, config=None, log=None):
         self.log = log
         default_config = os.path.join(os.environ.get("HOME"), ".ngi_config", "statusdb.yaml")
+        # if there is no first default config, try to get it from environ 
+        if not os.path.exists(default_config):
+            default_config = os.path.join(os.environ.get("STATUS_DB_CONFIG"))
         try:
             with open(default_config) as f:
                 conf = yaml.load(f)
