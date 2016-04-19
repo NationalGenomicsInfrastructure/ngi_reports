@@ -23,7 +23,7 @@ class statusdb_connection(object):
                 config = conf["statusdb"]
         except IOError:
             if not config:
-                raise SystemExit("Could not find any config info")
+                raise SystemExit("Could not find any config info in '~/.ngi_config/statusdb.yaml' or ENV variable 'STATUS_DB_CONFIG'")
 
         self.user = config.get("username")
         self.pwrd = config.get("password")
