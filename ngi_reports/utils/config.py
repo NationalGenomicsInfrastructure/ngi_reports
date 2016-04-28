@@ -21,7 +21,7 @@ def load_config(config_file=None):
     except IOError:
         raise IOError(("There was a problem loading the configuration file. "
                 "Please make sure that ~/.ngi_config/ngi_reports.conf exists "
-                "or env vairable 'NGI_REPORTS_CONFIG' is set with path to conf "
+                "or env variable 'NGI_REPORTS_CONFIG' is set with path to conf "
                 "file and set with read permissions"))
 
 def expand_path(input_path, substitutions):
