@@ -396,17 +396,18 @@ class Report(project_summary.CommonReport):
         if self.proj.get('application') == "Finished library":
             return "Library was prepared by user."
         try:
+            lib_meth_pat = r'^(.*?),(.*?),(.*?),(.*?)[\[,](.*)$' #Input, Type, Option, Category -/, doucment number
             lib_head = ['Input', 'Type', 'Option', 'Category']
-            lib_meth = [i.strip() for i in re.sub("\[\d+\]$", '', self.proj_details['library_construction_method']).split(',')]
-            if len(lib_meth) == 5:
-                lib_meth = lib_meth[:4]
-            if len(lib_meth) == 4:
+            lib_meth = re.search(lib_meth_pat, self.proj_details['library_construction_method'])
+            if lib_meth:
+                lib_meth_list = lib_meth.groups()[:4] #not interested in the document number
                 lib_list = []
-                for category,method in zip(lib_head,lib_meth):
-                    if method == 'By user':
+                for name,value in zip(lib_head, lib_meth_list):
+                    value = value.strip() #remove empty space(s) at the ends
+                    if value == 'By user':
                         return "Library was prepared by user."
-                    if method != '-':
-                        lib_list.append("* {}: {}".format(category, method))
+                    if value and value != "-":
+                        lib_list.append("* {}: {}".format(name, value))
                 return ("\n".join(lib_list))
             else:
                 self.LOG.error("Library method is not mentioned in expected format for project {}".format(self.project_name))
