@@ -399,8 +399,8 @@ class Report(project_summary.CommonReport):
             lib_head = ['Input', 'Type', 'Option', 'Category']
             lib_meth = [i.strip() for i in re.sub("\[\d+\]$", '', self.proj_details['library_construction_method']).split(',')]
             if len(lib_meth) == 5:
-				lib_meth = lib_meth[:4]
-			if len(lib_meth) == 4:
+                lib_meth = lib_meth[:4]
+            if len(lib_meth) == 4:
                 lib_list = []
                 for category,method in zip(lib_head,lib_meth):
                     if method == 'By user':
