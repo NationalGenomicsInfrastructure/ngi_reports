@@ -14,13 +14,11 @@ __NOTE__: _Please make sure that there are no exisiting [issues]((https://github
 
 #### Setting the correct version number
 
-Version numbers follow the typical `MAJOR.MINOR.REVISION` system. If you suspect another pull requests will be merged before yours, simply ask the PR responsible to suggest a number as part of their review. 
+Version numbers follow the typical `MAJOR.MINOR.REVISION` system. If you suspect another pull requests will be merged before yours, simply ask the PR responsible to suggest a number as part of their review. In brief version numbers are set as follows: 
 
-###### Version numbers in brief
-
-Revision - Small sized updates such as addressing a logic error or changing what version of a dependency is required
-Minor - Medium sized updates such as adding a new functionality or optimizing an existing feature
-Major - Large sized updates that either add a big bundle of functionality, or optimization that required a large section of the repository to be refactored.
+- Revision - Small sized updates such as addressing a logic error or changing what version of a dependency is required
+- Minor - Medium sized updates such as adding a new functionality or optimizing an existing feature
+- Major - Large sized updates that either add a big bundle of functionality, or optimization that required a large section of the repository to be refactored.
 
 You can find more detailed instructions in the ngi_reports documentation:
 http://nationalgenomicsinfrastructure.github.io/ngi_reports/contributing/
