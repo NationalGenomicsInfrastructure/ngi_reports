@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
+from ngi_reports import __version__
 import sys, os
 
-version = '0.1'
 
 try:
     with open("requirements.txt", "r") as f:
@@ -17,7 +17,7 @@ except IOError:
 
 setup(
     name='ngi_reports',
-    version=version,
+    version=__version__,
     description="Report generation for NGI Sweden",
     long_description='This package is used to generate different types of '
                    'reports for both the NGI Stockholm and Uppsala nodes.',
