@@ -34,6 +34,12 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
     # Figure out the sequencing node
     ngi_node = find_ngi_node(config, ngi_node, working_dir)
 
+    # Figure out if pdfs are needed
+    try:
+        generate_pdf = config.getboolean('ngi_reports', 'generate_pdf')
+    except:
+        generate_pdf = True
+
     # Import the modules for this report type
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
 
@@ -93,8 +99,8 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
         except OSError:
             LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')
 
-        # Convert markdown to PDF using pandoc, Stockholm node does not generate pdfs anymore
-        if ngi_node != "stockholm":
+        # Convert markdown to PDF using pandoc, mentioned in config file if not required
+        if generate_pdf:
             try:
                 pdf_cmd = shlex.split('{2} --standalone {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter {1}/pandoc_filters.py -V template_dir={1}'.format(output_bn, pandoc_dir, pandoc_cmd))
                 subprocess.call(pdf_cmd)
