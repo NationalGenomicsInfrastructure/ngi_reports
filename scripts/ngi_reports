@@ -93,12 +93,13 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
         except OSError:
             LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')
 
-        # Convert markdown to PDF using pandoc
-        try:
-            pdf_cmd = shlex.split('{2} --standalone {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter {1}/pandoc_filters.py -V template_dir={1}'.format(output_bn, pandoc_dir, pandoc_cmd))
-            subprocess.call(pdf_cmd)
-        except OSError:
-            LOG.error('Could not convert markdown to PDF - pandoc error. Skipping PDF report generation...')
+        # Convert markdown to PDF using pandoc, Stockholm node does not generate pdfs anymore
+        if ngi_node != "stockholm":
+            try:
+                pdf_cmd = shlex.split('{2} --standalone {0}.md -o {0}.pdf --template={1}/latex_pandoc.tex --latex-engine=xelatex --default-image-extension=pdf --filter {1}/pandoc_filters.py -V template_dir={1}'.format(output_bn, pandoc_dir, pandoc_cmd))
+                subprocess.call(pdf_cmd)
+            except OSError:
+                LOG.error('Could not convert markdown to PDF - pandoc error. Skipping PDF report generation...')
     
     # Generate CSV files for project_summary reports
     if report_type == 'project_summary' and not kwargs['no_txt']:
