@@ -13,6 +13,7 @@ import shlex
 import shutil
 import subprocess
 
+from ngi_reports import __version__
 from ngi_reports.log import loggers
 from ngi_reports.utils import config as report_config
 
@@ -186,6 +187,7 @@ if __name__ == "__main__":
     parser.add_argument('--samples', default=None, action="store", nargs="*", help="Limit the samples to include in reports")
     parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
     parser.add_argument('--fc_phix', default={}, action="store", type=json.loads, help="Overwrite or use Phix values for mentioned flowcells/lanes provided as a json string, having each flowcell as a key. Example: --fc_phix '{\"BH3JLWCCXX\": {\"1\": \"0.42\", \"3\": \"0.46\"}}'")
+    parser.add_argument('--version', action='version', version="NGI reports version - {}".format(__version__))
     
     kwargs = vars(parser.parse_args())
 

@@ -160,7 +160,7 @@ class Report(project_summary.CommonReport):
                 self.LOG.warn('No library prep information was available for sample {}'.format(sample_id))
 
         ## collect all the flowcell this project was run
-        self.get_project_flowcell({'HiSeq2500':fcon.proj_list, 'HiSeqX':xcon.proj_list})
+        self.get_project_flowcell({'flowcell':fcon.proj_list, 'x_flowcell':xcon.proj_list})
 
         ## Collect required information for all flowcell run for the project
         for fc in self.flowcell_info.values():
@@ -168,14 +168,25 @@ class Report(project_summary.CommonReport):
             if fc_name in kwargs.get('exclude_fc'):
                 del self.flowcell_info[fc_name]
                 continue
-            if fc['type'] == 'HiSeqX':
+            
+            # get database document from appropriate database
+            if fc['db'] == 'x_flowcell':
                 fc_obj = xcon.get_entry(fc['run_name'])
                 fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
-                self.project_info['is_hiseqx'] = True
-                self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_id'])
             else:
                 fc_obj = fcon.get_entry(fc['run_name'])
                 fc_runp = fc_obj.get('RunParameters',{})
+            
+            # set the fc type
+            fc_inst = fc_obj.get('RunInfo', {}).get('Instrument','')
+            if fc_inst.startswith('ST-'):
+                fc['type'] = 'HiSeqX'
+                self.project_info['is_hiseqx'] = True
+                self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_id'])
+            elif '-' in fc_name:
+                fc['type'] = 'MiSeq'
+            else:
+                fc['type'] = 'HiSeq2500'
             fc_illumina = fc_obj.get('illumina',{})
             fc_lane_summary = fc_obj.get('lims_data', {}).get('run_summary', {})
             self.flowcell_info[fc_name]['lanes'] = OrderedDict()
@@ -208,11 +219,11 @@ class Report(project_summary.CommonReport):
                 try:
                     if re.sub('_+','.',stat['Project'],1) != self.project_name and stat['Project'] != self.project_name:
                         continue
-                    sample, lane = (stat['Sample'] if seq_plat == "HiSeqX" else stat['Sample ID'], stat['Lane'])
+                    sample, lane = (stat['Sample'] if fc['db'] == "x_flowcell" else stat['Sample ID'], stat['Lane'])
                     try:
-                        if seq_plat in ["HiSeq2500", "MiSeq"]:
+                        if fc['db'] == "flowcell":
                             qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
-                        elif seq_plat == "HiSeqX":
+                        elif fc['db'] == "x_flowcell":
                             qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
                         r_idx = '{}_{}'.format(lane, fc_name)
                         r_num, r_len = map(int, run_setup.split('x'))
@@ -510,15 +521,16 @@ class Report(project_summary.CommonReport):
         proj_id = self.project_info['ngi_id']
         ## check only flowcell run after project opendate to save time, if open date not available
         ## check flowcell sequenced after 2015, the year this new report implemented
+        ## if same flowcell have entries in both 'flowcell' and 'x_flowcell', entry in 'x_flowcell' is used
         proj_open_date = datetime.strptime(self.proj.get('open_date','2015-01-01'),'%Y-%m-%d')
-        for fc_type, proj_list in fc_dict.iteritems():
-            sort_fcs = sorted(proj_list.keys(), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
+        for db_type in sorted(fc_dict.keys(), reverse=True):
+            sort_fcs = sorted(fc_dict[db_type].keys(), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
             for fc in sort_fcs:
                 fc_date, fc_name = fc.split('_')
                 if datetime.strptime(fc_date,'%y%m%d') < proj_open_date:
                     break
-                if proj_id in proj_list[fc] and fc_name not in self.flowcell_info.keys():
-                    self.flowcell_info[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date, 'type':'MiSeq' if '-' in fc_name else fc_type}
+                if proj_id in fc_dict[db_type][fc] and fc_name not in self.flowcell_info.keys():
+                    self.flowcell_info[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date, 'db':db_type}
 
 
     def set_sample_status(self):
