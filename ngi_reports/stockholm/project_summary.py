@@ -91,6 +91,9 @@ class Report(project_summary.CommonReport):
         self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id','').lower()
         if not self.project_info['UPPMAX_id']:
             self.LOG.warn("UPPMAX id missing in status db, provide with option '-u' if known or contact project co-ordinater")
+        elif not re.match(r'^[a-b]\d{7}$', self.project_info['UPPMAX_id']):
+            self.LOG.warn("UPPMAX id '{}' is not in the expected formatted, so setting uppmax id as 'None' and will not be shown in the final report".format(self.project_info['UPPMAX_id']))
+            self.project_info['UPPMAX_id'] = None
         self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'])
         self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True

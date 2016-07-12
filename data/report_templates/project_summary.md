@@ -40,11 +40,13 @@ Ordered lanes
 Order Dates
 :   {{ project.dates }}
 
+{% if project.UPPMAX_id -%}
 UPPMAX Project ID
 :   `{{ project.UPPMAX_id }}`
 
 UPPNEX project path
 :   `{{ project.UPPMAX_path }}`
+{%- endif %}
 
 {% if project.reference.genome -%}
 Reference Genome
