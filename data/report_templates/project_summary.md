@@ -40,11 +40,13 @@ Ordered lanes
 Order Dates
 :   {{ project.dates }}
 
+{% if project.UPPMAX_id -%}
 UPPMAX Project ID
 :   `{{ project.UPPMAX_id }}`
 
 UPPNEX project path
 :   `{{ project.UPPMAX_path }}`
+{%- endif %}
 
 {% if project.reference.genome -%}
 Reference Genome
@@ -181,18 +183,6 @@ reverse reads (if the run was a paired-end run).
 
 The naming of the files follow the convention:
 
-{% if not project.is_hiseqx -%}
-```
-[LANE]_[DATE]_[POSITION][FLOWCELL]_[NGI-NAME]_[READ].fastq.gz
-```
-
-* _LANE:_ Sequencing lane that the file originates from
-* _DATE:_ Date of sequencing
-* _POSITION:_ Position of the flowcell in the sequencer
-* _FLOWCELL:_ Unique flowcell indentifier
-* _NGI-NAME:_ Internal NGI sample indentifier
-* _READ:_ Forward(1) or reverse(2) read indentifier
-{%- else -%}
 ```
 [NGI-NAME]_[BCL-CONVERSION-ID]_[LANE]_[READ]_[VOLUME].fastq.gz
 ```
@@ -202,7 +192,6 @@ The naming of the files follow the convention:
 * _LANE:_ Sequencing lane that the file originates from
 * _READ:_ Forward(1) or reverse(2) read indentifier
 * _VOLUME:_ Volume index when file is large enough to be split into volumes
-{%- endif %}
 
 ## Data access at UPPMAX
 
