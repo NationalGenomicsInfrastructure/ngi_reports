@@ -232,6 +232,7 @@ class Report(project_summary.CommonReport):
                         r_num, r_len = map(int, run_setup.split('x'))
                         qval = float(stat.get(qval_key))
                         pfrd = int(stat.get(base_key).replace(',',''))
+                        pfrd = pfrd/2 if fc['db'] == "flowcell" else pfrd 
                         base = pfrd * r_num * r_len
                         self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
@@ -286,7 +287,6 @@ class Report(project_summary.CommonReport):
                 self.samples_info[sample]['qscore'] = round(avg_qval, 2)
                 ## Get/overwrite yield from the FCs computed instead of statusDB value
                 if kwargs.get('yield_from_fc') and total_reads:
-                    total_reads = total_reads if self.project_info['is_hiseqx'] else total_reads/2
                     self.samples_info[sample]['total_reads'] = "{:.2f}".format(total_reads/float(1000000))
                     if sample in self.project_info['aborted_samples']:
                         self.LOG.info("Sample {} was sequenced, so removing it from NOT sequenced samples list".format(sample))
