@@ -151,7 +151,7 @@ class Report(project_summary.CommonReport):
                 if not 'pcr-free' in self.project_info['library_construction'].lower():
                     try:
                         lib_valids = prep['library_validation']
-                        keys = sorted(lib_valids.keys(), key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
+                        keys = sorted([k for k in lib_valids.keys() if re.match('^[\d\-]*$',k)], key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
                         self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
                     except KeyError:
                         self.LOG.warn("No library validation step found or no sufficient info for sample {}".format(sample_id))
