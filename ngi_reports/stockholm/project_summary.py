@@ -67,6 +67,7 @@ class Report(project_summary.CommonReport):
         ## Helper vars
         self.seq_methods, self.sample_qval = (OrderedDict(), defaultdict(dict))
         self.proj_details = self.proj.get('details',{})
+        self.project_info['skip_fastq'] = kwargs.get('skip_fastq')
 
         ## Check if it is an aborted project before proceding
         if "aborted" in self.proj_details:

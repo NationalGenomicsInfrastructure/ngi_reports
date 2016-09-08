@@ -175,6 +175,7 @@ NGI ID | User ID | Status
 
 # General Information
 
+{% if not project.skip_fastq -%}
 ## Naming conventions
 
 The data is delivered in FastQ format using Illumina 1.8 quality scores.
@@ -192,6 +193,7 @@ The naming of the files follow the convention:
 * _LANE:_ Sequencing lane that the file originates from
 * _READ:_ Forward(1) or reverse(2) read indentifier
 * _VOLUME:_ Volume index when file is large enough to be split into volumes
+{%- endif %}
 
 ## Data access at UPPMAX
 
