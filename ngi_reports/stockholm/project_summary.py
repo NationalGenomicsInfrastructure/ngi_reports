@@ -67,6 +67,7 @@ class Report(project_summary.CommonReport):
         ## Helper vars
         self.seq_methods, self.sample_qval = (OrderedDict(), defaultdict(dict))
         self.proj_details = self.proj.get('details',{})
+        self.project_info['skip_fastq'] = kwargs.get('skip_fastq')
 
         ## Check if it is an aborted project before proceding
         if "aborted" in self.proj_details:
@@ -106,8 +107,14 @@ class Report(project_summary.CommonReport):
         self.project_info['aborted_samples'] = OrderedDict()
         self.project_info['seq_setup'] = self.proj_details.get('sequencing_setup')
 
+        self.samples_to_include = kwargs.get('samples', [])
+        if self.samples_to_include:
+            self.LOG.info('"--samples" option is passed, will only include samples {}'.format(", ".join(self.samples_to_include)))
+        
         ## Collect information about the sample preps and collect aborted samples
         for sample_id, sample in sorted(self.proj.get('samples', {}).iteritems()):
+            if self.samples_to_include and sample_id not in self.samples_to_include:
+                continue
             self.LOG.info('Processing sample {}'.format(sample_id))
             ## Check if the sample is aborted before processing
             if sample.get('details',{}).get('status_(manual)') == "Aborted":
@@ -153,7 +160,7 @@ class Report(project_summary.CommonReport):
                         lib_valids = prep['library_validation']
                         keys = sorted([k for k in lib_valids.keys() if re.match('^[\d\-]*$',k)], key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
                         self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
-                    except KeyError:
+                    except:
                         self.LOG.warn("No library validation step found or no sufficient info for sample {}".format(sample_id))
                 else:
                     self.LOG.info("PCR-free library was used, so setting fragment size as N/A")
@@ -223,6 +230,8 @@ class Report(project_summary.CommonReport):
                     if re.sub('_+','.',stat['Project'],1) != self.project_name and stat['Project'] != self.project_name:
                         continue
                     sample, lane = (stat['Sample'] if fc['db'] == "x_flowcell" else stat['Sample ID'], stat['Lane'])
+                    if self.samples_to_include and sample not in self.samples_to_include:
+                        continue
                     try:
                         if fc['db'] == "flowcell":
                             qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
