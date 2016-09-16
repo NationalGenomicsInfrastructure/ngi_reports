@@ -195,6 +195,7 @@ The naming of the files follow the convention:
 * _VOLUME:_ Volume index when file is large enough to be split into volumes
 {%- endif %}
 
+{% if project.UPPMAX_id -%}
 ## Data access at UPPMAX
 
 Data from the sequencing will be uploaded to the UPPNEX (UPPMAX Next
@@ -210,6 +211,7 @@ If you have problems accessing your data, please contact NGI
 [{{ project.support_email }}](mailto:{{ project.support_email }}).
 If you have questions regarding UPPNEX, please contact
 [support@uppmax.uu.se](mailto:support@uppmax.uu.se).
+{%- endif %}
 
 ## Acknowledgements
 
