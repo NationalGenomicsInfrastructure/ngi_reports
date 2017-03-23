@@ -50,7 +50,7 @@ class Report(project_summary.CommonReport):
         self.LOG.info("...connected")
 
         ## Get the project from statusdb, make call according to id or name
-        id_view = True if re.match('^P\d+$', self.project_name) else False
+        id_view, pid_as_uppmax_dest = (True, True) if re.match('^P\d+$', self.project_name) else (False, False)
         self.proj = pcon.get_entry(self.project_name, use_id_view=id_view)
         if not self.proj:
             self.LOG.error("No such project name/id '{}', check if provided information is right".format(self.project_name))
@@ -95,7 +95,7 @@ class Report(project_summary.CommonReport):
         elif "HDD" in self.project_info['UPPMAX_id']:
             self.LOG.INFO("Delivery done in HDD, so removing UPPMAX sections from the report")
             self.project_info['UPPMAX_id'] = None
-        self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'])
+        self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_id' if pid_as_uppmax_dest else 'ngi_name'])
         self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['library_construction'] = self.get_library_method()
@@ -192,7 +192,6 @@ class Report(project_summary.CommonReport):
             if fc_inst.startswith('ST-'):
                 fc['type'] = 'HiSeqX'
                 self.project_info['is_hiseqx'] = True
-                self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_id'])
             elif '-' in fc_name:
                 fc['type'] = 'MiSeq'
             else:
