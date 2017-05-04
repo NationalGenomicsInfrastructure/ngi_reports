@@ -92,10 +92,10 @@ class Report(project_summary.CommonReport):
         self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id','').lower()
         if not self.project_info['UPPMAX_id']:
             self.LOG.warn("UPPMAX id missing in status db, provide with option '-u' if known or contact project co-ordinater")
-        elif re.match(r'hdd', self.project_info['UPPMAX_id'], flags=re.IGNORECASE):
+        elif "HDD" in self.project_info['UPPMAX_id']:
             self.LOG.INFO("Delivery done in HDD, so removing UPPMAX sections from the report")
             self.project_info['UPPMAX_id'] = None
-        self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}-{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'], self.project_info['ngi_id'])
+        self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_id' if pid_as_uppmax_dest else 'ngi_name'])
         self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['library_construction'] = self.get_library_method()
