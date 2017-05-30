@@ -93,7 +93,7 @@ class Report(project_summary.CommonReport):
         if not self.project_info['UPPMAX_id']:
             self.LOG.warn("UPPMAX id missing in status db, provide with option '-u' if known or contact project co-ordinater")
         elif re.match(r'hdd', self.project_info['UPPMAX_id'], flags=re.IGNORECASE):
-            self.LOG.INFO("Delivery done in HDD, so removing UPPMAX sections from the report")
+            self.LOG.info("Delivery done in HDD, so removing UPPMAX sections from the report")
             self.project_info['UPPMAX_id'] = None
         self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}-{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'], self.project_info['ngi_id'])
         self.project_info['ordered_reads'] = []
