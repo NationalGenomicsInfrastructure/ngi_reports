@@ -68,6 +68,8 @@ class Report(project_summary.CommonReport):
         self.seq_methods, self.sample_qval = (OrderedDict(), defaultdict(dict))
         self.proj_details = self.proj.get('details',{})
         self.project_info['skip_fastq'] = kwargs.get('skip_fastq')
+        self.project_info['cluster'] = kwargs.get('cluster')
+        self.project_info['not_as_million'] = kwargs.get('not_as_million')
 
         ## Check if it is an aborted project before proceding
         if "aborted" in self.proj_details:
@@ -89,13 +91,14 @@ class Report(project_summary.CommonReport):
         self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], '')
         self.project_info['user_ID'] = self.to_ascii(self.proj_details.get('customer_project_reference',''))
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
-        self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id','').lower()
-        if not self.project_info['UPPMAX_id']:
-            self.LOG.warn("UPPMAX id missing in status db, provide with option '-u' if known or contact project co-ordinater")
-        elif re.match(r'hdd', self.project_info['UPPMAX_id'], flags=re.IGNORECASE):
-            self.LOG.info("Delivery done in HDD, so removing UPPMAX sections from the report")
-            self.project_info['UPPMAX_id'] = None
-        self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}-{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'], self.project_info['ngi_id'])
+        if self.project_info['cluster'] == 'milou':
+            self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id','').lower()
+            if not self.project_info['UPPMAX_id']:
+                self.LOG.warn("UPPMAX id missing in status db, provide with option '-u' if known or contact project co-ordinater")
+            elif re.match(r'hdd', self.project_info['UPPMAX_id'], flags=re.IGNORECASE):
+                self.LOG.info("Delivery done in HDD, so removing UPPMAX sections from the report")
+                self.project_info['UPPMAX_id'] = None
+            self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}-{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'], self.project_info['ngi_id'])
         self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['library_construction'] = self.get_library_method()
@@ -182,20 +185,21 @@ class Report(project_summary.CommonReport):
             # get database document from appropriate database
             if fc['db'] == 'x_flowcell':
                 fc_obj = xcon.get_entry(fc['run_name'])
-                fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
             else:
                 fc_obj = fcon.get_entry(fc['run_name'])
-                fc_runp = fc_obj.get('RunParameters',{})
             
             # set the fc type
             fc_inst = fc_obj.get('RunInfo', {}).get('Instrument','')
             if fc_inst.startswith('ST-'):
                 fc['type'] = 'HiSeqX'
                 self.project_info['is_hiseqx'] = True
+                fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
             elif '-' in fc_name:
                 fc['type'] = 'MiSeq'
+                fc_runp = fc_obj.get('RunParameters',{})
             else:
                 fc['type'] = 'HiSeq2500'
+                fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
             fc_illumina = fc_obj.get('illumina',{})
             fc_lane_summary = fc_obj.get('lims_data', {}).get('run_summary', {})
             self.flowcell_info[fc_name]['lanes'] = OrderedDict()
@@ -295,7 +299,7 @@ class Report(project_summary.CommonReport):
                 self.samples_info[sample]['qscore'] = round(avg_qval, 2)
                 ## Get/overwrite yield from the FCs computed instead of statusDB value
                 if kwargs.get('yield_from_fc') and total_reads:
-                    self.samples_info[sample]['total_reads'] = "{:.2f}".format(total_reads/float(1000000))
+                    self.samples_info[sample]['total_reads'] = total_reads if self.project_info.get('not_as_million') else "{:.2f}".format(total_reads/float(1000000))
                     if sample in self.project_info['aborted_samples']:
                         self.LOG.info("Sample {} was sequenced, so removing it from NOT sequenced samples list".format(sample))
                         del self.project_info['aborted_samples'][sample]
@@ -312,7 +316,7 @@ class Report(project_summary.CommonReport):
     ###############################################################################
 
         ## sample_info table
-        sample_header = ['NGI ID', 'User ID', 'Mreads', '>=Q30']
+        sample_header = ['NGI ID', 'User ID', '#reads' if self.project_info.get('not_as_million') else 'Mreads', '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
         if self.project_info['library_construction'] != "Library was prepared by user.":
             sample_header.append('Status')
@@ -323,6 +327,9 @@ class Report(project_summary.CommonReport):
                                                                 "* _Mreads:_ Total million reads (or pairs) for a sample\n"\
                                                                 "* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30\n"\
                                                                 "* _Status:_ Sequencing status of sample based on the total reads"
+        if self.project_info.get('not_as_million'):
+            self.tables_info['header_explanation']['sample_info'] = self.tables_info['header_explanation']['sample_info'].replace("_Mreads:_ Total million reads (or pairs) for a sample",
+                                                                                                                                  "_#reads:_ Total number of reads (or pairs) for a sample")
         if not self.project_info['ordered_reads']:
             self.tables_info['header_explanation']['sample_info'] = re.sub(r'\n\* _Status\:_ .*$','',self.tables_info['header_explanation']['sample_info'])
 
