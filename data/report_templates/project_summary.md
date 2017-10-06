@@ -40,7 +40,7 @@ Ordered lanes
 Order Dates
 :   {{ project.dates }}
 
-{% if project.UPPMAX_id -%}
+{% if project.cluster == 'milou' -%}
 UPPMAX Project ID
 :   `{{ project.UPPMAX_id }}`
 
@@ -106,7 +106,7 @@ Sample information table can be viewed tab-separated text file, please click [he
 
 {{ tables.sample_info }}
 {% else %}
-NGI ID | User ID | Mreads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
+NGI ID | User ID | {% if project.not_as_million %}#{% else %}M{% endif %}reads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
 -------|---------|--------|----------{% if project.ordered_reads %}|-------- {% endif %}
 {% for sample in samples.values()|sort(attribute='ngi_id') -%}
 {{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
@@ -195,10 +195,11 @@ The naming of the files follow the convention:
 * _VOLUME:_ Volume index when file is large enough to be split into volumes
 {%- endif %}
 
-{% if project.UPPMAX_id -%}
+
+{% if project.cluster == 'milou' -%}
 ## Data access at UPPMAX
 
-Data from the sequencing will be uploaded to the UPPNEX (UPPMAX Next
+Data from the sequencing have been uploaded to the UPPNEX (UPPMAX Next
 Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)),
 from which the user can access it. You can find the data in the INBOX folder of the
 UPPNEX project, which was created for you when your order was placed: 
@@ -211,6 +212,15 @@ If you have problems accessing your data, please contact NGI
 [{{ project.support_email }}](mailto:{{ project.support_email }}).
 If you have questions regarding UPPNEX, please contact
 [support@uppmax.uu.se](mailto:support@uppmax.uu.se).
+{% elif project.cluster == 'grus' %}
+## Data access at UPPMAX
+
+Data from the sequencing have been be uploaded to the UPPNEX (UPPMAX Next
+Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) called **GRUS**. More details can be found on the following links
+
+- [NGI data delivery note](https://ngisweden.scilifelab.se/info/Data%20delivery)
+- [UPPMAX GRUS user guide](https://www.uppmax.uu.se/support/user-guides/grus-user-guide/)
+
 {%- endif %}
 
 ## Acknowledgements
