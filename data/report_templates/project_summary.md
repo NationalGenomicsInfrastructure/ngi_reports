@@ -228,7 +228,7 @@ Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) ca
 Services provided by NGI must be acknowledged in all scientific dissemination activities,
 such as publications, presentations, posters, etc., using the following statement:
 
-> The authors acknowledge support from the National Genomics Infrastructure in Stockholm/Uppsala (please specify node used) 
+> The authors acknowledge support from the National Genomics Infrastructure in {% if project.ngi_facility -%} {{ project.ngi_facility }} {%- endif %}
 > funded by Science for Life Laboratory, the Knut and Alice Wallenberg Foundation and the Swedish Research Council, 
 > and SNIC/Uppsala Multidisciplinary Center for Advanced Computational Science for assistance with massively parallel sequencing 
 > and access to the UPPMAX computational infrastructure
