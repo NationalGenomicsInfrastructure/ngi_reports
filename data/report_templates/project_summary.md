@@ -225,12 +225,15 @@ Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) ca
 
 ## Acknowledgements
 
-In publications based on data from the work covered by this agreement,
-the authors must acknowledge SciLifeLab, NGI and Uppmax:
+Services provided by NGI must be acknowledged in all scientific dissemination activities,
+such as publications, presentations, posters, etc., using the following statement:
 
-> The authors would like to acknowledge support from Science for Life Laboratory,
-> the National Genomics Infrastructure, NGI, and Uppmax for providing
-> assistance in massive parallel sequencing and computational infrastructure.
+> The authors acknowledge support from the National Genomics Infrastructure in {% if project.ngi_facility -%} {{ project.ngi_facility }} {%- endif %}
+> funded by Science for Life Laboratory, the Knut and Alice Wallenberg Foundation and the Swedish Research Council, 
+> and SNIC/Uppsala Multidisciplinary Center for Advanced Computational Science for assistance with massively parallel sequencing 
+> and access to the UPPMAX computational infrastructure
+
+This acknowledgement is used for reporting purposes by the NGI and is critical for the future funding of the facility.
 
 # Further Help
 If you have any queries, please get in touch at
