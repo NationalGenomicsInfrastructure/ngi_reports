@@ -88,7 +88,7 @@ class Report(project_summary.CommonReport):
         self.project_info['num_samples'] = self.proj.get('no_of_samples')
         self.project_info['reference'] = {}
         self.project_info['reference']['genome'] = None if self.proj.get('reference_genome') == 'other' else self.proj.get('reference_genome')
-        self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], '')
+        self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], None)
         self.project_info['user_ID'] = self.to_ascii(self.proj_details.get('customer_project_reference',''))
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
         if self.project_info['cluster'] == 'milou':
@@ -197,6 +197,9 @@ class Report(project_summary.CommonReport):
             elif '-' in fc_name:
                 fc['type'] = 'MiSeq'
                 fc_runp = fc_obj.get('RunParameters',{})
+            elif fc_inst.startswith('A'):
+                fc['type'] = 'NovaSeq6000'
+                fc_runp = fc_obj.get('RunParameters',{})
             else:
                 fc['type'] = 'HiSeq2500'
                 fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
@@ -209,7 +212,7 @@ class Report(project_summary.CommonReport):
                            "chemistry. The Bcl to FastQ conversion was performed using {} from the CASAVA software suite. The "\
                            "quality scale used is Sanger / phred33 / Illumina 1.8+."
             run_setup = fc_obj.get("run_setup")
-            fc_chem = fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs'))
+            fc_chem = fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs', fc_runp.get('WorkflowType')))
             seq_plat = fc['type']
             clus_meth = ["cBot","onboard clustering"][seq_plat == "MiSeq" or fc_runp.get("ClusteringChoice","") == "OnBoardClustering"]
             try:
@@ -219,7 +222,8 @@ class Report(project_summary.CommonReport):
             if seq_plat == "MiSeq":
                 seq_software = "MSC {}/RTA {}".format(fc_runp.get("MCSVersion"),fc_runp.get("RTAVersion"))
             else:
-                seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName"),fc_runp.get("ApplicationVersion"),fc_runp.get("RTAVersion"))
+                seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName", fc_runp.get("Application")),
+                                                     fc_runp.get("ApplicationVersion"),fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))
             tmp_method = seq_template.format("SECTION", clus_meth, seq_plat, seq_software, run_setup, fc_chem, casava)
 
             ## to make sure the sequencing methods are unique
@@ -254,7 +258,8 @@ class Report(project_summary.CommonReport):
                     if lane not in self.flowcell_info[fc_name]['lanes']:
                         lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                         self.flowcell_info[fc_name]['lanes'][lane] = {'id': lane,
-                                                                      'cluster': self.get_lane_info('Clusters PF',lane_sum,run_setup[0],True),
+                                                                      'cluster': self.get_lane_info('Reads PF (M)' if 'NovaSeq' in fc['type'] else 'Clusters PF',lane_sum,
+                                                                                                     run_setup[0], False if 'NovaSeq' in fc['type'] else True),
                                                                       'avg_qval': self.get_lane_info('% Bases >=Q30',lane_sum,run_setup[0]),
                                                                       'phix': kwargs.get('fc_phix',{}).get(fc_name, {}).get(lane, self.get_lane_info('% Error Rate',lane_sum,run_setup[0]))}
 

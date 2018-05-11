@@ -50,7 +50,7 @@ UPPNEX project path
 
 {% if project.reference.genome -%}
 Reference Genome
-:   {{ project.reference.organism}} ({{ project.reference.genome }})
+:   {% if project.reference.organism -%}{{ project.reference.organism}} - {% endif %}{{ project.reference.genome }}
 {%- endif %}
 
 {% if project.ordered_reads -%}
