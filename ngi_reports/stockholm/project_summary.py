@@ -208,11 +208,14 @@ class Report(project_summary.CommonReport):
             self.flowcell_info[fc_name]['lanes'] = OrderedDict()
 
             ## Get sequecing method for the flowcell
-            seq_template = "{}) Clustering was done by '{}' and samples were sequenced on {} ({}) with a {} setup using '{}' "\
-                           "chemistry. The Bcl to FastQ conversion was performed using {} from the CASAVA software suite. The "\
-                           "quality scale used is Sanger / phred33 / Illumina 1.8+."
+            seq_template = "{}) Clustering was done by '{}' and samples were sequenced on {} ({}) with a {} setup "\
+                           "using {}. The Bcl to FastQ conversion was performed using {} from the CASAVA software "\
+                           "suite. The quality scale used is Sanger / phred33 / Illumina 1.8+."
             run_setup = fc_obj.get("run_setup")
-            fc_chem = fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs', fc_runp.get('WorkflowType')))
+            if fc['type'] == 'NovaSeq6000':
+                fc_chem = "'{}' workflow in '{}' mode flowcell".format(fc_runp.get('WorkflowType'), fc_runp.get('RfidsInfo', {}).get('FlowCellMode'))
+            else:
+                fc_chem = "'{}' chemistry".format(fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs')))
             seq_plat = fc['type']
             clus_meth = ["cBot","onboard clustering"][seq_plat == "MiSeq" or fc_runp.get("ClusteringChoice","") == "OnBoardClustering"]
             try:
