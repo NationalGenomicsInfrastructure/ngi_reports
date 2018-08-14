@@ -34,13 +34,6 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
 
     # Figure out the sequencing node
     ngi_node = find_ngi_node(config, ngi_node, working_dir)
-    
-    # Use approprite html template and modify other required params
-    if report_type == "project_summary" and not kwargs.get("no_scrollable"):
-        pandoc_html_template = "html_pandoc_scrollable.html"
-    else:
-        pandoc_html_template = "html_pandoc.html"
-        kwargs["display_limit"] = 50
 
     # Import the modules for this report type
     report_mod = __import__('ngi_reports.{}.{}'.format(ngi_node, report_type), fromlist=['ngi_reports.{}'.format(ngi_node)])
@@ -96,7 +89,7 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
 
         # Convert markdown to HTML using pandoc
         try:
-            html_cmd = shlex.split('{2} --standalone --self-contained --section-divs {0}.md -o {0}.html --template={1}/{3} --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir, pandoc_cmd, pandoc_html_template))
+            html_cmd = shlex.split('{2} --standalone --self-contained --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir, pandoc_cmd))
             subprocess.call(html_cmd)
         except OSError:
             LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')
@@ -177,8 +170,6 @@ if __name__ == "__main__":
     parser.add_argument('--not_as_million', default=False, action="store_true", help="Dont give the total reads for samples as million reads")
     parser.add_argument('--skip_fastq', action="store_true", help="Option to skip naming convention of fastq files from report")
     parser.add_argument('--exclude_fc', nargs="*", default=[], action="store", help="Exclude these FCs while processing, Format should be BH3JLWCCXX/000000000-AEUUP.")
-    parser.add_argument('--display_limit', default=None, action="store", type=int, help="Threshold for not showing table in the report")
-    parser.add_argument('--no_scrollable', action="store_true", help="Option to specify if the generated HTML should be in old format despite what specified in config file")
     parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
     parser.add_argument('--samples', default=None, action="store", nargs="*", help="Limit the samples to include in reports")
     parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")

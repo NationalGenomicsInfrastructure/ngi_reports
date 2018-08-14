@@ -100,7 +100,6 @@ class Report(project_summary.CommonReport):
         self.project_info['library_construction'] = self.get_library_method()
         self.project_info['accredit'] = self.get_accredit_info(['library_preparation','sequencing','data_processing','data_analysis'])
         self.project_info['total_lanes'] = 0
-        self.project_info['display_limit'] = kwargs.get('display_limit')
         self.project_info['missing_fc'] = False
         self.project_info['is_hiseqx'] = False
         self.project_info['aborted_samples'] = OrderedDict()
