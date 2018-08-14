@@ -83,6 +83,50 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
     padding: 0 10px 0 5px;
   }
 
+  /* Download button */
+  span.icon_download {
+    width: 70px;
+    height: 14px;
+    color:#626466;
+    font-size: 10px;
+    font-weight: 550;
+    text-align: center;
+    padding: 2px 0px 2px 2px;
+    line-height: 15px;
+    border-radius: 3px;
+    border-width: 0.5px;
+    border-style: solid;
+    border-color: #999999;
+    cursor:pointer;
+    float: right;
+    position: relative;
+    top:3px;
+  }
+  span.icon_download:hover {
+    color: #ffffff;
+    background-color: #5a5f66;
+  }
+  
+  /* div for expanding table */
+  div.expander {
+    width: 100%;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    background-color:#D9D9D9;
+  }
+  span.expander {
+    font-size: 12px;
+    font-weight: 500;
+    border-radius:3px;
+    padding: 0px 6px;
+    cursor: pointer;
+  }
+  span.expander:hover {
+    color: #ffffff;
+    background-color: #5a5f66;
+  }
+
   /* Nicer code - styles stolen from GitHub */
   code {
     white-space:pre;
@@ -207,6 +251,151 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
   <!--[if lt IE 9]>
     <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
+
+  <script>
+   window.onload = updatePage;
+    
+    function updatePage(){
+      var headInfo = document.getElementsByTagName('h1');
+        for (var h = 0; h < headInfo.length; h++){
+          var textCont = headInfo[h].textContent;
+          if(textCont.match(/Sample|Library|Lanes Information/)){
+            var dId = textCont.toLowerCase().replace(/\s+/, "-");
+            var divCont = document.getElementById(dId);
+            var divTable = divCont.getElementsByTagName("table").item(0);
+            if (divTable){
+              /* add download icon next to header and add event listener */
+              var tbId = "table-" + dId;
+              divTable.id = tbId;
+              var newTextCont = textCont + "<span class='icon_download' id='clicker-" + dId + "'>Download &#11015;</span>";
+              headInfo[h].innerHTML = newTextCont;
+              
+              /* change table style if exceeds certain height */
+              if (divTable.offsetHeight > 700){
+                var updatedStyle = "table#"+ tbId +" { border-top:0px; border-right:0px; border-left:0px; }\n" +
+                                   "table#"+ tbId +" thead{ display:block; }\n" +
+                                   "table#"+ tbId +" tbody{ height:495px; display:block; overflow:auto; "+ getTransitionString(divTable.getElementsByTagName("tr").length) +"}\n" +
+                                   "table#"+ tbId +" tbody tr{ height:33px; line-height: normal; }\n" +
+                                   "table#"+ tbId +" tr:last-child > td { border-bottom:0px; }"; 
+                var headCols = document.querySelectorAll("div#"+ dId +" thead th");
+                for (var c = 0; c < headCols.length; c++){
+                  updatedStyle += "\ntable#"+ tbId +" tr > *:nth-child("+ (c+1) +") { width:"+ headCols[c].offsetWidth +"px; }";
+                }
+                /* Append the new style so the width is preserved after splitting table */
+                var newStyleSheet = document.createElement('style');
+                newStyleSheet.id = "style-"+ dId +"-table";
+                /* will use default style while print i.e. the table will look expanded */
+                newStyleSheet.media = "screen";
+                newStyleSheet.innerHTML = updatedStyle;
+                document.head.appendChild(newStyleSheet);
+                
+                /* Add expander bar at end of the table */
+                var divNewInnerHTML = divCont.innerHTML;
+                divNewInnerHTML = divNewInnerHTML.replace("</table>\n<p>", "</table>\n<div class='expander'><span class='expander' id='expander-"+ dId +"'>Expand &#9662;</span></div>\n<p>");
+                divCont.innerHTML = divNewInnerHTML;
+                
+                /* Add "expand" listener to expand bar */
+                var expander = document.getElementById("expander-" + dId);
+                expander.addEventListener("click", function(event){ changeTableSize(event.target.id); }, false);
+              }
+              
+              /* Add "click" listener after neccesary modification of HTML */
+              var clicker = document.getElementById("clicker-" + dId);
+              clicker.addEventListener("click", function(event) {
+                var tId = event.target.id.replace("clicker", "table");
+                saveTableToFile(tId);
+              }, false);
+            }
+           }
+        }
+    }
+    
+    function saveTableToFile(tId) {
+      var tableOut = "";
+      var fileName = document.title;
+      fileName = (fileName.match(/[a-zA-Z]+\.[a-zA-Z]+_\d{2}_\d{2}/) || [""])[0]
+      fileName = (fileName + "_" + tId.replace("table-","").replace(/\-/g, "_") + ".tsv").replace(/^_/, "")
+      try {
+	    var finalTableOut = [];
+        var table = document.getElementById(tId);
+		var tableRows = table.getElementsByTagName("tr");
+		for (var r = 0; r < tableRows.length; r++) {
+		  var colTexts = [];
+		  var rowColumns = tableRows[r].getElementsByTagName("td");
+		  if (rowColumns.length == 0) { rowColumns = tableRows[r].getElementsByTagName("th"); }
+		  for (var c = 0; c < rowColumns.length; c++) { colTexts.push(rowColumns[c].textContent); }
+		  finalTableOut.push(colTexts.join("\t"));
+		}
+		finalTableOut = finalTableOut.join("\n");
+        /* following logic taken from stackoverflow for cross browser compatibility */
+        var tabBlob = new Blob([finalTableOut], {type: 'text/tab-separated-values'});
+        if(window.navigator.msSaveOrOpenBlob) {
+          window.navigator.msSaveBlob(tabBlob, fileName);
+        } else {
+          var tabAnc = document.createElement('a');
+          tabAnc.href = window.URL.createObjectURL(tabBlob);
+          tabAnc.download = fileName;        
+          document.body.appendChild(tabAnc);
+          tabAnc.click();  
+          window.URL.revokeObjectURL(tabAnc.href);       
+          document.body.removeChild(tabAnc);
+        }
+      } catch (all) {
+        /* Above attempt should have worked as the expected table is in simple structure
+        and is not gonna be changed anytime soon. So for some reason if it fails do
+        alert the user and suggest them to contact NGI for potential debugging */
+		console.log(all.message);
+        alert("Sorry! For some reason not able to download the table. Please report this to NGI");
+      }
+    }
+    
+    function changeTableSize(eId) {
+      var expandString = "Expand \u25BE";
+      var collapseString = "Collapse \u25B4";
+      var spanObj = document.getElementById(eId);
+      var tbodyObj = document.querySelector("table#"+ eId.replace("expander", "table") +" tbody");
+      if (spanObj.textContent == expandString) {
+        tbodyObj.style.height = tbodyObj.scrollHeight + "px";
+        spanObj.textContent = collapseString;
+      } else if (spanObj.textContent == collapseString ) {
+        tbodyObj.style.height = "495px";
+        var curScroll = (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0);
+        var curDivTop = document.getElementById(eId.replace("expander-", "")).getBoundingClientRect().top;
+        var stopPostition = Math.round(curScroll+curDivTop);
+        var stepPerScroll = getScrollStep(tbodyObj.getElementsByTagName("tr").length, curDivTop);
+        tbodyObj.style.height = "495px";
+        if (curDivTop < 0) {
+          var caller = setInterval(scrollChange, 20);
+          function scrollChange(){
+            if (curScroll <= stopPostition){
+              clearInterval(caller);
+              spanObj.textContent = expandString;
+            } else {
+              curScroll += stepPerScroll;
+              window.scrollTo(0, curScroll);
+            }
+          }
+        }
+      }
+    }
+    
+    function getScrollStep(nSamples, tPixels) {
+      var maxDuration = nSamples * 10;
+      if (maxDuration > 900) { maxDuration = 900; }
+      var scrollStep = Math.round((tPixels * 20) / maxDuration);
+      return scrollStep;
+    }
+    
+    function getTransitionString(nRows) {
+        var transTime = ((nRows/100) * 1.5).toFixed(2);
+        if (transTime > 1) { transTime = 1; }
+        var transString = "transition: height "+ transTime +"s; -moz-transition: height "+ transTime +"s; " +
+                          "-ms-transition: height "+ transTime +"s; -o-transition: height "+ transTime +"s; " +
+                          "-webkit-transition: height "+ transTime +"s;";
+        return transString;
+    }
+  </script>
+
 $if(highlighting-css)$<style type="text/css">$highlighting-css$</style>$endif$
 $for(css)$<link rel="stylesheet" href="$css$">$endfor$
 $if(math)$$math$$endif$

@@ -40,14 +40,6 @@ Ordered lanes
 Order Dates
 :   {{ project.dates }}
 
-{% if project.cluster == 'milou' -%}
-UPPMAX Project ID
-:   `{{ project.UPPMAX_id }}`
-
-UPPNEX project path
-:   `{{ project.UPPMAX_path }}`
-{%- endif %}
-
 {% if project.reference.genome -%}
 Reference Genome
 :   {% if project.reference.organism -%}{{ project.reference.organism}} - {% endif %}{{ project.reference.genome }}
@@ -101,10 +93,6 @@ Data Analysis
 # Sample Information
 {% if not samples %}
 No sample information to be displayed.
-{% elif samples|length > project.display_limit %}
-Sample information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_sample_info.txt) (table hidden due to number of samples). Below you can find an explanation of the header column used in the table.
-
-{{ tables.sample_info }}
 {% else %}
 NGI ID | User ID | {% if project.not_as_million %}#{% else %}M{% endif %}reads | >=Q30(%) {% if project.ordered_reads %}| Status {% endif %}
 -------|---------|--------|----------{% if project.ordered_reads %}|-------- {% endif %}
@@ -112,7 +100,7 @@ NGI ID | User ID | {% if project.not_as_million %}#{% else %}M{% endif %}reads |
 {{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }} {% if project.ordered_reads %} | {{ sample.seq_status }} {% endif %}
 {% endfor %}
 
-The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_sample_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+Below you can find an explanation of the header column used in the table.
 
 {{ tables.sample_info }}
 {% endif %}
@@ -121,10 +109,6 @@ The table is also saved as parseable tab-separated text [file]({{ project.ngi_na
 # Library Information
 {% if not samples %}
 No library information to be displayed.
-{% elif samples|length > project.display_limit %}
-Library information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_library_info.txt) (table hidden due to number of samples). Below you can find an explanation of the header column used in the table.
-
-{{ tables.library_info }}
 {% else %}
 NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 -------|-------|----------|---------|--------
@@ -136,7 +120,7 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 {% endif -%}
 {%- endfor %}
 
-The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_library_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+Below you can find an explanation of the header column used in the table.
 
 {{ tables.library_info }}
 {% endif %}
@@ -145,10 +129,6 @@ The table is also saved as parseable tab-separated text [file]({{ project.ngi_na
 # Lanes Information
 {% if project.missing_fc %}
 No lanes information to be displayed.
-{% elif project.total_lanes > project.display_limit %}
-Lanes information table can be viewed tab-separated text file, please click [here]({{ project.ngi_name }}_lanes_info.txt) (table hidden due to number of lanes). Below you can find an explanation of the header column used in the table.
-
-{{ tables.lanes_info }}
 {% else %}
 Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 -----|----------|------|-------------|------|----------|--------
@@ -158,7 +138,7 @@ Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 {% endfor -%}
 {%- endfor %}
 
-The table is also saved as parseable tab-separated text [file]({{ project.ngi_name }}_lanes_info.txt) for convenience. Below you can find an explanation of the header column used in the table.
+Below you can find an explanation of the header column used in the table.
 
 {{ tables.lanes_info }}
 {% endif %}
@@ -196,23 +176,7 @@ The naming of the files follow the convention:
 {%- endif %}
 
 
-{% if project.cluster == 'milou' -%}
-## Data access at UPPMAX
-
-Data from the sequencing have been uploaded to the UPPNEX (UPPMAX Next
-Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)),
-from which the user can access it. You can find the data in the INBOX folder of the
-UPPNEX project, which was created for you when your order was placed: 
-
-```
-{{ project.UPPMAX_path }}
-```
-
-If you have problems accessing your data, please contact NGI
-[{{ project.support_email }}](mailto:{{ project.support_email }}).
-If you have questions regarding UPPNEX, please contact
-[support@uppmax.uu.se](mailto:support@uppmax.uu.se).
-{% elif project.cluster == 'grus' %}
+{% if project.cluster == 'grus' -%}
 ## Data access at UPPMAX
 
 Data from the sequencing have been be uploaded to the UPPNEX (UPPMAX Next
