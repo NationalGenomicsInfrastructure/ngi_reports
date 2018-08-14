@@ -91,14 +91,10 @@ class Report(project_summary.CommonReport):
         self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], None)
         self.project_info['user_ID'] = self.to_ascii(self.proj_details.get('customer_project_reference',''))
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
-        if self.project_info['cluster'] == 'milou':
-            self.project_info['UPPMAX_id'] = kwargs.get('uppmax_id') if kwargs.get('uppmax_id') else self.proj.get('uppnex_id','').lower()
-            if not self.project_info['UPPMAX_id']:
-                self.LOG.warn("UPPMAX id missing in status db, provide with option '-u' if known or contact project co-ordinater")
-            elif re.match(r'hdd', self.project_info['UPPMAX_id'], flags=re.IGNORECASE):
-                self.LOG.info("Delivery done in HDD, so removing UPPMAX sections from the report")
-                self.project_info['UPPMAX_id'] = None
-            self.project_info['UPPMAX_path'] = "/proj/{}/INBOX/{}-{}".format(self.project_info['UPPMAX_id'], self.project_info['ngi_name'], self.project_info['ngi_id'])
+        if 'hdd' in self.proj.get('uppnex_id','').lower():
+            self.project_info['cluster'] = 'hdd'
+        else:
+            self.project_info['cluster'] = 'grus'
         self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['library_construction'] = self.get_library_method()
@@ -122,7 +118,7 @@ class Report(project_summary.CommonReport):
             ## Check if the sample is aborted before processing
             if sample.get('details',{}).get('status_(manual)') == "Aborted":
                 self.LOG.info('Sample {} is aborted, so skipping it'.format(sample_id))
-                self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Aborted'}
+                self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name','NA'), 'status':'Aborted'}
                 continue
 
             ## Basic fields from Project database
@@ -134,14 +130,14 @@ class Report(project_summary.CommonReport):
                 self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')                    
             except KeyError:
                 self.LOG.warn("Sample {} doesn't have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
-                self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name',''), 'status':'Not sequenced'}
+                self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name','NA'), 'status':'Not sequenced'}
                 ## dont gather unnecessary information if not going to be looked up
                 if not kwargs.get('yield_from_fc'):
                     del self.samples_info[sample_id]
                     continue
 
             ## special characters should be removed
-            self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name',''))
+            self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name','NA'))
             self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             self.samples_info[sample_id]['preps'] = {}
 
@@ -150,12 +146,14 @@ class Report(project_summary.CommonReport):
                 self.samples_info[sample_id]['preps'][prep_id] = {'label': prep_id }
                 if not prep.get('reagent_label'):
                     self.LOG.warn("Could not fetch barcode for sample {} in prep {}".format(sample_id, prep_id))
+                    self.samples_info[sample_id]['preps'][prep_id]['barcode'] = "NA"
+                    self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = "NA"
                 else:
-                    self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label')
+                    self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label', 'NA')
                 if not prep.get('prep_status'):
                     self.LOG.warn("Could not fetch prep-status for sample {} in prep {}".format(sample_id, prep_id))
                 else:
-                    self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status')
+                    self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status', 'NA')
 
                 #get average fragment size from lastest validation step if exists not for PCR-free libs
                 if not 'pcr-free' in self.project_info['library_construction'].lower():
@@ -165,9 +163,10 @@ class Report(project_summary.CommonReport):
                         self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
                     except:
                         self.LOG.warn("No library validation step found or no sufficient info for sample {}".format(sample_id))
+                        self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "NA"
                 else:
-                    self.LOG.info("PCR-free library was used, so setting fragment size as N/A")
-                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "N/A"
+                    self.LOG.info("PCR-free library was used, so setting fragment size as NA")
+                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "NA"
 
             if not self.samples_info[sample_id]['preps']:
                 self.LOG.warn('No library prep information was available for sample {}'.format(sample_id))
