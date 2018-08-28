@@ -46,7 +46,7 @@ class Report(project_summary.CommonReport):
         fcon = statusdb.FlowcellRunMetricsConnection()
         assert fcon, "Could not connect to {} database in StatusDB".format("flowcell")
         xcon = statusdb.X_FlowcellRunMetricsConnection()
-        assert xcon, "Could not connect to {} database in StatusDB".format("x_flowcell")
+        assert xcon, "Could not connect to {} database in StatusDB".format("x_flowcells")
         self.LOG.info("...connected")
 
         ## Get the project from statusdb, make call according to id or name
@@ -171,7 +171,8 @@ class Report(project_summary.CommonReport):
                 self.LOG.warn('No library prep information was available for sample {}'.format(sample_id))
 
         ## collect all the flowcell this project was run
-        self.get_project_flowcell({'flowcell':fcon.proj_list, 'x_flowcell':xcon.proj_list})
+        self.flowcell_info.update(fcon.get_project_flowcell(self.project_info['ngi_id'], self.proj.get('open_date','2015-01-01')))
+        self.flowcell_info.update(xcon.get_project_flowcell(self.project_info['ngi_id'], self.proj.get('open_date','2015-01-01')))
 
         ## Collect required information for all flowcell run for the project
         for fc in self.flowcell_info.values():
@@ -181,7 +182,7 @@ class Report(project_summary.CommonReport):
                 continue
             
             # get database document from appropriate database
-            if fc['db'] == 'x_flowcell':
+            if fc['db'] == 'x_flowcells':
                 fc_obj = xcon.get_entry(fc['run_name'])
             else:
                 fc_obj = fcon.get_entry(fc['run_name'])
@@ -237,13 +238,13 @@ class Report(project_summary.CommonReport):
                 try:
                     if re.sub('_+','.',stat['Project'],1) != self.project_name and stat['Project'] != self.project_name:
                         continue
-                    sample, lane = (stat['Sample'] if fc['db'] == "x_flowcell" else stat['Sample ID'], stat['Lane'])
+                    sample, lane = (stat['Sample'] if fc['db'] == "x_flowcells" else stat['Sample ID'], stat['Lane'])
                     if self.samples_to_include and sample not in self.samples_to_include:
                         continue
                     try:
                         if fc['db'] == "flowcell":
                             qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
-                        elif fc['db'] == "x_flowcell":
+                        elif fc['db'] == "x_flowcells":
                             qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
                         r_idx = '{}_{}'.format(lane, fc_name)
                         r_num, r_len = map(int, run_setup.split('x'))
@@ -538,23 +539,6 @@ class Report(project_summary.CommonReport):
         except NoOptionError:
             self.LOG.warn("Could not find pre-defined threshold for length {} in section {} in config file, using default 80% as threshold".format(read_length, q_section))
             return default
-
-
-    def get_project_flowcell(self, fc_dict):
-        """From information available in flowcell db connection collect the flowcell this project was sequenced"""
-        proj_id = self.project_info['ngi_id']
-        ## check only flowcell run after project opendate to save time, if open date not available
-        ## check flowcell sequenced after 2015, the year this new report implemented
-        ## if same flowcell have entries in both 'flowcell' and 'x_flowcell', entry in 'x_flowcell' is used
-        proj_open_date = datetime.strptime(self.proj.get('open_date','2015-01-01'),'%Y-%m-%d')
-        for db_type in sorted(fc_dict.keys(), reverse=True):
-            sort_fcs = sorted(fc_dict[db_type].keys(), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
-            for fc in sort_fcs:
-                fc_date, fc_name = fc.split('_')
-                if datetime.strptime(fc_date,'%y%m%d') < proj_open_date:
-                    break
-                if proj_id in fc_dict[db_type][fc] and fc_name not in self.flowcell_info.keys():
-                    self.flowcell_info[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date, 'db':db_type}
 
 
     def set_sample_status(self):
