@@ -10,18 +10,18 @@ import os
 import re
 import numpy as np
 import unicodedata
+
 from datetime import datetime
 from collections import OrderedDict, defaultdict
 from string import ascii_uppercase as alphabets
 from ngi_reports.common import project_summary
-from ngi_reports.utils import statusdb
+from ngi_reports.utils import statusdb, nbis_xml_generator
 from ConfigParser import NoSectionError, NoOptionError
 
 class Report(project_summary.CommonReport):
 
     ## initialize class and assign basic variables
     def __init__(self, config, LOG, working_dir, **kwargs):
-
         # Initialise the parent class
         # This will grab info from the Piper XML files if found
         super(Report, self).__init__(config, LOG, working_dir, **kwargs)
@@ -374,6 +374,27 @@ class Report(project_summary.CommonReport):
                                                                "* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30\n"\
                                                                "* _PhiX:_ Average PhiX error rate for the lane\n"\
                                                                "* _Method:_ Sequencing method used. See above for description\n"
+
+
+    ######################################################
+    ##### Create XML text from collected information #####
+    ######################################################
+        
+        self.xml_info = {}
+        if not kwargs.get('no_xml', False):
+            self.LOG.info("Fetching information for xml generation")
+            try:
+                xgen = nbis_xml_generator.xml_generator(self.proj, # statusdb project object
+                                                        ignore_lib_prep=kwargs.get("ignore_lib_prep"), # boolean to ignore prep
+                                                        flowcells=self.flowcell_info, # sequenced FC for the project
+                                                        LOG=self.LOG, # log object for logging
+                                                        pcon=pcon, # StatusDB project connection
+                                                        fcon=fcon, # StatusDB flowcells connection
+                                                        xcon=xcon) # StatusDB xflowcells connection
+                self.xml_info.update(xgen.generate_xml(return_string_dict=True))
+            except Exception as e:
+                self.LOG.warning("Fetching XML infroamtion failed due to '{}'".format(e))
+
 
     #####################################################
     ##### Helper methods to get certain information #####
