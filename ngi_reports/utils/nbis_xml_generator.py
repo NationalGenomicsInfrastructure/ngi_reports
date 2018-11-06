@@ -167,9 +167,9 @@ class xml_generator(object):
 
     def _set_project_design(self):
         """ Get project library design and protocol details """
-        # This function is not particularly clever, but this is the best 
+        # This function is not particularly clever, but this is the best
         # I was able to do with avilable stuff at the time of writing
-        self.project_design = {}        
+        self.project_design = {}
         # get application type of project
         proj_app = self.project.get("details", {}).get("application")
         # get library construction method and parse neccesary information
@@ -188,7 +188,7 @@ class xml_generator(object):
         self.project_design['design'] = design_template + "{instrument}"
         self.project_design['protocol'] = dp_protocol
         # try setting strategy based on application type
-        if not proj_app:
+        if not proj_app or proj_app.lower() == "metagenomics":
             dp_strategy = "OTHER"
         elif proj_app.lower() == "rna-seq":
             dp_strategy = "miRNA-Seq" if self.project.get("details", {}).get("bioinformatic_qc", "").lower() == "mirna-seq" else "RNA-Seq"
@@ -250,7 +250,7 @@ class xml_generator(object):
 
 
     def _check_and_load_project(self, project):
-        """ Get the project document from couchDB if it is not """                
+        """ Get the project document from couchDB if it is not """
         if isinstance(project, str):
             self.LOG.info("Fetching project '{}' from statusDB".format(project))
             project = self.pcon.get_entry(project, use_id_view=True)
@@ -275,7 +275,7 @@ class xml_generator(object):
             for sample in self.samples_delivered.keys():
                 sample_preps = self.project.get("samples", {}).get(sample, {}).get("library_prep", {})
                 for prep, prep_info in sample_preps.iteritems():
-                    self.sample_prep_fc_map[sample][prep] = prep_info.get("sequenced_fc", [])        
+                    self.sample_prep_fc_map[sample][prep] = prep_info.get("sequenced_fc", [])
 
 
     def _check_and_load_outdir(self, outdir):
