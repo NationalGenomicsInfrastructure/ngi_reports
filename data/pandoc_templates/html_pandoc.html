@@ -106,7 +106,7 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
     color: #ffffff;
     background-color: #5a5f66;
   }
-  
+
   /* div for expanding table */
   div.expander {
     width: 100%;
@@ -254,7 +254,7 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
 
   <script>
    window.onload = updatePage;
-    
+
     function updatePage(){
       var headInfo = document.getElementsByTagName('h1');
         for (var h = 0; h < headInfo.length; h++){
@@ -269,15 +269,15 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
               divTable.id = tbId;
               var newTextCont = textCont + "<span class='icon_download' id='clicker-" + dId + "'>Download &#11015;</span>";
               headInfo[h].innerHTML = newTextCont;
-              
+
               /* change table style if exceeds certain height */
               if (divTable.offsetHeight > 700){
                 var updatedStyle = "table#"+ tbId +" { border-top:0px; border-right:0px; border-left:0px; }\n" +
                                    "table#"+ tbId +" thead{ display:block; }\n" +
                                    "table#"+ tbId +" tbody{ height:495px; display:block; overflow:auto; "+ getTransitionString(divTable.getElementsByTagName("tr").length) +"}\n" +
                                    "table#"+ tbId +" tbody tr{ height:33px; line-height: normal; }\n" +
-                                   "table#"+ tbId +" tr:last-child > td { border-bottom:0px; }"; 
-                var headCols = document.querySelectorAll("div#"+ dId +" thead th");
+                                   "table#"+ tbId +" tr:last-child > td { border-bottom:0px; }";
+                var headCols = document.querySelectorAll("table#table-"+ dId +" thead th");
                 for (var c = 0; c < headCols.length; c++){
                   updatedStyle += "\ntable#"+ tbId +" tr > *:nth-child("+ (c+1) +") { width:"+ headCols[c].offsetWidth +"px; }";
                 }
@@ -288,17 +288,17 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
                 newStyleSheet.media = "screen";
                 newStyleSheet.innerHTML = updatedStyle;
                 document.head.appendChild(newStyleSheet);
-                
+
                 /* Add expander bar at end of the table */
                 var divNewInnerHTML = divCont.innerHTML;
                 divNewInnerHTML = divNewInnerHTML.replace("</table>\n<p>", "</table>\n<div class='expander'><span class='expander' id='expander-"+ dId +"'>Expand &#9662;</span></div>\n<p>");
                 divCont.innerHTML = divNewInnerHTML;
-                
+
                 /* Add "expand" listener to expand bar */
                 var expander = document.getElementById("expander-" + dId);
                 expander.addEventListener("click", function(event){ changeTableSize(event.target.id); }, false);
               }
-              
+
               /* Add "click" listener after neccesary modification of HTML */
               var clicker = document.getElementById("clicker-" + dId);
               clicker.addEventListener("click", function(event) {
@@ -309,7 +309,7 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
            }
         }
     }
-    
+
     function saveTableToFile(tId) {
       var tableOut = "";
       var fileName = document.title;
@@ -334,10 +334,10 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
         } else {
           var tabAnc = document.createElement('a');
           tabAnc.href = window.URL.createObjectURL(tabBlob);
-          tabAnc.download = fileName;        
+          tabAnc.download = fileName;
           document.body.appendChild(tabAnc);
-          tabAnc.click();  
-          window.URL.revokeObjectURL(tabAnc.href);       
+          tabAnc.click();
+          window.URL.revokeObjectURL(tabAnc.href);
           document.body.removeChild(tabAnc);
         }
       } catch (all) {
@@ -348,7 +348,7 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
         alert("Sorry! For some reason not able to download the table. Please report this to NGI");
       }
     }
-    
+
     function changeTableSize(eId) {
       var expandString = "Expand \u25BE";
       var collapseString = "Collapse \u25B4";
@@ -378,14 +378,14 @@ $if(date-meta)$<meta name="dcterms.date" content="$date-meta$">$endif$
         }
       }
     }
-    
+
     function getScrollStep(nSamples, tPixels) {
       var maxDuration = nSamples * 10;
       if (maxDuration > 900) { maxDuration = 900; }
       var scrollStep = Math.round((tPixels * 20) / maxDuration);
       return scrollStep;
     }
-    
+
     function getTransitionString(nRows) {
         var transTime = ((nRows/100) * 1.5).toFixed(2);
         if (transTime > 1) { transTime = 1; }
