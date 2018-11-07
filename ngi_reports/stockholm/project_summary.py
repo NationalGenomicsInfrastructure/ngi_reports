@@ -56,14 +56,14 @@ class Report(project_summary.CommonReport):
             self.LOG.error("No such project name/id '{}', check if provided information is right".format(self.project_name))
             raise KeyError
         self.project_name = self.proj.get('project_name')
-        
+
         ## Report filename
         self.report_fn = "{}_project_summary".format(self.project_name)
         ## Bail If the data source is not lims (old projects)
         if self.proj.get('source') != 'lims':
             self.LOG.error("The source for data for project {} is not LIMS.".format(self.project_name))
             raise BaseException
-        
+
         ## Helper vars
         self.seq_methods, self.sample_qval = (OrderedDict(), defaultdict(dict))
         self.proj_details = self.proj.get('details',{})
@@ -98,6 +98,7 @@ class Report(project_summary.CommonReport):
         self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['library_construction'] = self.get_library_method()
+        self.project_info['is_finished_lib'] = True if "by user" in self.project_info['library_construction'].lower() else False
         self.project_info['accredit'] = self.get_accredit_info(['library_preparation','sequencing','data_processing','data_analysis'])
         self.project_info['total_lanes'] = 0
         self.project_info['missing_fc'] = False
@@ -108,7 +109,7 @@ class Report(project_summary.CommonReport):
         self.samples_to_include = kwargs.get('samples', [])
         if self.samples_to_include:
             self.LOG.info('"--samples" option is passed, will only include samples {}'.format(", ".join(self.samples_to_include)))
-        
+
         ## Collect information about the sample preps and collect aborted samples
         for sample_id, sample in sorted(self.proj.get('samples', {}).iteritems()):
             if self.samples_to_include and sample_id not in self.samples_to_include:
@@ -126,7 +127,7 @@ class Report(project_summary.CommonReport):
             ## get total reads if avialable or mark sample as not sequenced
             try:
                 self.samples_info[sample_id]['total_reads'] = "{:.2f}".format(float(sample['details']['total_reads_(m)']))
-                self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')                    
+                self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             except KeyError:
                 self.LOG.warn("Sample {} doesn't have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name','NA'), 'status':'Not sequenced'}
@@ -179,13 +180,13 @@ class Report(project_summary.CommonReport):
             if fc_name in kwargs.get('exclude_fc'):
                 del self.flowcell_info[fc_name]
                 continue
-            
+
             # get database document from appropriate database
             if fc['db'] == 'x_flowcell':
                 fc_obj = xcon.get_entry(fc['run_name'])
             else:
                 fc_obj = fcon.get_entry(fc['run_name'])
-            
+
             # set the fc type
             fc_inst = fc_obj.get('RunInfo', {}).get('Instrument','')
             if fc_inst.startswith('ST-'):
@@ -249,7 +250,7 @@ class Report(project_summary.CommonReport):
                         r_num, r_len = map(int, run_setup.split('x'))
                         qval = float(stat.get(qval_key))
                         pfrd = int(stat.get(base_key).replace(',',''))
-                        pfrd = pfrd/2 if fc['db'] == "flowcell" else pfrd 
+                        pfrd = pfrd/2 if fc['db'] == "flowcell" else pfrd
                         base = pfrd * r_num * r_len
                         self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
@@ -270,7 +271,7 @@ class Report(project_summary.CommonReport):
                                 self.LOG.warn("Could not fetch {} for FC {} at lane {}".format(k, fc_name, lane))
                 except KeyError:
                     continue
-        
+
         ## Check if there are FCs processed
         if not self.flowcell_info:
             self.LOG.warn('There is no flowcell to process for project {}'.format(self.project_name))
@@ -285,13 +286,13 @@ class Report(project_summary.CommonReport):
         ## Evaluate threshold for Q30 to set sample status, priority given to user mentioned value
         ## if not duduce from the run setup, only very basic assumptions made for deduction
         self.q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_threshold(config)
-        
+
         if self.sample_qval and kwargs.get('yield_from_fc'):
             self.LOG.info("'yield_from_fc' option was given so will compute the yield from collected flowcells")
             for sample in self.samples_info.keys():
                 if sample not in self.sample_qval.keys():
                     del self.samples_info[sample]
-        
+
         ## calculate average Q30 over all lanes and flowcell
         for sample in sorted(self.sample_qval.keys()):
             try:
