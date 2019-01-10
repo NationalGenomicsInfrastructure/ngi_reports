@@ -63,3 +63,16 @@ class CommonReport(ngi_reports.common.BaseReport):
                 op_fl = os.path.join(op_dir, op_fl)
             with open(op_fl, 'w') as TXT:
                 TXT.write(tb_cont)
+    
+    # Generate XML files for the tables
+    def create_xml_files(self, op_dir=None):
+        """ Generate the XML files that can be used by NBIS which contains some meta data information
+            
+            :param str op_dir: Path where the XML files should be created, current dir is default
+        """
+        for xml_name, xml_cont in self.xml_info.iteritems():
+            op_fl = "{}_{}.xml".format(self.project_name, xml_name)
+            if op_dir:
+                op_fl = os.path.join(op_dir, op_fl)
+            with open(op_fl, 'w') as XML:
+                XML.write(xml_cont)

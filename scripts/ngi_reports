@@ -89,7 +89,7 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
 
         # Convert markdown to HTML using pandoc
         try:
-            html_cmd = shlex.split('{2} --standalone --self-contained --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir, pandoc_cmd))
+            html_cmd = shlex.split('{2} --standalone --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir, pandoc_cmd))
             subprocess.call(html_cmd)
         except OSError:
             LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')
@@ -101,6 +101,14 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
             LOG.info('Generated TXT files...')
         except:
             LOG.error('Could not generate TXT files...')
+    
+    # Generate XML files for project_summary reports
+    if report_type == 'project_summary' and not kwargs['no_xml']:
+        try:
+            report.create_xml_files()
+            LOG.info('Generated XML files...')
+        except:
+            LOG.error('Could not generate XML files...')
 
     # Change back to previous working dir
     os.chdir(old_cwd)
@@ -171,6 +179,8 @@ if __name__ == "__main__":
     parser.add_argument('--skip_fastq', action="store_true", help="Option to skip naming convention of fastq files from report")
     parser.add_argument('--exclude_fc', nargs="*", default=[], action="store", help="Exclude these FCs while processing, Format should be BH3JLWCCXX/000000000-AEUUP.")
     parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
+    parser.add_argument('--no_xml', action="store_true", help="Use this option to not generate XML files for NBIS")
+    parser.add_argument('--ignore_lib_prep', action="store_true", help="Use this option to not consider lib preps while XML files generation")
     parser.add_argument('--samples', default=None, action="store", nargs="*", help="Limit the samples to include in reports")
     parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
     parser.add_argument('--fc_phix', default={}, action="store", type=json.loads, help="Overwrite or use Phix values for mentioned flowcells/lanes provided as a json string, having each flowcell as a key. Example: --fc_phix '{\"BH3JLWCCXX\": {\"1\": \"0.42\", \"3\": \"0.46\"}}'")
