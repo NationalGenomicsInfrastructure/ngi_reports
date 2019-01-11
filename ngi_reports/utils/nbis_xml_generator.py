@@ -68,9 +68,9 @@ class xml_generator(object):
                                       '\t\t<PROCESSING/>\n'
                                       '\t</EXPERIMENT>\n').format(**sample_stat['experiment'])
             # fill in to run values from collected stat
-            run_xml_string += ('\t<RUN alias="{alias}" run_center="National Genomics Infrastructure, Stockholm" run_date="" center_name="">\n'
+            run_xml_string += ('\t<RUN alias="{alias}" run_center="National Genomics Infrastructure, Stockholm" center_name="">\n'
                                '\t\t<EXPERIMENT_REF refname="{exp_ref}"/>\n'
-                               '\t\t<DATA_BLOCK member_name="{data_name}">\n'
+                               '\t\t<DATA_BLOCK">\n'
                                '\t\t\t<FILES>\n'
                                '{files}'
                                '\t\t\t</FILES>\n'
@@ -210,12 +210,12 @@ class xml_generator(object):
         # get layout from setup
         seq_setup = self.project.get("details",{}).get("sequencing_setup", "")
         if seq_setup.startswith("1x"):
-            dp_layout = "SINGLE"
+            dp_layout = "<SINGLE/>"
         elif seq_setup.startswith("2x"):
-            dp_layout = "PAIRED"
+            dp_layout = "<PAIRED></PAIRED>"
         else:
-            self.LOG.warn("Was not able to fetch sequencing setup from couchdb for project {}".format())
-            dp_layout = "NA"
+            self.LOG.warn("Was not able to fetch sequencing setup from couchdb for project {}, so choosing PAIRED".format())
+            dp_layout = "<PAIRED></PAIRED>"
         self.project_design['layout'] = dp_layout
         # set library selection depending upon setup
         if dp_protocol == "NA":
@@ -245,7 +245,7 @@ class xml_generator(object):
             # if flowcells given filter files only from that flowcell
             if flowcells and fl.split("/")[2] not in flowcells:
                 continue
-            file_block += ('\t\t\t\t<FILE filename="{}" filetype="fastq" checksum_method="MD5" checksum="{}">\n'.format(fl, fl_stat.get('md5_sum','')))
+            file_block += ('\t\t\t\t<FILE filename="{}" filetype="fastq" checksum_method="MD5" checksum="{}" />\n'.format(fl, fl_stat.get('md5_sum','')))
         return file_block
 
 
