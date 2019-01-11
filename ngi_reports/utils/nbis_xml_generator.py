@@ -70,7 +70,7 @@ class xml_generator(object):
             # fill in to run values from collected stat
             run_xml_string += ('\t<RUN alias="{alias}" run_center="National Genomics Infrastructure, Stockholm" center_name="">\n'
                                '\t\t<EXPERIMENT_REF refname="{exp_ref}"/>\n'
-                               '\t\t<DATA_BLOCK">\n'
+                               '\t\t<DATA_BLOCK>\n'
                                '\t\t\t<FILES>\n'
                                '{files}'
                                '\t\t\t</FILES>\n'
