@@ -95,7 +95,6 @@ class Report(project_summary.CommonReport):
             self.project_info['cluster'] = 'hdd'
         else:
             self.project_info['cluster'] = 'grus'
-        self.project_info['ordered_reads'] = []
         self.project_info['best_practice'] = False if self.proj_details.get('best_practice_bioinformatics','No') == "No" else True
         self.project_info['library_construction'] = self.get_library_method()
         self.project_info['is_finished_lib'] = True if "by user" in self.project_info['library_construction'].lower() else False
@@ -127,7 +126,6 @@ class Report(project_summary.CommonReport):
             ## get total reads if avialable or mark sample as not sequenced
             try:
                 self.samples_info[sample_id]['total_reads'] = "{:.2f}".format(float(sample['details']['total_reads_(m)']))
-                self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             except KeyError:
                 self.LOG.warn("Sample {} doesn't have total reads, so adding it to NOT sequenced samples list.".format(sample_id))
                 self.project_info['aborted_samples'][sample_id] = {'user_id': sample.get('customer_name','NA'), 'status':'Not sequenced'}
@@ -138,7 +136,6 @@ class Report(project_summary.CommonReport):
 
             ## special characters should be removed
             self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name','NA'))
-            self.samples_info[sample_id]['reads_min'] = sample.get('details',{}).get('reads_min')
             self.samples_info[sample_id]['preps'] = {}
 
             ## Go through each prep for each sample in the Projects database
@@ -152,11 +149,20 @@ class Report(project_summary.CommonReport):
                     self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label', 'NA')
                 if not prep.get('prep_status'):
                     self.LOG.warn("Could not fetch prep-status for sample {} in prep {}".format(sample_id, prep_id))
+                ## For application projects and finished library projects we don't specify QC flag of library prep
+                elif self.proj_details.get('type') != 'Production' or self.project_info['library_construction'] == "Library was prepared by user.":
+                    self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = "NA"
                 else:
                     self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status', 'NA')
 
-                #get average fragment size from lastest validation step if exists not for PCR-free libs
-                if not 'pcr-free' in self.project_info['library_construction'].lower():
+                #get average fragment size from lastest validation step if exists not for PCR-free libs and finished libs
+                if self.project_info['library_construction'] == "Library was prepared by user.":
+                    self.LOG.info("Finished library from user, so setting fragment size as NA")
+                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "NA"
+                elif 'pcr-free' in self.project_info['library_construction'].lower():
+                    self.LOG.info("PCR-free library was used, so setting fragment size as NA")
+                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "NA"
+                else:
                     try:
                         lib_valids = prep['library_validation']
                         keys = sorted([k for k in lib_valids.keys() if re.match('^[\d\-]*$',k)], key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
@@ -164,9 +170,6 @@ class Report(project_summary.CommonReport):
                     except:
                         self.LOG.warn("No library validation step found or no sufficient info for sample {}".format(sample_id))
                         self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "NA"
-                else:
-                    self.LOG.info("PCR-free library was used, so setting fragment size as NA")
-                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "NA"
 
             if not self.samples_info[sample_id]['preps']:
                 self.LOG.warn('No library prep information was available for sample {}'.format(sample_id))
@@ -284,10 +287,6 @@ class Report(project_summary.CommonReport):
         if "None" in self.project_info['sequencing_methods']:
             self.LOG.warn("Sequencing methods have some missing information, kindly check.")
 
-        ## Evaluate threshold for Q30 to set sample status, priority given to user mentioned value
-        ## if not duduce from the run setup, only very basic assumptions made for deduction
-        self.q30_threshold = kwargs.get('quality') if kwargs.get('quality') else self.get_q30_threshold(config)
-
         if self.sample_qval and kwargs.get('yield_from_fc'):
             self.LOG.info("'yield_from_fc' option was given so will compute the yield from collected flowcells")
             for sample in self.samples_info.keys():
@@ -314,10 +313,6 @@ class Report(project_summary.CommonReport):
             except (TypeError, KeyError):
                 self.LOG.error("Could not calcluate average Q30 for sample {}".format(sample))
 
-        self.set_sample_status()
-        ## convert readsminimum list to a string
-        self.project_info['ordered_reads'] = ", ".join(set(self.project_info['ordered_reads']))
-
 
     ###############################################################################
     ##### Create table text and header explanation from collected information #####
@@ -326,21 +321,15 @@ class Report(project_summary.CommonReport):
         ## sample_info table
         sample_header = ['NGI ID', 'User ID', '#reads' if self.project_info.get('not_as_million') else 'Mreads', '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
-        if self.project_info['library_construction'] != "Library was prepared by user.":
-            sample_header.append('Status')
-            sample_filter.append('seq_status')
+
         self.tables_info['tables']['sample_info'] = self.create_table_text(sorted(self.samples_info.values(), key=lambda d: d['ngi_id']), filter_keys=sample_filter, header=sample_header)
         self.tables_info['header_explanation']['sample_info'] = "* _NGI ID:_ Internal NGI sample indentifier\n"\
                                                                 "* _User ID:_ User submitted name for a sample\n"\
                                                                 "* _Mreads:_ Total million reads (or pairs) for a sample\n"\
-                                                                "* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30\n"\
-                                                                "* _Status:_ Sequencing status of sample based on the total reads"
+                                                                "* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30"
         if self.project_info.get('not_as_million'):
             self.tables_info['header_explanation']['sample_info'] = self.tables_info['header_explanation']['sample_info'].replace("_Mreads:_ Total million reads (or pairs) for a sample",
                                                                                                                                   "_#reads:_ Total number of reads (or pairs) for a sample")
-        if not self.project_info['ordered_reads']:
-            self.tables_info['header_explanation']['sample_info'] = re.sub(r'\n\* _Status\:_ .*$','',self.tables_info['header_explanation']['sample_info'])
-
         ## library_info table
         library_header = ['NGI ID', 'Index', 'Lib Prep', 'Avg. FS', 'Lib QC']
         library_filter = ['ngi_id', 'barcode', 'label', 'avg_size', 'qc_status']
@@ -520,56 +509,3 @@ class Report(project_summary.CommonReport):
         if not isinstance(value, unicode):
             value = unicode(value, 'utf-8')
         return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
-
-
-    def get_q30_threshold(self, config, default=80):
-        """Set the Q30 percentage based upon run setup and pre-defined Q30 from config
-
-        :param config: A config parser instance returned after loading the config file
-        """
-        try:
-            read_length = self.project_info['seq_setup'].split('x')[-1]
-        except:
-            self.LOG.warn("Some problem with fetching setup from db, using default 80% as threshold. But kindly check the sequencing methods in generated report")
-            return default
-        fc_platforms = [fc_vals.get('type') for fc_vals in self.flowcell_info.values()]
-        ## Its rare a project run on multiple platforms, if it happened priority given as HiSeX, HiSeq and Miseq
-        if "HiSeqX" in fc_platforms:
-            q_section = "quality_threshold_hiseqx"
-            if int(read_length) < 150:
-                read_length = "<150"
-            else:
-                read_length = ">150"
-        elif "HiSeq2500" in fc_platforms:
-            q_section = "quality_threshold_hiseq"
-        elif "MiSeq" in fc_platforms:
-            q_section = "quality_threshold_miseq"
-            if int(read_length) < 100:
-                read_length = "<100"
-            elif int(read_length) >= 250:
-                read_length = ">250"
-        else:
-            self.LOG.warn("Couldn't find runtype as HiseqX/Hiseq/Miseq, will use 80% for threshold. But kindly check the sequencing methods in generated report")
-            return default
-        ## Log warning if the section missing in config file and use default
-        if not config.has_section(q_section):
-            self.LOG.warn("Couldn't find section {} in the config file, using default 80% as threshold".format(q_section))
-            return default
-        ## Get approprite threshold based on runtype
-        try:
-            return int(config.get(q_section, read_length))
-        except NoOptionError:
-            self.LOG.warn("Could not find pre-defined threshold for length {} in section {} in config file, using default 80% as threshold".format(read_length, q_section))
-            return default
-
-
-    def set_sample_status(self):
-        """Set sequencing status of samples based upon reads and quality"""
-        for sample, sam_info in self.samples_info.items():
-            if not sam_info['reads_min']:
-                continue
-            self.project_info['ordered_reads'].append("{}M".format(sam_info['reads_min']))
-            if float(sam_info['total_reads']) > float(sam_info['reads_min']) and int(sam_info['qscore']) > self.q30_threshold:
-                self.samples_info[sample]['seq_status'] = 'PASSED'
-            else:
-                self.samples_info[sample]['seq_status'] = 'FAILED'
