@@ -239,7 +239,7 @@ class Report(project_summary.CommonReport):
                 try:
                     if re.sub('_+','.',stat['Project'],1) != self.project_name and stat['Project'] != self.project_name:
                         continue
-                    sample, lane = (stat['Sample'] if fc['db'] == "x_flowcells" else stat['Sample ID'], stat['Lane'])
+                    sample, lane, barcode = (stat['Sample'] if fc['db'] == "x_flowcells" else stat['Sample ID'], stat['Lane'], stat['Barcode sequence'] if fc['db'] == "x_flowcells" else stat['Index'])
                     if self.samples_to_include and sample not in self.samples_to_include:
                         continue
                     try:
@@ -247,7 +247,7 @@ class Report(project_summary.CommonReport):
                             qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
                         elif fc['db'] == "x_flowcells":
                             qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
-                        r_idx = '{}_{}'.format(lane, fc_name)
+                        r_idx = '{}_{}_{}'.format(lane, fc_name, barcode)
                         r_num, r_len = map(int, run_setup.split('x'))
                         qval = float(stat.get(qval_key))
                         pfrd = int(stat.get(base_key).replace(',',''))
@@ -255,7 +255,7 @@ class Report(project_summary.CommonReport):
                         base = pfrd * r_num * r_len
                         self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
-                        self.LOG.warn("Someting went wonrg while fetching Q30 for sample {} in FV {} at lane {}".format(sample, fc_name, lane))
+                        self.LOG.warn("Someting went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}".format(sample, barcode, fc_name, lane))
                         pass
                     ## collect lanes of interest to proceed later
                     if lane not in self.flowcell_info[fc_name]['lanes']:
@@ -380,7 +380,7 @@ class Report(project_summary.CommonReport):
     ######################################################
     ##### Create XML text from collected information #####
     ######################################################
-        
+
         self.xml_info = {}
         if not kwargs.get('no_xml', False):
             self.LOG.info("Fetching information for xml generation")
