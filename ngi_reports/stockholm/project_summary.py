@@ -258,7 +258,7 @@ class Report(project_summary.CommonReport):
                         base = pfrd * r_num * r_len
                         self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
-                        self.LOG.warn("Someting went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}".format(sample, barcode, fc_name, lane))
+                        self.LOG.warn("Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}".format(sample, barcode, fc_name, lane))
                         pass
                     ## collect lanes of interest to proceed later
                     if lane not in self.flowcell_info[fc_name]['lanes']:
