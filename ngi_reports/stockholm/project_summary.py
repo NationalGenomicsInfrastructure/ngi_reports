@@ -149,17 +149,11 @@ class Report(project_summary.CommonReport):
                     self.samples_info[sample_id]['preps'][prep_id]['barcode'] = prep.get('reagent_label', 'NA')
                 if not prep.get('prep_status'):
                     self.LOG.warn("Could not fetch prep-status for sample {} in prep {}".format(sample_id, prep_id))
-                ## For application projects and finished library projects we don't specify QC flag of library prep
-                elif self.proj_details.get('type') != 'Production' or self.project_info['library_construction'] == "Library was prepared by user.":
-                    self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = "NA"
                 else:
                     self.samples_info[sample_id]['preps'][prep_id]['qc_status'] = prep.get('prep_status', 'NA')
 
-                #get average fragment size from lastest validation step if exists not for PCR-free libs and finished libs
-                if self.project_info['library_construction'] == "Library was prepared by user.":
-                    self.LOG.info("Finished library from user, so setting fragment size as NA")
-                    self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "NA"
-                elif 'pcr-free' in self.project_info['library_construction'].lower():
+                #get average fragment size from lastest validation step if exists not for PCR-free libs
+                if 'pcr-free' in self.project_info['library_construction'].lower():
                     self.LOG.info("PCR-free library was used, so setting fragment size as NA")
                     self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = "NA"
                 else:
