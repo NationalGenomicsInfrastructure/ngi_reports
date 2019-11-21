@@ -150,6 +150,10 @@ NGI ID | User ID | Status
 
 # General Information
 
+## Libraries that have failed reception control QC
+
+In cases where libraries have failed the QC, the user is always contacted and asked how to proceed. If the user wishes to proceed to sequence the failed libraries, NGI bears no responsibility regarding the quality and number of reads of the sequenced sample data. In addition, the re-run policy does not apply.
+
 {% if not project.skip_fastq -%}
 ## Naming conventions
 
