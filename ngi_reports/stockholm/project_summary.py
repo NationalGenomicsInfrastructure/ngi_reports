@@ -197,6 +197,9 @@ class Report(project_summary.CommonReport):
             elif fc_inst.startswith('A'):
                 fc['type'] = 'NovaSeq6000'
                 fc_runp = fc_obj.get('RunParameters',{})
+            elif fc_inst.startswith('NS'):
+                fc['type'] = 'NextSeq500'
+                fc_runp = fc_obj.get('RunParameters',{})
             else:
                 fc['type'] = 'HiSeq2500'
                 fc_runp = fc_obj.get('RunParameters',{}).get('Setup',{})
@@ -205,16 +208,17 @@ class Report(project_summary.CommonReport):
             self.flowcell_info[fc_name]['lanes'] = OrderedDict()
 
             ## Get sequecing method for the flowcell
-            seq_template = "{}) Clustering was done by '{}' and samples were sequenced on {} ({}) with a {} setup "\
+            seq_template = "{}) Samples were sequenced on {} ({}) with a {} setup "\
                            "using {}. The Bcl to FastQ conversion was performed using {} from the CASAVA software "\
                            "suite. The quality scale used is Sanger / phred33 / Illumina 1.8+."
             run_setup = fc_obj.get("run_setup")
             if fc['type'] == 'NovaSeq6000':
                 fc_chem = "'{}' workflow in '{}' mode flowcell".format(fc_runp.get('WorkflowType'), fc_runp.get('RfidsInfo', {}).get('FlowCellMode'))
+            elif fc['type'] == 'NextSeq500':
+                fc_chem = "'{}' chemistry".format(fc_runp.get('Chemistry').replace("NextSeq ", ""))
             else:
                 fc_chem = "'{}' chemistry".format(fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs')))
             seq_plat = fc['type']
-            clus_meth = ["cBot","onboard clustering"][seq_plat == "MiSeq" or fc_runp.get("ClusteringChoice","") == "OnBoardClustering"]
             try:
                 casava = fc_obj['DemultiplexConfig'].values()[0]['Software']['Version']
             except KeyError, IndexError:
@@ -224,7 +228,7 @@ class Report(project_summary.CommonReport):
             else:
                 seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName", fc_runp.get("Application")),
                                                      fc_runp.get("ApplicationVersion"),fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))
-            tmp_method = seq_template.format("SECTION", clus_meth, seq_plat, seq_software, run_setup, fc_chem, casava)
+            tmp_method = seq_template.format("SECTION", seq_plat, seq_software, run_setup, fc_chem, casava)
 
             ## to make sure the sequencing methods are unique
             if tmp_method not in self.seq_methods.keys():
