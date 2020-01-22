@@ -26,11 +26,11 @@ class xml_generator(object):
             self.xcon = xcon or statusdb.X_FlowcellRunMetricsConnection()
             assert self.xcon, "Could not connect to {} database in StatusDB".format("x_flowcells")
             self._check_and_load_project(project)
-            assert isinstance(self.project, couchdb.client.Document), "Could not get proper project document for {} from StatusDB".format(project)
+            assert isinstance(self.project, couchdb.client.Document), "Could not get proper project document for {} from StatusDB".format(project['project_id'])
             self.samples_delivered = self.project.get('staged_files', {})
-            assert self.samples_delivered, "No delivered samples for project {}, cannot generate XML files".format(project)
+            assert self.samples_delivered, "No delivered samples for project {}, cannot generate XML files".format(project['project_id'])
             self._check_and_load_flowcells(flowcells)
-            assert isinstance(self.flowcells, dict), "Could not get the flowcell for project {} from StatusDB".format(project)
+            assert isinstance(self.flowcells, dict), "Could not get the flowcell for project {} from StatusDB".format(project['project_id'])
         except AssertionError as e:
             self.LOG.error(e)
             raise e
