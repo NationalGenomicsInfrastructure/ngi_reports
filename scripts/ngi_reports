@@ -103,7 +103,7 @@ def make_reports (report_type, ngi_node='unknown', working_dir=os.getcwd(), pand
             LOG.error('Could not generate TXT files...')
 
     # Generate XML files for project_summary reports
-    if report_type == 'project_summary' and not kwargs['no_xml']:
+    if report_type == 'project_summary' and kwargs['xml']:
         try:
             report.create_xml_files()
             LOG.info('Generated XML files...')
