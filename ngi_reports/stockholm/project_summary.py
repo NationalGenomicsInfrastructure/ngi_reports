@@ -369,7 +369,7 @@ class Report(project_summary.CommonReport):
     ######################################################
 
         self.xml_info = {}
-        if not kwargs.get('no_xml', False):
+        if not kwargs.get('xml', False):
             self.LOG.info("Fetching information for xml generation")
             try:
                 xgen = nbis_xml_generator.xml_generator(self.proj, # statusdb project object
@@ -381,7 +381,7 @@ class Report(project_summary.CommonReport):
                                                         xcon=xcon) # StatusDB xflowcells connection
                 self.xml_info.update(xgen.generate_xml(return_string_dict=True))
             except Exception as e:
-                self.LOG.warning("Fetching XML infroamtion failed due to '{}'".format(e))
+                self.LOG.warning("Fetching XML information failed due to '{}'".format(e))
 
 
     #####################################################
