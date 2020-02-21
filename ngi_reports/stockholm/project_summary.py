@@ -215,7 +215,7 @@ class Report(project_summary.CommonReport):
             if fc['type'] == 'NovaSeq6000':
                 fc_chem = "'{}' workflow in '{}' mode flowcell".format(fc_runp.get('WorkflowType'), fc_runp.get('RfidsInfo', {}).get('FlowCellMode'))
             elif fc['type'] == 'NextSeq500':
-                fc_chem = "'{}' chemistry".format(fc_runp.get('Chemistry').replace("NextSeq ", ""))
+                fc_chem = "'{}-Output' chemistry".format(fc_runp.get('Chemistry').replace("NextSeq ", ""))
             else:
                 fc_chem = "'{}' chemistry".format(fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs')))
             seq_plat = fc['type']
@@ -226,8 +226,8 @@ class Report(project_summary.CommonReport):
             if seq_plat == "MiSeq":
                 seq_software = "MSC {}/RTA {}".format(fc_runp.get("MCSVersion"),fc_runp.get("RTAVersion"))
             else:
-                seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName", fc_runp.get("Application")),
-                                                     fc_runp.get("ApplicationVersion"),fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))
+                seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName", fc_runp.get("Application", fc_runp.get("Setup").get("ApplicationName"))),
+                                                     fc_runp.get("ApplicationVersion", fc_runp.get("Setup").get("ApplicationVersion")),fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))
             tmp_method = seq_template.format("SECTION", seq_plat, seq_software, run_setup, fc_chem, casava)
 
             ## to make sure the sequencing methods are unique
@@ -369,7 +369,7 @@ class Report(project_summary.CommonReport):
     ######################################################
 
         self.xml_info = {}
-        if not kwargs.get('xml', False):
+        if kwargs.get('xml', False):
             self.LOG.info("Fetching information for xml generation")
             try:
                 xgen = nbis_xml_generator.xml_generator(self.proj, # statusdb project object
