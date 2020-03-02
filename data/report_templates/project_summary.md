@@ -92,7 +92,7 @@ No sample information to be displayed.
 NGI ID | User ID | {% if project.not_as_million %}#{% else %}M{% endif %}reads | >=Q30(%)
 -------|---------|--------|----------
 {% for sample in samples.values()|sort(attribute='ngi_id') -%}
-{{ sample.ngi_id }} | {{ sample.customer_name }} | `{{ sample.total_reads }}` | {{ sample.qscore }}
+{{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }} | {{ sample.qscore }}
 {% endfor %}
 
 Below you can find an explanation of the header column used in the table.
@@ -105,12 +105,12 @@ Below you can find an explanation of the header column used in the table.
 {% if not samples %}
 No library information to be displayed.
 {% else %}
-NGI ID | Index | Lib Prep | Avg. FS {% if not project.is_finished_lib %}| Lib QC {% endif %}
--------|-------|----------|---------{% if not project.is_finished_lib %}|-------- {% endif %}
+NGI ID | Index | Lib Prep | Avg. FS | Lib QC
+-------|-------|----------|---------|--------
 {% for sample in samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} {% if not project.is_finished_lib %}| {{ prep.qc_status }} {% endif %}
+{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }} 
 {% endfor -%}
 {% endif -%}
 {%- endfor %}
