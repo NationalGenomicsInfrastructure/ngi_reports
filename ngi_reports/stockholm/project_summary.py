@@ -472,7 +472,7 @@ class Report(project_summary.CommonReport):
             try:
                 accredit = self.proj_details['accredited_({})'.format(k)]
                 if accredit in ['Yes','No']:
-                    accredit_info[k] = "{} under ISO accreditation 17025:2005".format(["[cross] Not validated","[tick] Validated"][accredit == "Yes"])
+                    accredit_info[k] = "{} under ISO accreditation 17025".format(["[cross] Not validated","[tick] Validated"][accredit == "Yes"])
                 elif accredit == 'N/A':
                     accredit_info[k] = "Not Applicable"
                 else:
