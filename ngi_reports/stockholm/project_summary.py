@@ -225,9 +225,12 @@ class Report(project_summary.CommonReport):
                 casava = None
             if seq_plat == "MiSeq":
                 seq_software = "MSC {}/RTA {}".format(fc_runp.get("MCSVersion"),fc_runp.get("RTAVersion"))
-            else:
+            elif seq_plat == "NextSeq500":
                 seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName", fc_runp.get("Application", fc_runp.get("Setup").get("ApplicationName"))),
                                                      fc_runp.get("ApplicationVersion", fc_runp.get("Setup").get("ApplicationVersion")),fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))
+            else:
+                seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName", fc_runp.get("Application")),
+                                                     fc_runp.get("ApplicationVersion"), fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))                
             tmp_method = seq_template.format("SECTION", seq_plat, seq_software, run_setup, fc_chem, casava)
 
             ## to make sure the sequencing methods are unique
