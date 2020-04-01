@@ -15,7 +15,7 @@ from datetime import datetime
 from collections import OrderedDict, defaultdict
 from string import ascii_uppercase as alphabets
 from ngi_reports.common import project_summary
-from ngi_reports.utils import statusdb, nbis_xml_generator
+from ngi_reports.utils import statusdb
 from ConfigParser import NoSectionError, NoOptionError
 
 class Report(project_summary.CommonReport):
@@ -230,7 +230,7 @@ class Report(project_summary.CommonReport):
                                                      fc_runp.get("ApplicationVersion", fc_runp.get("Setup").get("ApplicationVersion")),fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))
             else:
                 seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName", fc_runp.get("Application")),
-                                                     fc_runp.get("ApplicationVersion"), fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))                
+                                                     fc_runp.get("ApplicationVersion"), fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))
             tmp_method = seq_template.format("SECTION", seq_plat, seq_software, run_setup, fc_chem, casava)
 
             ## to make sure the sequencing methods are unique
@@ -365,26 +365,6 @@ class Report(project_summary.CommonReport):
                                                                "* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30\n"\
                                                                "* _PhiX:_ Average PhiX error rate for the lane\n"\
                                                                "* _Method:_ Sequencing method used. See above for description\n"
-
-
-    ######################################################
-    ##### Create XML text from collected information #####
-    ######################################################
-
-        self.xml_info = {}
-        if kwargs.get('xml', False):
-            self.LOG.info("Fetching information for xml generation")
-            try:
-                xgen = nbis_xml_generator.xml_generator(self.proj, # statusdb project object
-                                                        ignore_lib_prep=kwargs.get("ignore_lib_prep"), # boolean to ignore prep
-                                                        flowcells=self.flowcell_info, # sequenced FC for the project
-                                                        LOG=self.LOG, # log object for logging
-                                                        pcon=pcon, # StatusDB project connection
-                                                        fcon=fcon, # StatusDB flowcells connection
-                                                        xcon=xcon) # StatusDB xflowcells connection
-                self.xml_info.update(xgen.generate_xml(return_string_dict=True))
-            except Exception as e:
-                self.LOG.warning("Fetching XML information failed due to '{}'".format(e))
 
 
     #####################################################
