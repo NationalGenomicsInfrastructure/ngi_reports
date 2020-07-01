@@ -1,5 +1,5 @@
 """ Common reports module.
-Place for code common to both Stockholm and Uppsala NGI Nodes.
+Place for code common to all reports.
 eg. Information retrieval from the filesystem or Charon
 """
 
@@ -30,7 +30,7 @@ class BaseReport(object):
     def parse_piper_xml(self):
         """ Parses the XML setup files that Piper uses
         """
-        
+
         def _nextitem(xml):
             # One sample
             if isinstance(xml, dict):
