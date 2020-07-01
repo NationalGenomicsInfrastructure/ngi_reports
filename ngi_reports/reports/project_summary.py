@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 """ Module for producing the Project Summary Report
+Note: Much of this code was written by Pontus and lifted from
+the SciLifeLab repo - see
+https://github.com/senthil10/scilifelab/blob/edit_report/scilifelab/report/sequencing_report.py
 """
 
 from collections import defaultdict, OrderedDict
