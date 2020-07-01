@@ -93,13 +93,6 @@ cd ngi_visualizations
 python setup.py install
 ```
 
-
-## Status DB
-If you're running `ngi_reports` from the Stockholm NGI node, you'll need access
-to Status DB. This is done using the [statusdb](https://github.com/SciLifeLab/statusdb)
-python package. See that readme for installation instructions (it's very similar to the
-above, but I don't want to duplicate it here in case it gets out of date).
-
 ## Pandoc Conversion
 **Only read this if you're NOT running on UPPMAX**
 
