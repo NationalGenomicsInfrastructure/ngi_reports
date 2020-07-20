@@ -412,8 +412,6 @@
 
 {% if highlighting_css %}<style type="text/css">{{ highlighting-css }}</style>{% endif %}
 {% for item in css %}<link rel="stylesheet" href="{{ item }}">{% endfor %}
-{% if math %}{{ math }}{% endif %}
-{% for item in header_includes %} {{ item }} {% endfor %}
 </head>
 <body>
 <div class="page_header">
@@ -429,17 +427,9 @@
 {% if meta.date %}<h3 class="date">{{ get(meta.date) }}</h3>{% endif %}
 </header>
 
-{% for item in include_before %}
-{{ item }}
-{% endfor %}
-
 {% if toc %}<nav id="{{ idprefix }}TOC">{{ toc }}</nav>{% endif %}
 
 {{ body }}
-
-{% for item in include_after %}
-{{ item }}
-{% endfor %}
 
 <footer>
   {% if meta.support_email %}
