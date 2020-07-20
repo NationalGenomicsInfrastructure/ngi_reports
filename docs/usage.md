@@ -15,7 +15,7 @@ ngi_reports <report_type>
 
 Other report types or non-piper directories may need additional command line inputs.
 
-The package will generate a directory called `reports` containing 
+The package will generate a directory called `reports` containing
 a PDF report, an HTML report, a Markdown report and a subdirectory called `plots`.
 If running from a Piper directory, `reports` will be inside `delivery`.
 
@@ -33,8 +33,7 @@ If you need to manually edit any reports, make your changes to the markdown
 files and then run the following command:
 
 ```
-make_report *md
+ngi_reports <report_type> --regenerate_html_from_md --markdown_file <path/to/mdfile>
 ```
 
-This is a bash function described in the [installation](installation.md)
-docs. You can supply as many markdown file paths as you like.
+The command for regenerating the Project Summary report is aliased as `make_report` on Uppmax.

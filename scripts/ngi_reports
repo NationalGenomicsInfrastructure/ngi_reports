@@ -9,9 +9,7 @@ import argparse
 import jinja2
 import json
 import os
-import shlex
-import shutil
-import subprocess
+import markdown
 
 from ngi_reports import __version__
 from ngi_reports.log import loggers
@@ -23,7 +21,7 @@ LOG = loggers.minimal_logger('NGI Reports')
 # create choices for report type based on available report template
 allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ] + ['ign_aggregate_report']
 
-def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, config_file=None, **kwargs):
+def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
 
     # Setup
     template_fn = '{}.md'.format(report_type)
@@ -40,8 +38,6 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, con
 
     # Work out all of the directory names
     output_dir = os.path.realpath(os.path.join(working_dir, report.report_dir))
-    assets_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'assets'))
-    pandoc_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'pandoc_templates'))
     reports_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))
 
     # Create the directory if we don't already have it
@@ -57,12 +53,12 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, con
         LOG.error('Could not load the Jinja report template')
         raise
 
-    # Change to the reports directory - pandoc needs this for relative URLs
+    # Change to the reports directory
     old_cwd = os.getcwd()
     os.chdir(report.report_dir)
 
     # Get parsed markdown and print to file(s)
-    LOG.debug('Converting markdown to HTML and PDF')
+    LOG.debug('Converting markdown to HTML...')
     output_mds = report.parse_template(template)
     for output_bn, output_md in output_mds.iteritems():
         try:
@@ -73,19 +69,10 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, con
         except IOError as e:
             LOG.error("Error printing markdown report {} - skipping. {}".format(output_md, IOError(e)))
             continue
-
-        # Set path to pandoc
-        if pandoc_binary:
-            pandoc_cmd = os.path.join(pandoc_dir, 'pandoc')
-        else:
-            pandoc_cmd = 'pandoc'
-
-        # Convert markdown to HTML using pandoc
-        try:
-            html_cmd = shlex.split('{2} --standalone --section-divs {0}.md -o {0}.html --template={1}/html_pandoc.html --default-image-extension=png --filter {1}/pandoc_filters.py'.format(output_bn, pandoc_dir, pandoc_cmd))
-            subprocess.call(html_cmd)
-        except OSError:
-            LOG.error('Could not convert markdown to HTML - pandoc error. Skipping HTML report generation...')
+        #Convert markdown to html
+        html_out = markdown_to_html(report_type, jinja2_env=env, markdown_text=output_md, reports_dir=reports_dir,
+                                    out_path='{}.html'.format(output_bn))
+        LOG.info('{} HTML report written to: {}'.format(output_bn.rsplit('/', 1)[1], html_out))
 
     # Generate CSV files for project_summary reports
     if report_type == 'project_summary' and not kwargs['no_txt']:
@@ -98,6 +85,37 @@ def make_reports (report_type, working_dir=os.getcwd(), pandoc_binary=False, con
     # Change back to previous working dir
     os.chdir(old_cwd)
 
+def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_path=None, reports_dir=None, out_path=None):
+    #get path to template dir
+    if not reports_dir:
+        reports_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))
+    #get swedac text to add to report
+    with open(reports_dir+'/swedac.html', 'r') as f:
+        swedac_text = f.read()
+    #initialise jinja env
+    if not jinja2_env:
+        jinja2_env = jinja2.Environment(loader=jinja2.FileSystemLoader(reports_dir))
+    jinja2_env.globals['get'] = lambda x: x[0]
+    #get markdown text
+    if not markdown_text:
+        with open(markdown_path, 'r') as f:
+            markdown_text = f.read()
+
+    md_template = markdown.Markdown(extensions=['meta', 'tables', 'def_list', 'fenced_code', 'mdx_outline'])
+    markeddown_text = md_template.convert(markdown_text)
+
+    html_out = jinja2_env.get_template(report_type+'.html').render(body=markeddown_text, meta=md_template.Meta)
+    replace_list = {'[swedac]': swedac_text,
+                    '[tick]'  : '<span class="icon_tick">&#10004;</span> ',
+                    '[cross]' : '<span class="icon_cross">&#10008;</span> '
+                    }
+    for key in replace_list:
+        html_out = html_out.replace(key, replace_list[key])
+    if not out_path:
+        out_path = os.path.realpath(os.path.join(os.getcwd(), markdown_path.replace('md','html')))
+    with open(out_path, 'w') as f:
+        f.write(html_out)
+    return out_path
 
 # calling main method to generate report
 if __name__ == "__main__":
@@ -106,8 +124,6 @@ if __name__ == "__main__":
         help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
     parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
         help="Working Directory. Default: cwd when script is executed.")
-    parser.add_argument("-l", "--pandoc_binary", dest="pandoc_binary", action='store_true',
-        help="Use the linux RPM x86_64 pandoc binary bundled with the repository. UPPMAX bash script uses this flag. Default: False.")
     parser.add_argument('-c', '--config_file', default=None, action="store", help="Configuration file to use instead of default (~/.ngi_config/ngi_reports.conf)")
     parser.add_argument('-p', '--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('-s', '--signature', default=None, action="store", help="Signature/Name for person who generates 'project_summary' report")
@@ -122,7 +138,15 @@ if __name__ == "__main__":
     parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
     parser.add_argument('--fc_phix', default={}, action="store", type=json.loads, help="Overwrite or use Phix values for mentioned flowcells/lanes provided as a json string, having each flowcell as a key. Example: --fc_phix '{\"BH3JLWCCXX\": {\"1\": \"0.42\", \"3\": \"0.46\"}}'")
     parser.add_argument('--version', action='version', version="NGI reports version - {}".format(__version__))
+    parser.add_argument('--regenerate_html_from_md', action="store_true", help="Regenerate the html report from the given markdown file")
+    parser.add_argument('--markdown_file', default=None, help="Regenerate the html report from the given markdown file")
 
     kwargs = vars(parser.parse_args())
 
-    make_reports(**kwargs)
+    if kwargs['regenerate_html_from_md']:
+        if kwargs['markdown_file']:
+            print('HTML report written to: '+markdown_to_html(kwargs['report_type'], markdown_path=kwargs['markdown_file']))
+        else:
+            parser.error("--regenerate_html_from_md requires --markdown_file")
+    else:
+        make_reports(**kwargs)
