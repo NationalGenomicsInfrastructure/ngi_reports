@@ -9,12 +9,6 @@ try:
 except IOError:
     install_requires = []
 
-try:
-    with open("dependency_links.txt", "r") as f:
-        dependency_links = [x.strip() for x in f.readlines()]
-except IOError:
-    dependency_links = []
-
 setup(
     name='ngi_reports',
     version=__version__,
@@ -30,6 +24,5 @@ setup(
     include_package_data=True,
     zip_safe=False,
     scripts=['scripts/ngi_reports'],
-    install_requires=install_requires,
-    dependency_links=dependency_links
+    install_requires=install_requires
 )

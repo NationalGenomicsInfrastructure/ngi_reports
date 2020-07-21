@@ -16,7 +16,7 @@ ngi_reports <report_type>
 Other report types or non-piper directories may need additional command line inputs.
 
 The package will generate a directory called `reports` containing
-a PDF report, an HTML report, a Markdown report and a subdirectory called `plots`.
+an HTML report, a Markdown report and a subdirectory called `plots`.
 If running from a Piper directory, `reports` will be inside `delivery`.
 
 The package is designed to be run automatically by the processing pipelines.

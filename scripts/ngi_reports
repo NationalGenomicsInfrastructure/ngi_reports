@@ -95,7 +95,6 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
     #initialise jinja env
     if not jinja2_env:
         jinja2_env = jinja2.Environment(loader=jinja2.FileSystemLoader(reports_dir))
-    jinja2_env.globals['get'] = lambda x: x[0]
     #get markdown text
     if not markdown_text:
         with open(markdown_path, 'r') as f:
@@ -104,7 +103,9 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
     md_template = markdown.Markdown(extensions=['meta', 'tables', 'def_list', 'fenced_code', 'mdx_outline'])
     markeddown_text = md_template.convert(markdown_text)
 
-    html_out = jinja2_env.get_template(report_type+'.html').render(body=markeddown_text, meta=md_template.Meta)
+    #Markdown meta returns a dict with values as lists
+    html_out = jinja2_env.get_template(report_type+'.html').render(body=markeddown_text,
+                                        meta={key: ''.join(value) for (key, value) in md_template.Meta.items()})
     replace_list = {'[swedac]': swedac_text,
                     '[tick]'  : '<span class="icon_tick">&#10004;</span> ',
                     '[cross]' : '<span class="icon_cross">&#10008;</span> '
@@ -138,15 +139,11 @@ if __name__ == "__main__":
     parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
     parser.add_argument('--fc_phix', default={}, action="store", type=json.loads, help="Overwrite or use Phix values for mentioned flowcells/lanes provided as a json string, having each flowcell as a key. Example: --fc_phix '{\"BH3JLWCCXX\": {\"1\": \"0.42\", \"3\": \"0.46\"}}'")
     parser.add_argument('--version', action='version', version="NGI reports version - {}".format(__version__))
-    parser.add_argument('--regenerate_html_from_md', action="store_true", help="Regenerate the html report from the given markdown file")
     parser.add_argument('--markdown_file', default=None, help="Regenerate the html report from the given markdown file")
 
     kwargs = vars(parser.parse_args())
 
-    if kwargs['regenerate_html_from_md']:
-        if kwargs['markdown_file']:
-            print('HTML report written to: '+markdown_to_html(kwargs['report_type'], markdown_path=kwargs['markdown_file']))
-        else:
-            parser.error("--regenerate_html_from_md requires --markdown_file")
+    if kwargs['markdown_file']:
+        print('HTML report written to: '+markdown_to_html(kwargs['report_type'], markdown_path=kwargs['markdown_file']))
     else:
         make_reports(**kwargs)
