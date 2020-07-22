@@ -1,3 +1,0 @@
-[submodule "data/pandoc_templates/pandocfilters"]
-	path = data/pandoc_templates/pandocfilters
-	url = https://github.com/jgm/pandocfilters.git

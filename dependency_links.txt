@@ -1,1 +1,0 @@
-https://github.com/NationalGenomicsInfrastructure/ngi_visualizations/archive/master.zip#egg=ngi_visualizations
