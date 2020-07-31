@@ -139,7 +139,7 @@ if __name__ == "__main__":
     parser.add_argument('--samples_extra', default={}, action="store", type=json.loads, help="Pass in extra information about samples as a json string, having each sample as a key. Example: --samples_extra '{\"TS001-1\": {\"delivered\": \"20150701\"}}'")
     parser.add_argument('--fc_phix', default={}, action="store", type=json.loads, help="Overwrite or use Phix values for mentioned flowcells/lanes provided as a json string, having each flowcell as a key. Example: --fc_phix '{\"BH3JLWCCXX\": {\"1\": \"0.42\", \"3\": \"0.46\"}}'")
     parser.add_argument('--version', action='version', version="NGI reports version - {}".format(__version__))
-    parser.add_argument('--markdown_file', default=None, help="Regenerate the html report from the given markdown file")
+    parser.add_argument('-md', '--markdown_file', default=None, help="Regenerate the html report from the given markdown file")
 
     kwargs = vars(parser.parse_args())
 
