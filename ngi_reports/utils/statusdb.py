@@ -66,7 +66,7 @@ class statusdb_connection(object):
             open_date = datetime.strptime("2015-01-01", "%Y-%m-%d")
 
         project_flowcells = {}
-        date_sorted_fcs = sorted(self.proj_list.keys(), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
+        date_sorted_fcs = sorted(list(self.proj_list.keys()), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
         for fc in date_sorted_fcs:
             fc_date, fc_name = fc.split('_')
             if datetime.strptime(fc_date,'%y%m%d') < open_date:

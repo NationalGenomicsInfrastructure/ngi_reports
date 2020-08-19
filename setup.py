@@ -23,6 +23,6 @@ setup(
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
     include_package_data=True,
     zip_safe=False,
-    scripts=['scripts/ngi_reports'],
+    entry_points={"console_scripts": ["ngi_reports=ngi_reports.ngi_reports:main"]},
     install_requires=install_requires
 )
