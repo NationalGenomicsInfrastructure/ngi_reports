@@ -322,7 +322,7 @@ class Report(ngi_reports.reports.BaseReport):
                     total_bases += qinfo[k]['bases']
                     total_reads += qinfo[k]['reads']
                 avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp)
-                self.samples_info[sample]['qscore'] = str(round(avg_qval, 2))
+                self.samples_info[sample]['qscore'] = '{:.2f}'.format(round(avg_qval, 2))
                 ## Get/overwrite yield from the FCs computed instead of statusDB value
                 if kwargs.get('yield_from_fc') and total_reads:
                     self.samples_info[sample]['total_reads'] = total_reads if self.project_info.get('not_as_million') else "{:.2f}".format(total_reads/float(1000000))
@@ -496,7 +496,7 @@ class Report(ngi_reports.reports.BaseReport):
         """
         try:
             v = np.mean([float(lane_info.get('{} R{}'.format(key, str(r)))) for r in range(1,int(reads)+1)])
-            return str(int(v/1000000)) if as_million else str(round(v,2))
+            return '{:.2f}'.format(round(v/1000000, 2)) if as_million else '{:.2f}'.format(round(v, 2))
         except TypeError:
             return None
 
