@@ -283,7 +283,7 @@ class Report(ngi_reports.reports.BaseReport):
                     if lane not in self.flowcell_info[fc_name]['lanes']:
                         lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                         self.flowcell_info[fc_name]['lanes'][lane] = {'id': lane,
-                                                                      'cluster': self.get_lane_info('Reads PF (M)' if 'NovaSeq' in fc['type'] else 'Clusters PF',lane_sum,
+                                                                      'cluster': self.get_lane_info('Reads PF (M)' if 'NovaSeq' in fc['type'] or 'NextSeq' in fc['type'] else 'Clusters PF',lane_sum,
                                                                                                      run_setup[0], False if 'NovaSeq' in fc['type'] else True),
                                                                       'avg_qval': self.get_lane_info('% Bases >=Q30',lane_sum,run_setup[0]),
                                                                       'phix': kwargs.get('fc_phix',{}).get(fc_name, {}).get(lane, self.get_lane_info('% Error Rate',lane_sum,run_setup[0]))}
@@ -322,7 +322,7 @@ class Report(ngi_reports.reports.BaseReport):
                     total_bases += qinfo[k]['bases']
                     total_reads += qinfo[k]['reads']
                 avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp)
-                self.samples_info[sample]['qscore'] = round(avg_qval, 2)
+                self.samples_info[sample]['qscore'] = str(round(avg_qval, 2))
                 ## Get/overwrite yield from the FCs computed instead of statusDB value
                 if kwargs.get('yield_from_fc') and total_reads:
                     self.samples_info[sample]['total_reads'] = total_reads if self.project_info.get('not_as_million') else "{:.2f}".format(total_reads/float(1000000))
