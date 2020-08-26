@@ -2,7 +2,7 @@
 
 A Python package used to generate reports for use by the
 National Genomics Infrastructure. It is designed for use
-by both the Stockholm and Uppsala NGI nodes.
+by the Stockholm node.
 
 For more information see the
 [NGI Reports Documentation](http://nationalgenomicsinfrastructure.github.io/ngi_reports/).
