@@ -62,8 +62,6 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
     output_mds = report.parse_template(template)
     for output_bn, output_md in list(output_mds.items()):
         try:
-            # Ignore special character in the sring, panda might fail because of that
-            #output_md = output_md.encode('ascii', 'ignore')
             with open('{}.md'.format(output_bn), 'w', encoding='utf-8') as fh:
                 print(output_md, file=fh)
         except IOError as e:

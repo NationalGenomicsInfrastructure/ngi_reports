@@ -112,7 +112,7 @@ class BaseReport(object):
         E.g. {my : {nested: {key: value}}} -> "my.nested.key: value"
         """
         items = []
-        for k, v in list(d.items()):
+        for k, v in d.items():
             new_key = "{}{}{}".format(parent_key, sep, k) if parent_key else k
             if isinstance(v, collections.MutableMapping):
                 items.extend(list(self.flatten_dict(v, new_key, sep=sep).items()))
