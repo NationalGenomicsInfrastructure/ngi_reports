@@ -18,7 +18,7 @@ import numpy as np
 import unicodedata
 from string import ascii_uppercase as alphabets
 from ngi_reports.utils import statusdb
-from ConfigParser import NoSectionError, NoOptionError
+from configparser import NoSectionError, NoOptionError
 
 class Report(ngi_reports.reports.BaseReport):
 
@@ -128,7 +128,7 @@ class Report(ngi_reports.reports.BaseReport):
             self.LOG.info('"--samples" option is passed, will only include samples {}'.format(", ".join(self.samples_to_include)))
 
         ## Collect information about the sample preps and collect aborted samples
-        for sample_id, sample in sorted(self.proj.get('samples', {}).iteritems()):
+        for sample_id, sample in sorted(self.proj.get('samples', {}).items()):
             if self.samples_to_include and sample_id not in self.samples_to_include:
                 continue
             self.LOG.info('Processing sample {}'.format(sample_id))
@@ -157,7 +157,7 @@ class Report(ngi_reports.reports.BaseReport):
             self.samples_info[sample_id]['preps'] = {}
 
             ## Go through each prep for each sample in the Projects database
-            for prep_id, prep in sample.get('library_prep', {}).iteritems():
+            for prep_id, prep in list(sample.get('library_prep', {}).items()):
                 self.samples_info[sample_id]['preps'][prep_id] = {'label': prep_id }
                 if not prep.get('reagent_label'):
                     self.LOG.warn("Could not fetch barcode for sample {} in prep {}".format(sample_id, prep_id))
@@ -177,7 +177,7 @@ class Report(ngi_reports.reports.BaseReport):
                 else:
                     try:
                         lib_valids = prep['library_validation']
-                        keys = sorted([k for k in lib_valids.keys() if re.match('^[\d\-]*$',k)], key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
+                        keys = sorted([k for k in list(lib_valids.keys()) if re.match('^[\d\-]*$',k)], key=lambda k: datetime.strptime(lib_valids[k]['start_date'], "%Y-%m-%d"), reverse=True)
                         self.samples_info[sample_id]['preps'][prep_id]['avg_size'] = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
                     except:
                         self.LOG.warn("No library validation step found or no sufficient info for sample {}".format(sample_id))
@@ -191,7 +191,7 @@ class Report(ngi_reports.reports.BaseReport):
         self.flowcell_info.update(xcon.get_project_flowcell(self.project_info['ngi_id'], self.proj.get('open_date','2015-01-01')))
 
         ## Collect required information for all flowcell run for the project
-        for fc in self.flowcell_info.values():
+        for fc in list(self.flowcell_info.values()):
             fc_name = fc['name']
             if fc_name in kwargs.get('exclude_fc'):
                 del self.flowcell_info[fc_name]
@@ -238,8 +238,8 @@ class Report(ngi_reports.reports.BaseReport):
                 fc_chem = "'{}' chemistry".format(fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs')))
             seq_plat = fc['type']
             try:
-                casava = fc_obj['DemultiplexConfig'].values()[0]['Software']['Version']
-            except KeyError, IndexError:
+                casava = list(fc_obj['DemultiplexConfig'].values())[0]['Software']['Version']
+            except (KeyError, IndexError):
                 casava = None
             if seq_plat == "MiSeq":
                 seq_software = "MSC {}/RTA {}".format(fc_runp.get("MCSVersion"),fc_runp.get("RTAVersion"))
@@ -252,8 +252,8 @@ class Report(ngi_reports.reports.BaseReport):
             tmp_method = seq_template.format("SECTION", seq_plat, seq_software, run_setup, fc_chem, casava)
 
             ## to make sure the sequencing methods are unique
-            if tmp_method not in self.seq_methods.keys():
-                self.seq_methods[tmp_method] = alphabets[len(self.seq_methods.keys())]
+            if tmp_method not in list(self.seq_methods.keys()):
+                self.seq_methods[tmp_method] = alphabets[len(list(self.seq_methods.keys()))]
             self.flowcell_info[fc_name]['seq_meth'] = self.seq_methods[tmp_method]
 
             ## Collect quality info for samples and collect lanes of interest
@@ -270,7 +270,7 @@ class Report(ngi_reports.reports.BaseReport):
                         elif fc['db'] == "x_flowcells":
                             qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
                         r_idx = '{}_{}_{}'.format(lane, fc_name, barcode)
-                        r_num, r_len = map(int, run_setup.split('x'))
+                        r_num, r_len = list(map(int, run_setup.split('x')))
                         qval = float(stat.get(qval_key))
                         pfrd = int(stat.get(base_key).replace(',',''))
                         pfrd = pfrd/2 if fc['db'] == "flowcell" else pfrd
@@ -289,7 +289,7 @@ class Report(ngi_reports.reports.BaseReport):
                                                                       'phix': kwargs.get('fc_phix',{}).get(fc_name, {}).get(lane, self.get_lane_info('% Error Rate',lane_sum,run_setup[0]))}
 
                         ## Check if the above created dictionay have all info needed
-                        for k,v in self.flowcell_info[fc_name]['lanes'][lane].iteritems():
+                        for k,v in self.flowcell_info[fc_name]['lanes'][lane].items():
                             if not v:
                                 self.LOG.warn("Could not fetch {} for FC {} at lane {}".format(k, fc_name, lane))
                 except KeyError:
@@ -308,8 +308,8 @@ class Report(ngi_reports.reports.BaseReport):
 
         if self.sample_qval and kwargs.get('yield_from_fc'):
             self.LOG.info("'yield_from_fc' option was given so will compute the yield from collected flowcells")
-            for sample in self.samples_info.keys():
-                if sample not in self.sample_qval.keys():
+            for sample in list(self.samples_info.keys()):
+                if sample not in list(self.sample_qval.keys()):
                     del self.samples_info[sample]
 
         ## calculate average Q30 over all lanes and flowcell
@@ -341,7 +341,7 @@ class Report(ngi_reports.reports.BaseReport):
         sample_header = ['NGI ID', 'User ID', '#reads' if self.project_info.get('not_as_million') else 'Mreads', '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
 
-        self.tables_info['tables']['sample_info'] = self.create_table_text(sorted(self.samples_info.values(), key=lambda d: d['ngi_id']), filter_keys=sample_filter, header=sample_header)
+        self.tables_info['tables']['sample_info'] = self.create_table_text(sorted(list(self.samples_info.values()), key=lambda d: d['ngi_id']), filter_keys=sample_filter, header=sample_header)
         self.tables_info['header_explanation']['sample_info'] = "* _NGI ID:_ Internal NGI sample indentifier\n"\
                                                                 "* _User ID:_ User submitted name for a sample\n"\
                                                                 "* _Mreads:_ Total million reads (or pairs) for a sample\n"\
@@ -353,8 +353,8 @@ class Report(ngi_reports.reports.BaseReport):
         library_header = ['NGI ID', 'Index', 'Lib Prep', 'Avg. FS', 'Lib QC']
         library_filter = ['ngi_id', 'barcode', 'label', 'avg_size', 'qc_status']
         library_list = []
-        for s, v in self.samples_info.items():
-            for p in v.get('preps',{}).values():
+        for s, v in list(self.samples_info.items()):
+            for p in list(v.get('preps',{}).values()):
                 p['ngi_id'] = s
                 library_list.append(p)
         self.tables_info['tables']['library_info'] = self.create_table_text(sorted(library_list, key=lambda d: d['ngi_id']), filter_keys=library_filter, header=library_header)
@@ -368,8 +368,8 @@ class Report(ngi_reports.reports.BaseReport):
         lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', 'Phix', '>=Q30(%)', 'Method']
         lanes_filter = ['date', 'name', 'id', 'cluster', 'phix', 'avg_qval', 'seq_meth']
         lanes_list = []
-        for f, v in self.flowcell_info.items():
-            for l in v.get('lanes',{}).values():
+        for f, v in list(self.flowcell_info.items()):
+            for l in list(v.get('lanes',{}).values()):
                 l['date'] = v.get('date')
                 l['name'] = v.get('name')
                 l['seq_meth'] = v.get('seq_meth')
@@ -400,19 +400,19 @@ class Report(ngi_reports.reports.BaseReport):
         """
         op_string = []
         if isinstance(ip, dict):
-            ip = ip.values()
+            ip = list(ip.values())
         if header:
             op_string.append(sep.join(header))
         if not filter_keys:
             filter_keys = []
             for i in ip:
-                filter_keys.extend(i.keys())
+                filter_keys.extend(list(i.keys()))
             filter_keys = sorted(list(set(filter_keys)))
         for i in ip:
             row = []
             for k in filter_keys:
                 row.append(i.get(k,'NA'))
-            row = map(str, row)
+            row = list(map(str, row))
             op_string.append(sep.join(row))
         return "\n".join(op_string)
 
@@ -505,8 +505,8 @@ class Report(ngi_reports.reports.BaseReport):
 
         :param string value: a 'str' or 'unicode' string
         """
-        if not isinstance(value, unicode):
-            value = unicode(value, 'utf-8')
+        if not isinstance(value, str):
+            value = str(value, 'utf-8')
         return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
 
     # Return the parsed markdown
@@ -531,7 +531,7 @@ class Report(ngi_reports.reports.BaseReport):
 
             :param str op_dir: Path where the TXT files should be created, current dir is default
         """
-        for tb_nm, tb_cont in self.tables_info['tables'].items():
+        for tb_nm, tb_cont in list(self.tables_info['tables'].items()):
             op_fl = "{}_{}.txt".format(self.project_name, tb_nm)
             if op_dir:
                 op_fl = os.path.join(op_dir, op_fl)

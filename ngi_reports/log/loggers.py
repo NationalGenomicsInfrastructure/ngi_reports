@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 
-from ConfigParser import NoOptionError, NoSectionError
+from configparser import NoOptionError, NoSectionError
 
 from ngi_reports.utils import config as cl
 

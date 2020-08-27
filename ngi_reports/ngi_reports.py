@@ -60,11 +60,9 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
     # Get parsed markdown and print to file(s)
     LOG.debug('Converting markdown to HTML...')
     output_mds = report.parse_template(template)
-    for output_bn, output_md in output_mds.iteritems():
+    for output_bn, output_md in list(output_mds.items()):
         try:
-            # Ignore special character in the sring, panda might fail because of that
-            output_md = output_md.encode('ascii', 'ignore')
-            with open('{}.md'.format(output_bn), 'w') as fh:
+            with open('{}.md'.format(output_bn), 'w', encoding='utf-8') as fh:
                 print(output_md, file=fh)
         except IOError as e:
             LOG.error("Error printing markdown report {} - skipping. {}".format(output_md, IOError(e)))
@@ -118,8 +116,7 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
         f.write(html_out)
     return out_path
 
-# calling main method to generate report
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser("Make an NGI Report")
     parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>',
         help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
@@ -147,3 +144,7 @@ if __name__ == "__main__":
         print('HTML report written to: '+markdown_to_html(kwargs['report_type'], markdown_path=kwargs['markdown_file']))
     else:
         make_reports(**kwargs)
+
+# calling main method to generate report
+if __name__ == "__main__":
+    main()

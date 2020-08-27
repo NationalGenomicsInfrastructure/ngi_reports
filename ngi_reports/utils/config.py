@@ -1,6 +1,6 @@
 """ Load and parse configuration file
 """
-import ConfigParser
+import configparser
 import os
 from string import Template
 
@@ -14,7 +14,7 @@ def load_config(config_file=None):
             config_file = os.path.join(os.environ.get('HOME'), '.ngi_config', 'ngi_reports.conf')
             if not os.path.exists(config_file):
                 config_file = os.path.join(os.environ.get("NGI_REPORTS_CONFIG"))
-        config = ConfigParser.SafeConfigParser({'ngi_node': 'unknown'})
+        config = configparser.SafeConfigParser()
         with open(config_file) as f:
             config.readfp(f)
         return config
