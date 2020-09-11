@@ -107,7 +107,7 @@ class Report(ngi_reports.reports.BaseReport):
         self.project_info['reference'] = {}
         self.project_info['reference']['genome'] = None if self.proj.get('reference_genome') == 'other' else self.proj.get('reference_genome')
         self.project_info['reference']['organism'] = self.organism_names.get(self.project_info['reference']['genome'], None)
-        self.project_info['user_ID'] = self.to_ascii(self.proj_details.get('customer_project_reference',''))
+        self.project_info['user_ID'] = self.proj_details.get('customer_project_reference','')
         self.project_info['num_lanes'] = self.proj_details.get('sequence_units_ordered_(lanes)')
         if 'hdd' in self.proj.get('uppnex_id','').lower():
             self.project_info['cluster'] = 'hdd'
@@ -153,7 +153,7 @@ class Report(ngi_reports.reports.BaseReport):
                     continue
 
             ## special characters should be removed
-            self.samples_info[sample_id]['customer_name'] = self.to_ascii(sample.get('customer_name','NA'))
+            self.samples_info[sample_id]['customer_name'] = sample.get('customer_name','NA')
             self.samples_info[sample_id]['preps'] = {}
 
             ## Go through each prep for each sample in the Projects database
@@ -499,15 +499,6 @@ class Report(ngi_reports.reports.BaseReport):
             return '{:.2f}'.format(round(v/1000000, 2)) if as_million else '{:.2f}'.format(round(v, 2))
         except TypeError:
             return None
-
-    def to_ascii(self,value):
-        """Convert any non-ASCII character to its closest ASCII equivalent
-
-        :param string value: a 'str' or 'unicode' string
-        """
-        if not isinstance(value, str):
-            value = str(value, 'utf-8')
-        return unicodedata.normalize('NFKD', value).encode('ascii', 'ignore')
 
     # Return the parsed markdown
     def parse_template(self, template):
