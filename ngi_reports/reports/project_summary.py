@@ -229,7 +229,29 @@ class Report(ngi_reports.reports.BaseReport):
             seq_template = "{}) Samples were sequenced on {} ({}) with a {} setup "\
                            "using {}. The Bcl to FastQ conversion was performed using {} from the CASAVA software "\
                            "suite. The quality scale used is Sanger / phred33 / Illumina 1.8+."
-            run_setup = fc_obj.get("run_setup")
+            ## Fetch run setup for the flowcell
+            run_setup = fc_obj.get("RunInfo").get('Reads')
+            ## Sort by the order of reads
+            run_setup = sorted(run_setup, key=lambda k: k['Number'])
+            run_setup_text = ''
+            read_count = 0
+            index_count = 0
+            for read in run_setup:
+                run_setup_text += read['NumCycles'].encode("utf-8")
+                run_setup_text += 'nt'
+                if read['IsIndexedRead'] == 'N':
+                    read_count += 1
+                    run_setup_text += '(Read'
+                    run_setup_text += str(read_count)
+                elif read['IsIndexedRead'] == 'Y':
+                    index_count += 1
+                    run_setup_text += '(Index'
+                    run_setup_text += str(index_count)
+                if run_setup.index(read) == len(run_setup)-1:
+                    run_setup_text += ')'
+                else:
+                    run_setup_text += ')-'
+
             if fc['type'] == 'NovaSeq6000':
                 fc_chem = "'{}' workflow in '{}' mode flowcell".format(fc_runp.get('WorkflowType'), fc_runp.get('RfidsInfo', {}).get('FlowCellMode'))
             elif fc['type'] == 'NextSeq500':
@@ -249,7 +271,7 @@ class Report(ngi_reports.reports.BaseReport):
             else:
                 seq_software = "{} {}/RTA {}".format(fc_runp.get("ApplicationName", fc_runp.get("Application")),
                                                      fc_runp.get("ApplicationVersion"), fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")))
-            tmp_method = seq_template.format("SECTION", seq_plat, seq_software, run_setup, fc_chem, casava)
+            tmp_method = seq_template.format("SECTION", seq_plat, seq_software, run_setup_text, fc_chem, casava)
 
             ## to make sure the sequencing methods are unique
             if tmp_method not in list(self.seq_methods.keys()):
@@ -270,11 +292,13 @@ class Report(ngi_reports.reports.BaseReport):
                         elif fc['db'] == "x_flowcells":
                             qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
                         r_idx = '{}_{}_{}'.format(lane, fc_name, barcode)
-                        r_num, r_len = list(map(int, run_setup.split('x')))
+                        r_len_list = [x['NumCycles'] for x in run_setup if x['IsIndexedRead'] == 'N']
+                        r_len_list = [int(x) for x in r_len_list]
+                        r_num = len(r_len_list)
                         qval = float(stat.get(qval_key))
                         pfrd = int(stat.get(base_key).replace(',',''))
                         pfrd = pfrd/2 if fc['db'] == "flowcell" else pfrd
-                        base = pfrd * r_num * r_len
+                        base = pfrd sum(r_len_list)
                         self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
                         self.LOG.warn("Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}".format(sample, barcode, fc_name, lane))
@@ -284,9 +308,9 @@ class Report(ngi_reports.reports.BaseReport):
                         lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                         self.flowcell_info[fc_name]['lanes'][lane] = {'id': lane,
                                                                       'cluster': self.get_lane_info('Reads PF (M)' if 'NovaSeq' in fc['type'] or 'NextSeq' in fc['type'] else 'Clusters PF',lane_sum,
-                                                                                                     run_setup[0], False if 'NovaSeq' in fc['type'] else True),
-                                                                      'avg_qval': self.get_lane_info('% Bases >=Q30',lane_sum,run_setup[0]),
-                                                                      'phix': kwargs.get('fc_phix',{}).get(fc_name, {}).get(lane, self.get_lane_info('% Error Rate',lane_sum,run_setup[0]))}
+                                                                                                     str(r_num), False if 'NovaSeq' in fc['type'] else True),
+                                                                      'avg_qval': self.get_lane_info('% Bases >=Q30',lane_sum,str(r_num)),
+                                                                      'phix': kwargs.get('fc_phix',{}).get(fc_name, {}).get(lane, self.get_lane_info('% Error Rate',lane_sum,str(r_num)))}
 
                         ## Check if the above created dictionay have all info needed
                         for k,v in self.flowcell_info[fc_name]['lanes'][lane].items():
