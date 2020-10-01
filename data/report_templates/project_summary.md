@@ -143,7 +143,7 @@ Below you can find an explanation of the header column used in the table.
 
 NGI ID | User ID | Status
 -------|---------|-------
-{% for sample, info in project.aborted_samples.iteritems() -%}
+{% for sample, info in project.aborted_samples.items() -%}
 {{ sample }} | {{ info.user_id }} | {{ info.status }}
 {% endfor -%}
 {% endif %}
