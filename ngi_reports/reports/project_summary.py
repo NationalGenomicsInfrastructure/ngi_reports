@@ -237,7 +237,7 @@ class Report(ngi_reports.reports.BaseReport):
             read_count = 0
             index_count = 0
             for read in run_setup:
-                run_setup_text += read['NumCycles'].encode("utf-8")
+                run_setup_text += read['NumCycles']
                 run_setup_text += 'nt'
                 if read['IsIndexedRead'] == 'N':
                     read_count += 1
