@@ -298,7 +298,7 @@ class Report(ngi_reports.reports.BaseReport):
                         qval = float(stat.get(qval_key))
                         pfrd = int(stat.get(base_key).replace(',',''))
                         pfrd = pfrd/2 if fc['db'] == "flowcell" else pfrd
-                        base = pfrd sum(r_len_list)
+                        base = pfrd * sum(r_len_list)
                         self.sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
                     except (TypeError, ValueError, AttributeError) as e:
                         self.LOG.warn("Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}".format(sample, barcode, fc_name, lane))
