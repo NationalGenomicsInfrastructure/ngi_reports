@@ -80,7 +80,7 @@ class Lane:
             self.cluster = val
         elif to_set == 'avg_qval':
             self.avg_qval = val
-        elif: to_set == 'fc_phix':
+        elif to_set == 'fc_phix':
             self.phix = val
 
 
@@ -135,8 +135,11 @@ class Project:
             self.user_id = user_id
 
 
-    def populate(self, project, kwargs, log):
+    def populate(self, log, organism_names, **kwargs):
 
+        project = kwargs.get('project', '')
+        if not project:
+            raise SystemExit()
         self.skip_fastq = kwargs.get('skip_fastq')
         self.cluster = kwargs.get('cluster')
         self.not_as_million = kwargs.get('not_as_million')
@@ -145,10 +148,10 @@ class Project:
         assert pcon, 'Could not connect to {} database in StatusDB'.format('project')
 
         if re.match('^P\d+$', project):
-            self.ngi_name = project
+            self.id = project
             id_view, pid_as_uppmax_dest = (True, True)
         else:
-            self.id = project
+            self.ngi_name = project
             id_view, pid_as_uppmax_dest = (False, False)
 
         proj = pcon.get_entry(project, use_id_view=id_view)
@@ -164,7 +167,7 @@ class Project:
         proj_details = proj.get('details',{})
 
         if 'aborted' in proj_details:
-            log.warn('Project {} was aborted, so not proceeding.'.format(project)
+            log.warn('Project {} was aborted, so not proceeding.'.format(project))
             raise SystemExit
 
         if id_view:
@@ -185,16 +188,16 @@ class Project:
 
 
         self.reference['genome'] = None if proj.get('reference_genome') == 'other' else proj.get('reference_genome')
-        self.reference['organism'] = self.organism_names.get(self.project_info['reference']['genome'], None) #??
+        self.reference['organism'] = organism_names.get(self.reference['genome'], None)
         self.user_ID = proj_details.get('customer_project_reference','')
         self.num_lanes = proj_details.get('sequence_units_ordered_(lanes)')
         if 'hdd' in proj.get('uppnex_id','').lower():
             self.cluster = 'hdd'
         else:
             self.cluster = 'grus'
-        self.project_info['best_practice'] = False if proj_details.get('best_practice_bioinformatics','No') == 'No' else True
+        self.best_practice = False if proj_details.get('best_practice_bioinformatics','No') == 'No' else True
         self.library_construction = self.get_library_method(self.ngi_name, self.application, proj_details['library_construction_method'])
-        self.is_finished_lib = True if 'by user' in self.library_construction.lower()
+        self.is_finished_lib = True if 'by user' in self.library_construction.lower() else False
 
         for key in self.accredited:
             self.accredited[key] = proj_details.get('accredited_({})'.format(key))
@@ -202,7 +205,7 @@ class Project:
         if 'hiseqx' in proj_details.get('sequencing_platform', ''):
             self.is_hiseqx = True
 
-        self.sequencing_setup = self.proj_details.get('sequencing_setup')
+        self.sequencing_setup = proj_details.get('sequencing_setup')
 
         for sample_id, sample in sorted(proj.get('samples', {}).items()):
 
@@ -241,11 +244,11 @@ class Project:
             for prep_id, prep in list(sample.get('library_prep', {}).items()):
                 prepObj = Prep()
                 prepObj.label = prep_id
-                if prep.get('reagent_label'):
-                    log.warn('Could not fetch barcode for sample {} in prep {}'.format(sample_id, prep_id))
+                if prep.get('reagent_label') and prep.get('prep_status'):
                     prepObj.barcode = prep.get('reagent_label', 'NA')
-                if prep.get('prep_status'):
                     prepObj.qc_status = prep.get('prep_status', 'NA')
+                else:
+                    log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
 
                 if 'pcr-free' not in self.library_construction:
                     if prep.get('library_validation'):
@@ -267,7 +270,7 @@ class Project:
         xcon = statusdb.X_FlowcellRunMetricsConnection()
         assert xcon, 'Could not connect to {} database in StatusDB'.format('x_flowcells')
         flowcell_info = fcon.get_project_flowcell(self.id, self.dates['open_date'])
-        flowcell_info.update(xcon.get_project_flowcell(self.id, self.dates['open_date'])
+        flowcell_info.update(xcon.get_project_flowcell(self.id, self.dates['open_date']))
 
         sample_qval = defaultdict(dict)
 
@@ -316,7 +319,7 @@ class Project:
                 fcObj.chemistry = {'Chemistry' : fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs'))}
 
             try:
-                fcObj.casava = list(fc_obj['DemultiplexConfig'].values())[0]['Software']['Version']
+                fcObj.casava = list(fc_details['DemultiplexConfig'].values())[0]['Software']['Version']
             except (KeyError, IndexError):
                 continue
 
@@ -418,7 +421,7 @@ class Project:
 
 
 
-    def get_library_method(project_name, application, library_construction_method):
+    def get_library_method(self, project_name, application, library_construction_method):
         """Get the library construction method and return as formatted string
         """
         if application == 'Finished library':
