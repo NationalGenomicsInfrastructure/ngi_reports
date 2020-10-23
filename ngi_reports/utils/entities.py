@@ -170,7 +170,7 @@ class Project:
             log.warn('Project {} was aborted, so not proceeding.'.format(project))
             raise SystemExit
 
-        if id_view:
+        if not id_view:
             self.id = proj.get('project_id')
 
         for date in self.dates:
@@ -303,9 +303,6 @@ class Project:
                 fcObj.type = 'HiSeq2500'
                 fc_runp = fc_details.get('RunParameters',{}).get('Setup',{})
 
-            #self.flowcell_info[fc_name]['lanes'] = OrderedDict()
-
-
             ## Fetch run setup for the flowcell
             fcObj.run_setup = fc_details.get('RunInfo').get('Reads')
             ## Sort by the order of reads
@@ -345,7 +342,7 @@ class Project:
                         continue
 
                     lane = stat['Lane']
-                    if fc['db'] == "x_flowcells":
+                    if fc['db'] == "flowcells":
                         sample = stat['Sample']
                         barcode = stat['Barcode sequence']
                         qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
@@ -355,7 +352,7 @@ class Project:
                         qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
                     try:
                         r_idx = '{}_{}_{}'.format(lane, fcObj.name, barcode)
-                        r_len_list = [x['NumCycles'] for x in run_setup if x['IsIndexedRead'] == 'N']
+                        r_len_list = [x['NumCycles'] for x in fcObj.run_setup if x['IsIndexedRead'] == 'N']
                         r_len_list = [int(x) for x in r_len_list]
                         r_num = len(r_len_list)
                         qval = float(stat.get(qval_key))
@@ -365,7 +362,7 @@ class Project:
                         sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
 
                     except (TypeError, ValueError, AttributeError) as e:
-                        log.warn("Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}".format(sample, barcode, fc_name, lane))
+                        log.warn("Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}".format(sample, barcode, fcObj.name, lane))
                         pass
                     ## collect lanes of interest to proceed later
                     fc_lane_summary = fc_details.get('lims_data', {}).get('run_summary', {})
