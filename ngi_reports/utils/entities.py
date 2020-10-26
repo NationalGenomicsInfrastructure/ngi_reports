@@ -19,6 +19,7 @@ class Sample:
         self.total_reads   = ''
         self.initial_qc    = { 'initial_qc_status' : '',
                                 'concentration': '',
+                                'conc_units':'',
                                 'volume_(ul)': '',
                                 'amount_(ng)': '',
                                 'rin': ''
@@ -39,7 +40,6 @@ class Flowcell:
     """
     def __init__(self):
         self.date      = ''
-        self.db        = ''
         self.lanes     = OrderedDict()
         self.name      = ''
         self.run_name  = ''
@@ -57,11 +57,8 @@ class Lane:
     def __init__(self):
         self.avg_qval = ''
         self.cluster  = ''
-        self.dates    = ''
         self.id       = ''
-        self.name     = ''
         self.phix     = ''
-        self.seq_meth = ''
 
     def set_lane_info(self, to_set, key, lane_info, reads, as_million=False):
         """Set the average value of gives key from given lane info
@@ -224,11 +221,12 @@ class Project:
             samObj = Sample()
             samObj.ngi_id = sample_id
             samObj.customer_name = customer_name
-            samObj.well_location = sample['well_location']
+            samObj.well_location = sample.get('well_location')
             ## Basic fields from Project database
             # Initial qc
             if sample.get('initial_qc'):
-                samObj.initial_qc['initial_qc_status'] = sample['initial_qc']['initial_qc_status']
+                for item in samObj.initial_qc:
+                    samObj.initial_qc[item] = sample['initial_qc'].get(item)
 
             #Library prep
 
@@ -275,8 +273,10 @@ class Project:
         sample_qval = defaultdict(dict)
 
         for fc in list(flowcell_info.values()):
-            fcObj = Flowcell()
-            fcObj.name = fc['name']
+            fcObj           = Flowcell()
+            fcObj.name      = fc['name']
+            fcObj.run_name  = fc['run_name']
+            fcObj.date      = fc['date']
 
             # get database document from appropriate database
             if fc['db'] == 'x_flowcells':
@@ -342,14 +342,15 @@ class Project:
                         continue
 
                     lane = stat['Lane']
-                    if fc['db'] == "flowcells":
+                    if fc['db'] == "x_flowcells":
                         sample = stat['Sample']
                         barcode = stat['Barcode sequence']
-                        qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
+                        qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
+
                     else:
                         sample = stat['Sample ID']
                         barcode = stat['Index']
-                        qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
+                        qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
                     try:
                         r_idx = '{}_{}_{}'.format(lane, fcObj.name, barcode)
                         r_len_list = [x['NumCycles'] for x in fcObj.run_setup if x['IsIndexedRead'] == 'N']
@@ -370,15 +371,17 @@ class Project:
                         laneObj = Lane()
                         lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                         laneObj.id = lane
-                        laneObj.set_lane_info('cluster', 'Reads PF (M)' if 'NovaSeq' in fc['type'] or 'NextSeq' in fc['type'] else 'Clusters PF', lane_sum,
-                                                    str(r_num), False if 'NovaSeq' in fc['type'] else True)
+                        laneObj.set_lane_info('cluster', 'Reads PF (M)' if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else 'Clusters PF', lane_sum,
+                                                    str(r_num), False if 'NovaSeq' in fcObj.type else True)
                         laneObj.set_lane_info('avg_qval', '% Bases >=Q30', lane_sum, str(r_num))
+                        laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum, str(r_num))
                         if kwargs.get('fc_phix',{}).get(fcObj.name, {}):
-                            kwargs.get('fc_phix').get(fcObj.name).get(lane, laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum, str(r_num)))
+                            laneObj.phix = kwargs.get('fc_phix').get(fcObj.name).get(lane)
+
                         fcObj.lanes[lane] = laneObj
 
                         ## Check if the above created lane object has all needed info
-                        for k,v in vars(laneObj):
+                        for k,v in vars(laneObj).items():
                             if not v:
                                 log.warn("Could not fetch {} for FC {} at lane {}".format(k, fcObj.name, lane))
                 except KeyError:
