@@ -14,6 +14,7 @@ import markdown
 from ngi_reports import __version__
 from ngi_reports.log import loggers
 from ngi_reports.utils import config as report_config
+from ngi_reports.utils.entities import Project
 
 LOG = loggers.minimal_logger('NGI Reports')
 
@@ -32,6 +33,9 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
 
     # Import the modules for this report type
     report_mod = __import__('ngi_reports.reports.{}'.format(report_type), fromlist=['ngi_reports.reports'])
+
+    proj = Project()
+    proj.populate(LOG, config._sections['organism_names'], **kwargs)
 
     # Make the report object
     report = report_mod.Report(config, LOG, working_dir, **kwargs)
@@ -59,7 +63,7 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
 
     # Get parsed markdown and print to file(s)
     LOG.debug('Converting markdown to HTML...')
-    output_mds = report.parse_template(template)
+    output_mds = report.generate_report_template(proj, template)
     for output_bn, output_md in list(output_mds.items()):
         try:
             with open('{}.md'.format(output_bn), 'w', encoding='utf-8') as fh:

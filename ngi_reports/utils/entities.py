@@ -115,7 +115,7 @@ class Project:
         self.not_as_million  = False
         self.num_samples = 0
         self.num_lanes = 0
-        self.id = ''
+        self.ngi_id = ''
         self.reference = { 'genome': None,
                             'organism': None }
         self.report_date = ''
@@ -145,7 +145,7 @@ class Project:
         assert pcon, 'Could not connect to {} database in StatusDB'.format('project')
 
         if re.match('^P\d+$', project):
-            self.id = project
+            self.ngi_id = project
             id_view, pid_as_uppmax_dest = (True, True)
         else:
             self.ngi_name = project
@@ -168,7 +168,7 @@ class Project:
             raise SystemExit
 
         if not id_view:
-            self.id = proj.get('project_id')
+            self.ngi_id = proj.get('project_id')
 
         for date in self.dates:
             self.dates[date] = proj_details.get(date, None)
@@ -205,6 +205,9 @@ class Project:
         self.sequencing_setup = proj_details.get('sequencing_setup')
 
         for sample_id, sample in sorted(proj.get('samples', {}).items()):
+            if kwargs.get('samples', []) and sample_id not in kwargs.get('samples', []):
+                log.info('"Will not include sample {} as it is not in given list'.format(sample_id))
+                continue
 
             customer_name = sample.get('customer_name','NA')
             #Get once for a project
@@ -237,6 +240,10 @@ class Project:
             except KeyError:
                 log.warn('Sample {} doesnt have total reads, so adding it to NOT sequenced samples list.'.format(sample_id))
                 self.aborted_samples[sample_id] = AbortedSampleInfo(customer_name, 'Not sequenced')
+                ## dont gather unnecessary information if not going to be looked up
+                if not kwargs.get('yield_from_fc'):
+                    del self.samples[sample_id]
+                    continue
 
             ## Go through each prep for each sample in the Projects database
             for prep_id, prep in list(sample.get('library_prep', {}).items()):
@@ -267,12 +274,14 @@ class Project:
         assert fcon, 'Could not connect to {} database in StatusDB'.format('flowcell')
         xcon = statusdb.X_FlowcellRunMetricsConnection()
         assert xcon, 'Could not connect to {} database in StatusDB'.format('x_flowcells')
-        flowcell_info = fcon.get_project_flowcell(self.id, self.dates['open_date'])
-        flowcell_info.update(xcon.get_project_flowcell(self.id, self.dates['open_date']))
+        flowcell_info = fcon.get_project_flowcell(self.ngi_id, self.dates['open_date'])
+        flowcell_info.update(xcon.get_project_flowcell(self.ngi_id, self.dates['open_date']))
 
         sample_qval = defaultdict(dict)
 
         for fc in list(flowcell_info.values()):
+            if fc['name'] in kwargs.get('exclude_fc'):
+                continue
             fcObj           = Flowcell()
             fcObj.name      = fc['name']
             fcObj.run_name  = fc['run_name']
@@ -322,7 +331,7 @@ class Project:
 
             if fcObj.type == 'MiSeq':
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion'),
-                                        'MCSVersion': fc_runp.get('MCSVersion')
+                                        'ApplicationVersion': fc_runp.get('MCSVersion')
                                         }
             elif fcObj.type == 'NextSeq500':
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion', fc_runp.get('RtaVersion')),
@@ -351,6 +360,10 @@ class Project:
                         sample = stat['Sample ID']
                         barcode = stat['Index']
                         qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
+
+                    if kwargs.get('samples', []) and sample not in kwargs.get('samples', []):
+                        continue
+
                     try:
                         r_idx = '{}_{}_{}'.format(lane, fcObj.name, barcode)
                         r_len_list = [x['NumCycles'] for x in fcObj.run_setup if x['IsIndexedRead'] == 'N']
