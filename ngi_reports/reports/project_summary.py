@@ -19,10 +19,10 @@ from string import ascii_uppercase as alphabets
 class Report(ngi_reports.reports.BaseReport):
 
     ## initialize class and assign basic variables
-    def __init__(self, config, LOG, working_dir, **kwargs):
+    def __init__(self, LOG, working_dir, **kwargs):
         # Initialise the parent class
         # This will grab info from the Piper XML files if found
-        super(Report, self).__init__(config, LOG, working_dir, **kwargs)
+        super(Report, self).__init__(LOG, working_dir, **kwargs)
         # general initialization
         self.tables_info = defaultdict(dict)
         self.report_info = {}
@@ -32,7 +32,7 @@ class Report(ngi_reports.reports.BaseReport):
         self.signature = kwargs.get('signature')
 
 
-    def generate_report_template(self, proj, template):
+    def generate_report_template(self, proj, template, support_email):
         # Scrape information from the filesystem
         # This function is in the common BaseReport class in __init__.py
         #Do we still need piper? Left as reminder
@@ -54,7 +54,7 @@ class Report(ngi_reports.reports.BaseReport):
 
         ## Get information for the report
         self.report_basename = '{}_project_summary'.format(proj.ngi_name)
-        self.report_info['support_email'] = self.config.get('ngi_reports','support_email')
+        self.report_info['support_email'] = support_email
         self.report_info['dates'] = self.get_order_dates(proj)
         self.report_info['report_date'] = datetime.now().strftime('%Y-%m-%d')
         self.report_info['accredit'] = self.get_accredit_info(proj)

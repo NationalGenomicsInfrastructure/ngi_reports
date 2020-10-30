@@ -15,16 +15,14 @@ class BaseReport(object):
     methods to be used by all report types.
     """
 
-    def __init__(self, config, LOG, working_dir, **kwargs):
+    def __init__(self, LOG, working_dir, **kwargs):
         # Incoming handles
-        self.config = config
         self.LOG = LOG
         self.working_dir = working_dir
 
         # Standalone fields
         self.date_format = "%Y-%m-%d"
         self.creation_date = datetime.now().strftime(self.date_format)
-        self.organism_names = config._sections.get('organism_names', {})
 
 
     def parse_piper_xml(self):
