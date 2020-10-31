@@ -81,7 +81,6 @@ class Lane:
             self.phix = val
 
 
-
 class Project:
     """Project class
     """
@@ -158,7 +157,7 @@ class Project:
         self.ngi_name = proj.get('project_name')
 
         if proj.get('source') != 'lims':
-            log.error("The source for data for project {} is not LIMS.".format(project))
+            log.error('The source for data for project {} is not LIMS.'.format(project))
             raise BaseException
 
         proj_details = proj.get('details',{})
@@ -177,24 +176,23 @@ class Project:
             self.dates['all_samples_sequenced'] = proj.get('project_summary',{}).get('all_samples_sequenced')
 
 
-        self.contact = proj.get('contact')
-        self.application = proj.get('application')
-        self.num_samples = proj.get('no_of_samples')
-
-        self.ngi_facility = 'Genomics {} Stockholm'.format(proj_details.get('type')) if proj_details.get('type') else None
-
-
-        self.reference['genome'] = None if proj.get('reference_genome') == 'other' else proj.get('reference_genome')
+        self.contact               = proj.get('contact')
+        self.application           = proj.get('application')
+        self.num_samples           = proj.get('no_of_samples')
+        self.ngi_facility          = 'Genomics {} Stockholm'.format(proj_details.get('type')) if proj_details.get('type') else None
+        self.reference['genome']   = None if proj.get('reference_genome') == 'other' else proj.get('reference_genome')
         self.reference['organism'] = organism_names.get(self.reference['genome'], None)
-        self.user_ID = proj_details.get('customer_project_reference','')
-        self.num_lanes = proj_details.get('sequence_units_ordered_(lanes)')
+        self.user_ID               = proj_details.get('customer_project_reference','')
+        self.num_lanes             = proj_details.get('sequence_units_ordered_(lanes)')
+
         if 'hdd' in proj.get('uppnex_id','').lower():
             self.cluster = 'hdd'
         else:
             self.cluster = 'grus'
-        self.best_practice = False if proj_details.get('best_practice_bioinformatics','No') == 'No' else True
-        self.library_construction = self.get_library_method(self.ngi_name, self.application, proj_details['library_construction_method'])
-        self.is_finished_lib = True if 'by user' in self.library_construction.lower() else False
+
+        self.best_practice          = False if proj_details.get('best_practice_bioinformatics','No') == 'No' else True
+        self.library_construction   = self.get_library_method(self.ngi_name, self.application, proj_details['library_construction_method'])
+        self.is_finished_lib        = True if 'by user' in self.library_construction.lower() else False
 
         for key in self.accredited:
             self.accredited[key] = proj_details.get('accredited_({})'.format(key))
@@ -206,7 +204,7 @@ class Project:
 
         for sample_id, sample in sorted(proj.get('samples', {}).items()):
             if kwargs.get('samples', []) and sample_id not in kwargs.get('samples', []):
-                log.info('"Will not include sample {} as it is not in given list'.format(sample_id))
+                log.info('Will not include sample {} as it is not in given list'.format(sample_id))
                 continue
 
             customer_name = sample.get('customer_name','NA')
@@ -221,8 +219,8 @@ class Project:
                 self.aborted_samples[sample_id] = AbortedSampleInfo(customer_name, 'Aborted')
                 continue
 
-            samObj = Sample()
-            samObj.ngi_id = sample_id
+            samObj               = Sample()
+            samObj.ngi_id        = sample_id
             samObj.customer_name = customer_name
             samObj.well_location = sample.get('well_location')
             ## Basic fields from Project database
@@ -232,10 +230,8 @@ class Project:
                     samObj.initial_qc[item] = sample['initial_qc'].get(item)
 
             #Library prep
-
-            ## get total reads if avialable or mark sample as not sequenced
+            ## get total reads if available or mark sample as not sequenced
             try:
-                #self.samples_info[sample_id]['total_reads'] = "{:.2f}".format(float(sample['details']['total_reads_(m)']))
                 samObj.total_reads = '{:.2f}'.format(float(sample['details']['total_reads_(m)']))
             except KeyError:
                 log.warn('Sample {} doesnt have total reads, so adding it to NOT sequenced samples list.'.format(sample_id))
@@ -314,8 +310,6 @@ class Project:
 
             ## Fetch run setup for the flowcell
             fcObj.run_setup = fc_details.get('RunInfo').get('Reads')
-            ## Sort by the order of reads
-
 
             if fcObj.type == 'NovaSeq6000':
                 fcObj.chemistry = {'WorkflowType' : fc_runp.get('WorkflowType'), 'FlowCellMode' : fc_runp.get('RfidsInfo', {}).get('FlowCellMode')}
@@ -339,9 +333,9 @@ class Project:
                                         'ApplicationVersion': fc_runp.get('ApplicationVersion', fc_runp.get('Setup').get('ApplicationVersion'))
                                         }
             else:
-                fcObj.seq_software = {'RTAVersion': fc_runp.get("RTAVersion", fc_runp.get("RtaVersion")),
-                                        'ApplicationName': fc_runp.get("ApplicationName", fc_runp.get("Application")),
-                                        'ApplicationVersion': fc_runp.get("ApplicationVersion")
+                fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion', fc_runp.get('RtaVersion')),
+                                        'ApplicationName': fc_runp.get('ApplicationName', fc_runp.get('Application')),
+                                        'ApplicationVersion': fc_runp.get('ApplicationVersion')
                                         }
 
             ## Collect quality info for samples and collect lanes of interest
@@ -351,7 +345,7 @@ class Project:
                         continue
 
                     lane = stat['Lane']
-                    if fc['db'] == "x_flowcells":
+                    if fc['db'] == 'x_flowcells':
                         sample = stat['Sample']
                         barcode = stat['Barcode sequence']
                         qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
@@ -371,12 +365,12 @@ class Project:
                         r_num = len(r_len_list)
                         qval = float(stat.get(qval_key))
                         pfrd = int(stat.get(base_key).replace(',',''))
-                        pfrd = pfrd/2 if fc['db'] == "flowcell" else pfrd
+                        pfrd = pfrd/2 if fc['db'] == 'flowcell' else pfrd
                         base = pfrd * sum(r_len_list)
                         sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
 
                     except (TypeError, ValueError, AttributeError) as e:
-                        log.warn("Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}".format(sample, barcode, fcObj.name, lane))
+                        log.warn('Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}'.format(sample, barcode, fcObj.name, lane))
                         pass
                     ## collect lanes of interest to proceed later
                     fc_lane_summary = fc_details.get('lims_data', {}).get('run_summary', {})
@@ -396,7 +390,7 @@ class Project:
                         ## Check if the above created lane object has all needed info
                         for k,v in vars(laneObj).items():
                             if not v:
-                                log.warn("Could not fetch {} for FC {} at lane {}".format(k, fcObj.name, lane))
+                                log.warn('Could not fetch {} for FC {} at lane {}'.format(k, fcObj.name, lane))
                 except KeyError:
                     continue
             self.flowcells[fcObj.name] = fcObj
@@ -407,7 +401,7 @@ class Project:
 
 
         if sample_qval and kwargs.get('yield_from_fc'):
-            log.info("'yield_from_fc' option was given so will compute the yield from collected flowcells")
+            log.info('\'yield_from_fc\' option was given so will compute the yield from collected flowcells')
             for sample in list(self.samples.keys()):
                 if sample not in list(sample_qval.keys()):
                     del self.samples[sample]
@@ -425,20 +419,19 @@ class Project:
                 self.samples[sample].qscore = '{:.2f}'.format(round(avg_qval, 2))
                 ## Get/overwrite yield from the FCs computed instead of statusDB value
                 if kwargs.get('yield_from_fc') and total_reads:
-                    self.samples[sample].total_reads = total_reads if self.not_as_million else "{:.2f}".format(total_reads/float(1000000))
+                    self.samples[sample].total_reads = total_reads if self.not_as_million else '{:.2f}'.format(total_reads/float(1000000))
                     if sample in self.aborted_samples:
-                        log.info("Sample {} was sequenced, so removing it from NOT sequenced samples list".format(sample))
+                        log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
                         del self.aborted_samples[sample]
             except (TypeError, KeyError):
-                log.error("Could not calcluate average Q30 for sample {}".format(sample))
-
+                log.error('Could not calcluate average Q30 for sample {}'.format(sample))
 
 
     def get_library_method(self, project_name, application, library_construction_method):
         """Get the library construction method and return as formatted string
         """
         if application == 'Finished library':
-            return "Library was prepared by user."
+            return 'Library was prepared by user.'
         try:
             lib_meth_pat = r'^(.*?),(.*?),(.*?),(.*?)[\[,](.*)$' #Input, Type, Option, Category -/, doucment number
             lib_head = ['Input', 'Type', 'Option', 'Category']
@@ -449,13 +442,13 @@ class Project:
                 for name,value in zip(lib_head, lib_meth_list):
                     value = value.strip() #remove empty space(s) at the ends
                     if value == 'By user':
-                        return "Library was prepared by user."
-                    if value and value != "-":
-                        lib_list.append("* {}: {}".format(name, value))
-                return ("\n".join(lib_list))
+                        return 'Library was prepared by user.'
+                    if value and value != '-':
+                        lib_list.append('* {}: {}'.format(name, value))
+                return ('\n'.join(lib_list))
             else:
-                log.error("Library method is not mentioned in expected format for project {}".format(project_name))
+                log.error('Library method is not mentioned in expected format for project {}'.format(project_name))
                 return None
         except KeyError:
-            log.error("Could not find library construction method for project {} in statusDB".format(project_name))
+            log.error('Could not find library construction method for project {} in statusDB'.format(project_name))
             return None

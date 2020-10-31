@@ -1,12 +1,11 @@
 site_name: NGI Reports
 repo_url: https://github.com/NationalGenomicsInfrastructure/ngi_reports/
-site_description: Package to generate reports for NGI Stockholm and Uppsala
+site_description: Package to generate reports for NGI Stockholm
 site_author: Phil Ewels
 theme: flatly
 pages:
-- ['index.md', 'Introduction'] 
+- ['index.md', 'Introduction']
 - ['installation.md', 'Installation']
 - ['usage.md', 'Usage']
 - ['contributing.md', 'Contributing']
 - ['report_project_report.md', 'Project Reports']
-- ['report_ign_sample_report.md', 'IGN Sample Reports']

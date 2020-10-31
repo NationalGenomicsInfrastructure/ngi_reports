@@ -2,18 +2,14 @@
 
 """ Module for producing the Project Summary Report
 Note: Much of this code was written by Pontus and lifted from
-the SciLifeLab repo - see
-https://github.com/senthil10/scilifelab/blob/edit_report/scilifelab/report/sequencing_report.py
+the SciLifeLab repo
 """
 
 from collections import defaultdict, OrderedDict
-from datetime import datetime
-import jinja2
 import os
+from string import ascii_uppercase as alphabets
 
 import ngi_reports.reports
-
-from string import ascii_uppercase as alphabets
 
 
 class Report(ngi_reports.reports.BaseReport):
@@ -21,7 +17,6 @@ class Report(ngi_reports.reports.BaseReport):
     ## initialize class and assign basic variables
     def __init__(self, LOG, working_dir, **kwargs):
         # Initialise the parent class
-        # This will grab info from the Piper XML files if found
         super(Report, self).__init__(LOG, working_dir, **kwargs)
         # general initialization
         self.tables_info = defaultdict(dict)
@@ -33,14 +28,6 @@ class Report(ngi_reports.reports.BaseReport):
 
 
     def generate_report_template(self, proj, template, support_email):
-        # Scrape information from the filesystem
-        # This function is in the common BaseReport class in __init__.py
-        #Do we still need piper? Left as reminder
-        #xml = self.parse_piper_xml()
-        #self.project_info = xml['project']
-        #self.samples_info = xml['samples']
-        #if len(xml['project']) > 0:
-        #    self.report_dir = os.path.join(self.working_dir, 'delivery', 'reports')
 
         ## Check and exit if signature not provided
         if not self.signature:
@@ -53,11 +40,11 @@ class Report(ngi_reports.reports.BaseReport):
         seq_methods = OrderedDict()
 
         ## Get information for the report
-        self.report_basename = '{}_project_summary'.format(proj.ngi_name)
+        self.report_basename              = '{}_project_summary'.format(proj.ngi_name)
         self.report_info['support_email'] = support_email
-        self.report_info['dates'] = self.get_order_dates(proj)
-        self.report_info['report_date'] = datetime.now().strftime('%Y-%m-%d')
-        self.report_info['accredit'] = self.get_accredit_info(proj)
+        self.report_info['dates']         = self.get_order_dates(proj)
+        self.report_info['report_date']   = self.creation_date
+        self.report_info['accredit']      = self.get_accredit_info(proj)
 
         ## Get sequecing method for the flowcell
         seq_template = '{}) Samples were sequenced on {} ({}) with a {} setup '\
