@@ -42,9 +42,9 @@ class Report(ngi_reports.reports.BaseReport):
         ## Get information for the report
         self.report_basename              = proj.ngi_name
         self.report_info['support_email'] = support_email
-        self.report_info['dates']         = self.get_order_dates(proj)
+        self.report_info['dates']         = self.get_order_dates(proj.dates)
         self.report_info['report_date']   = self.creation_date
-        self.report_info['accredit']      = self.get_accredit_info(proj)
+        self.report_info['accredit']      = self.get_accredit_info(proj.accredited, proj.library_construction, proj.ngi_name)
 
         ## Get sequecing method for the flowcell
         seq_template = '{}) Samples were sequenced on {} ({}) with a {} setup '\
@@ -197,32 +197,32 @@ class Report(ngi_reports.reports.BaseReport):
         return '\n'.join(op_string)
 
 
-    def get_order_dates(self, project):
+    def get_order_dates(self, project_dates):
         """ Get order dates as a markdown string. Ignore if unavailable
         """
         dates = []
-        for item in project.dates:
-            if project.dates.get(item):
-                dates.append('_{}:_ {}'.format(item.replace('_', ' ').capitalize(), project.dates[item]))
+        for item in project_dates:
+            if project_dates.get(item):
+                dates.append('_{}:_ {}'.format(item.replace('_', ' ').capitalize(), project_dates[item]))
         return ', '.join(dates)
 
-    def get_accredit_info(self, proj):
+    def get_accredit_info(self, accredit_dict, library_construction, proj_name):
         """Get swedac accreditation info for given step 'k'
 
         :param Project proj: Project object containing details of the relevant project
         """
         accredit_info = {}
-        for key in proj.accredited:
-            accredit = proj.accredited[key]
+        for key in accredit_dict:
+            accredit = accredit_dict[key]
             ## For "finished library" projects, set certain accredation steps as "NA" even if not set by default
-            if key in ['library_preparation','data_analysis'] and proj.library_construction == 'Library was prepared by user.':
+            if key in ['library_preparation','data_analysis'] and library_construction == 'Library was prepared by user.':
                 accredit_info[key] = 'Not Applicable'
             elif accredit in ['Yes','No']:
                 accredit_info[key] = '{} under ISO accreditation 17025'.format(['[cross] Not validated','[tick] Validated'][accredit == 'Yes'])
             elif accredit == 'N/A':
                 accredit_info[key] = 'Not Applicable'
             else:
-                self.LOG.error('Accreditation step {} for project {} is found, but no value is set'.format(key, proj.ngi_name))
+                self.LOG.error('Accreditation step {} for project {} is found, but no value is set'.format(key, proj_name))
         return accredit_info
 
     # Generate CSV files for the tables
