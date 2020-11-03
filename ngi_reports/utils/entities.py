@@ -80,6 +80,12 @@ class Lane:
         elif to_set == 'fc_phix':
             self.phix = val
 
+class AbortedSampleInfo:
+    """Aborted Sample info class
+    """
+    def __init__(self, user_id, status):
+        self.status = status
+        self.user_id = user_id
 
 class Project:
     """Project class
@@ -121,15 +127,6 @@ class Project:
         self.sequencing_setup = ''
         self.skip_fastq = False
         self.user_ID = ''
-
-
-    class AbortedSampleInfo:
-        """Aborted Sample info class
-        """
-        def __init__(self, user_id, status):
-            self.status = status
-            self.user_id = user_id
-
 
     def populate(self, log, organism_names, **kwargs):
 
@@ -238,7 +235,6 @@ class Project:
                 self.aborted_samples[sample_id] = AbortedSampleInfo(customer_name, 'Not sequenced')
                 ## dont gather unnecessary information if not going to be looked up
                 if not kwargs.get('yield_from_fc'):
-                    del self.samples[sample_id]
                     continue
 
             ## Go through each prep for each sample in the Projects database
@@ -251,13 +247,16 @@ class Project:
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
 
-                if 'pcr-free' not in self.library_construction:
+                if 'pcr-free' not in self.library_construction.lower():
                     if prep.get('library_validation'):
                         lib_valids = prep['library_validation']
                         keys = sorted([k for k in list(lib_valids.keys()) if re.match('^[\d\-]*$',k)], key=lambda k: datetime.strptime(lib_valids[k]['start_date'], '%Y-%m-%d'), reverse=True)
-                        prepObj.avg_size = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
+                        try:
+                            prepObj.avg_size = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
+                        except:
+                            log.warn('Insufficient info () for sample {}'.format('average_size_bp', sample_id))
                     else:
-                        log.warn('No library validation step found or no sufficient info for sample {}'.format(sample_id))
+                        log.warn('No library validation step found {}'.format(sample_id))
 
                 samObj.preps[prep_id] = prepObj
 
@@ -379,7 +378,7 @@ class Project:
                         lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                         laneObj.id = lane
                         laneObj.set_lane_info('cluster', 'Reads PF (M)' if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else 'Clusters PF', lane_sum,
-                                                    str(r_num), False if 'NovaSeq' in fcObj.type else True)
+                                                    str(r_num), False if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else True)
                         laneObj.set_lane_info('avg_qval', '% Bases >=Q30', lane_sum, str(r_num))
                         laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum, str(r_num))
                         if kwargs.get('fc_phix',{}).get(fcObj.name, {}):

@@ -40,7 +40,7 @@ class Report(ngi_reports.reports.BaseReport):
         seq_methods = OrderedDict()
 
         ## Get information for the report
-        self.report_basename              = '{}_project_summary'.format(proj.ngi_name)
+        self.report_basename              = proj.ngi_name
         self.report_info['support_email'] = support_email
         self.report_info['dates']         = self.get_order_dates(proj)
         self.report_info['report_date']   = self.creation_date
@@ -213,20 +213,16 @@ class Report(ngi_reports.reports.BaseReport):
         """
         accredit_info = {}
         for key in proj.accredited:
-            try:
-                accredit = proj.accredited[key]
-                if accredit in ['Yes','No']:
-                    accredit_info[key] = '{} under ISO accreditation 17025'.format(['[cross] Not validated','[tick] Validated'][accredit == 'Yes'])
-                elif accredit == 'N/A':
-                    accredit_info[key] = 'Not Applicable'
-                else:
-                    self.LOG.error('Accreditation step {} for project {} is found, but any value is not set'.format(key, proj.ngi_name))
-            except KeyError:
-                ## For "finished library" projects, set certain accredation steps as "NA" even if not set by default
-                if key in ['library_preparation','data_analysis'] and project.library_construction == 'Library was prepared by user.':
-                    accredit_info[key] = 'Not Applicable'
-                else:
-                    self.LOG.error('Could not find accreditation info for step {} for project {}'.format(key, proj.ngi_name))
+            accredit = proj.accredited[key]
+            ## For "finished library" projects, set certain accredation steps as "NA" even if not set by default
+            if key in ['library_preparation','data_analysis'] and proj.library_construction == 'Library was prepared by user.':
+                accredit_info[key] = 'Not Applicable'
+            elif accredit in ['Yes','No']:
+                accredit_info[key] = '{} under ISO accreditation 17025'.format(['[cross] Not validated','[tick] Validated'][accredit == 'Yes'])
+            elif accredit == 'N/A':
+                accredit_info[key] = 'Not Applicable'
+            else:
+                self.LOG.error('Accreditation step {} for project {} is found, but no value is set'.format(key, proj.ngi_name))
         return accredit_info
 
     # Generate CSV files for the tables
