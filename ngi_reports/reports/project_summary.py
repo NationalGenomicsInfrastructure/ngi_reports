@@ -308,7 +308,7 @@ class Report(ngi_reports.reports.BaseReport):
                         lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                         self.flowcell_info[fc_name]['lanes'][lane] = {'id': lane,
                                                                       'cluster': self.get_lane_info('Reads PF (M)' if 'NovaSeq' in fc['type'] or 'NextSeq' in fc['type'] else 'Clusters PF',lane_sum,
-                                                                                                     str(r_num), False if 'NovaSeq' in fc['type'] else True),
+                                                                                                     str(r_num), False if 'NovaSeq' in fc['type'] or 'NextSeq' in fc['type'] else True),
                                                                       'avg_qval': self.get_lane_info('% Bases >=Q30',lane_sum,str(r_num)),
                                                                       'phix': kwargs.get('fc_phix',{}).get(fc_name, {}).get(lane, self.get_lane_info('% Error Rate',lane_sum,str(r_num)))}
 
