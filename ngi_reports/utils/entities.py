@@ -1,6 +1,7 @@
 """ Define various entities and populate them
 """
 import re
+import sys
 import numpy as np
 from collections import defaultdict, OrderedDict
 from datetime import datetime
@@ -132,7 +133,8 @@ class Project:
 
         project = kwargs.get('project', '')
         if not project:
-            raise SystemExit()
+            log.error('A project must be provided, so not proceeding.')
+            sys.exit('A project was not provided, stopping execution...')
         self.skip_fastq = kwargs.get('skip_fastq')
         self.cluster = kwargs.get('cluster')
         self.not_as_million = kwargs.get('not_as_million')
@@ -150,7 +152,7 @@ class Project:
         proj = pcon.get_entry(project, use_id_view=id_view)
         if not proj:
             log.error('No such project name/id "{}", check if provided information is right'.format(project))
-            raise KeyError
+            sys.exit('Project not found in statusdb, stopping execution...')
         self.ngi_name = proj.get('project_name')
 
         if proj.get('source') != 'lims':
@@ -161,7 +163,7 @@ class Project:
 
         if 'aborted' in proj_details:
             log.warn('Project {} was aborted, so not proceeding.'.format(project))
-            raise SystemExit
+            sys.exit('Project {} was aborted, stopping execution...'.format(project))
 
         if not id_view:
             self.ngi_id = proj.get('project_id')
@@ -254,7 +256,7 @@ class Project:
                         try:
                             prepObj.avg_size = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
                         except:
-                            log.warn('Insufficient info () for sample {}'.format('average_size_bp', sample_id))
+                            log.warn('Insufficient info "{}" for sample {}'.format('average_size_bp', sample_id))
                     else:
                         log.warn('No library validation step found {}'.format(sample_id))
 
@@ -339,59 +341,63 @@ class Project:
 
             ## Collect quality info for samples and collect lanes of interest
             for stat in fc_details.get('illumina',{}).get('Demultiplex_Stats',{}).get('Barcode_lane_statistics',[]):
-                try:
-                    if re.sub('_+','.',stat['Project'],1) != self.ngi_name and stat['Project'] != self.ngi_name:
-                        continue
 
-                    lane = stat['Lane']
-                    if fc['db'] == 'x_flowcells':
-                        sample = stat['Sample']
-                        barcode = stat['Barcode sequence']
-                        qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
-
-                    else:
-                        sample = stat['Sample ID']
-                        barcode = stat['Index']
-                        qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
-
-                    if kwargs.get('samples', []) and sample not in kwargs.get('samples', []):
-                        continue
-
-                    try:
-                        r_idx = '{}_{}_{}'.format(lane, fcObj.name, barcode)
-                        r_len_list = [x['NumCycles'] for x in fcObj.run_setup if x['IsIndexedRead'] == 'N']
-                        r_len_list = [int(x) for x in r_len_list]
-                        r_num = len(r_len_list)
-                        qval = float(stat.get(qval_key))
-                        pfrd = int(stat.get(base_key).replace(',',''))
-                        pfrd = pfrd/2 if fc['db'] == 'flowcell' else pfrd
-                        base = pfrd * sum(r_len_list)
-                        sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
-
-                    except (TypeError, ValueError, AttributeError) as e:
-                        log.warn('Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}'.format(sample, barcode, fcObj.name, lane))
-                        pass
-                    ## collect lanes of interest to proceed later
-                    fc_lane_summary = fc_details.get('lims_data', {}).get('run_summary', {})
-                    if lane not in fcObj.lanes:
-                        laneObj = Lane()
-                        lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
-                        laneObj.id = lane
-                        laneObj.set_lane_info('cluster', 'Reads PF (M)' if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else 'Clusters PF', lane_sum,
-                                                    str(r_num), False if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else True)
-                        laneObj.set_lane_info('avg_qval', '% Bases >=Q30', lane_sum, str(r_num))
-                        laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum, str(r_num))
-                        if kwargs.get('fc_phix',{}).get(fcObj.name, {}):
-                            laneObj.phix = kwargs.get('fc_phix').get(fcObj.name).get(lane)
-
-                        fcObj.lanes[lane] = laneObj
-
-                        ## Check if the above created lane object has all needed info
-                        for k,v in vars(laneObj).items():
-                            if not v:
-                                log.warn('Could not fetch {} for FC {} at lane {}'.format(k, fcObj.name, lane))
-                except KeyError:
+                if re.sub('_+','.',stat['Project'],1) != self.ngi_name and stat['Project'] != self.ngi_name:
                     continue
+
+                lane = stat.get('Lane')
+                if fc['db'] == 'x_flowcells':
+                    sample = stat.get('Sample')
+                    barcode = stat.get('Barcode sequence')
+                    qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
+
+                else:
+                    sample = stat.get('Sample ID')
+                    barcode = stat.get('Index')
+                    qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
+
+                #skip if there are no lanes or samples
+                if not lane or not sample or not barcode:
+                    log.warn('Insufficient info/malformed data in Barcode_lane_statistics in FC {}, skipping...'.format(fcObj.name))
+                    continue
+
+                if kwargs.get('samples', []) and sample not in kwargs.get('samples', []):
+                    continue
+
+                try:
+                    r_idx = '{}_{}_{}'.format(lane, fcObj.name, barcode)
+                    r_len_list = [x['NumCycles'] for x in fcObj.run_setup if x['IsIndexedRead'] == 'N']
+                    r_len_list = [int(x) for x in r_len_list]
+                    r_num = len(r_len_list)
+                    qval = float(stat.get(qval_key))
+                    pfrd = int(stat.get(base_key).replace(',',''))
+                    pfrd = pfrd/2 if fc['db'] == 'flowcell' else pfrd
+                    base = pfrd * sum(r_len_list)
+                    sample_qval[sample][r_idx] = {'qval': qval, 'reads': pfrd, 'bases': base}
+
+                except (TypeError, ValueError, AttributeError) as e:
+                    log.warn('Something went wrong while fetching Q30 for sample {} with barcode {} in FC {} at lane {}'.format(sample, barcode, fcObj.name, lane))
+                    pass
+                ## collect lanes of interest to proceed later
+                fc_lane_summary = fc_details.get('lims_data', {}).get('run_summary', {})
+                if lane not in fcObj.lanes:
+                    laneObj = Lane()
+                    lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
+                    laneObj.id = lane
+                    laneObj.set_lane_info('cluster', 'Reads PF (M)' if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else 'Clusters PF', lane_sum,
+                                                str(r_num), False if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else True)
+                    laneObj.set_lane_info('avg_qval', '% Bases >=Q30', lane_sum, str(r_num))
+                    laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum, str(r_num))
+                    if kwargs.get('fc_phix',{}).get(fcObj.name, {}):
+                        laneObj.phix = kwargs.get('fc_phix').get(fcObj.name).get(lane)
+
+                    fcObj.lanes[lane] = laneObj
+
+                    ## Check if the above created lane object has all needed info
+                    for k,v in vars(laneObj).items():
+                        if not v:
+                            log.warn('Could not fetch {} for FC {} at lane {}'.format(k, fcObj.name, lane))
+
             self.flowcells[fcObj.name] = fcObj
 
         if not self.flowcells:
