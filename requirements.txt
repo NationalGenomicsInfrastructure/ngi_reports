@@ -1,7 +1,6 @@
 Markdown
 mdx_outline
 jinja2
-xmltodict
 couchdb
 pyyaml
 ngi_visualizations @ https://github.com/NationalGenomicsInfrastructure/ngi_visualizations/archive/master.zip
