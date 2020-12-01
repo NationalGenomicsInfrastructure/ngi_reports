@@ -102,17 +102,17 @@ class Report(ngi_reports.reports.BaseReport):
         ###############################################################################
 
         ## sample_info table
-        sample_header = ['NGI ID', 'User ID', '#reads' if proj.not_as_million else 'Mreads', '>=Q30']
+        unit_magnitude = {'#reads' : '', 'Thousandreads': ' Thousand','Mreads': ' Million'}
+        sample_header = ['NGI ID', 'User ID', proj.samples_unit, '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
 
         self.tables_info['tables']['sample_info'] = self.create_table_text(proj.samples.values(), filter_keys=sample_filter, header=sample_header)
         self.tables_info['header_explanation']['sample_info'] = '* _NGI ID:_ Internal NGI sample indentifier\n'\
                                                                 '* _User ID:_ User submitted name for a sample\n'\
-                                                                '* _Mreads:_ Total million reads (or pairs) for a sample\n'\
-                                                                '* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30'
-        if proj.not_as_million:
-            self.tables_info['header_explanation']['sample_info'] = self.tables_info['header_explanation']['sample_info'].replace('_Mreads:_ Total million reads (or pairs) for a sample',
-                                                                                                                                  '_#reads:_ Total number of reads (or pairs) for a sample')
+                                                                '* _{}:_ Total{} reads (or pairs) for a sample\n'\
+                                                                '* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30'\
+                                                                .format(proj.samples_unit, unit_magnitude[proj.samples_unit])
+
         ## library_info table
         library_header = ['NGI ID', 'Index', 'Lib Prep', 'Avg. FS', 'Lib QC']
         library_filter = ['ngi_id', 'barcode', 'label', 'avg_size', 'qc_status']

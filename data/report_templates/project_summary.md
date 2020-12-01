@@ -89,7 +89,7 @@ Data Analysis
 {% if not project.samples %}
 No sample information to be displayed.
 {% else %}
-NGI ID | User ID | {% if project.not_as_million %}#{% else %}M{% endif %}reads | >=Q30(%)
+NGI ID | User ID | {{ project.samples_unit }} | >=Q30(%)
 -------|---------|--------|----------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }} | {{ sample.qscore }}

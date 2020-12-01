@@ -118,7 +118,7 @@ class Project:
         self.missing_fc  = False
         self.ngi_facility = ''
         self.ngi_name = ''
-        self.not_as_million  = False
+        self.samples_unit  = '#reads'
         self.num_samples = 0
         self.num_lanes = 0
         self.ngi_id = ''
@@ -137,7 +137,6 @@ class Project:
             sys.exit('A project was not provided, stopping execution...')
         self.skip_fastq = kwargs.get('skip_fastq')
         self.cluster = kwargs.get('cluster')
-        self.not_as_million = kwargs.get('not_as_million')
 
         pcon = statusdb.ProjectSummaryConnection()
         assert pcon, 'Could not connect to {} database in StatusDB'.format('project')
@@ -231,7 +230,8 @@ class Project:
             #Library prep
             ## get total reads if available or mark sample as not sequenced
             try:
-                samObj.total_reads = '{:.2f}'.format(float(sample['details']['total_reads_(m)']))
+                #check if sample was sequenced. More accurate value will be calculated from flowcell yield
+                total_reads = float(sample['details']['total_reads_(m)'])
             except KeyError:
                 log.warn('Sample {} doesnt have total reads, so adding it to NOT sequenced samples list.'.format(sample_id))
                 self.aborted_samples[sample_id] = AbortedSampleInfo(customer_name, 'Not sequenced')
@@ -412,6 +412,7 @@ class Project:
                     del self.samples[sample]
 
         ## calculate average Q30 over all lanes and flowcell
+        max_total_reads = 0
         for sample in sorted(sample_qval.keys()):
             try:
                 qinfo = sample_qval[sample]
@@ -423,13 +424,27 @@ class Project:
                 avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp)
                 self.samples[sample].qscore = '{:.2f}'.format(round(avg_qval, 2))
                 ## Get/overwrite yield from the FCs computed instead of statusDB value
-                if kwargs.get('yield_from_fc') and total_reads:
-                    self.samples[sample].total_reads = total_reads if self.not_as_million else '{:.2f}'.format(total_reads/float(1000000))
+                if total_reads:
+                    self.samples[sample].total_reads = total_reads
+                    if total_reads > max_total_reads:
+                        max_total_reads = total_reads
                     if sample in self.aborted_samples:
                         log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
                         del self.aborted_samples[sample]
             except (TypeError, KeyError):
                 log.error('Could not calcluate average Q30 for sample {}'.format(sample))
+        #Cut down total reads to bite sized numbers
+        samples_divisor = 1
+        if max_total_reads > 1000:
+            if max_total_reads > 1000000:
+                self.samples_unit = 'Mreads'
+                samples_divisor = 1000000
+            else:
+                self.samples_unit = 'Thousandreads'
+                samples_divisor = 1000
+        for sample in self.samples:
+            self.samples[sample].total_reads = '{:.2f}'.format(self.samples[sample].total_reads/float(samples_divisor))
+
 
 
     def get_library_method(self, project_name, application, library_construction_method):
