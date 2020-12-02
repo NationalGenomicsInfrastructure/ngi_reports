@@ -132,7 +132,6 @@ def main():
     parser.add_argument('-u', '--uppmax_id', default=None, action="store", help="Given UPPMAX id will be used while generating report")
     parser.add_argument('-q', '--quality', default=None, action="store", type=int, help="Q30 threshold for samples to set status")
     parser.add_argument('-y', '--yield_from_fc', default=False, action="store_true", help="Compute the total for each sample from the retrived FC directly")
-    parser.add_argument('--not_as_million', default=False, action="store_true", help="Dont give the total reads for samples as million reads")
     parser.add_argument('--skip_fastq', action="store_true", help="Option to skip naming convention of fastq files from report")
     parser.add_argument('--exclude_fc', nargs="*", default=[], action="store", help="Exclude these FCs while processing, Format should be BH3JLWCCXX/000000000-AEUUP.")
     parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
