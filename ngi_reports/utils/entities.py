@@ -440,7 +440,7 @@ class Project:
                 self.samples_unit = 'Mreads'
                 samples_divisor = 1000000
             else:
-                self.samples_unit = 'Thousandreads'
+                self.samples_unit = 'Kreads'
                 samples_divisor = 1000
         for sample in self.samples:
             self.samples[sample].total_reads = '{:.2f}'.format(self.samples[sample].total_reads/float(samples_divisor))

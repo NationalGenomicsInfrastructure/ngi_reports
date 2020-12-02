@@ -89,7 +89,7 @@ class Report(ngi_reports.reports.BaseReport):
                 seq_methods[tmp_method] = alphabets[len(list(seq_methods.keys()))]
             fc.seq_meth = seq_methods[tmp_method]
 
-        
+
         ## give proper section name for the methods
         self.report_info['sequencing_methods'] = "\n\n".join([m.replace('SECTION',seq_methods[m]) for m in seq_methods])
         ## Check if sequencing info is complete
@@ -102,7 +102,7 @@ class Report(ngi_reports.reports.BaseReport):
         ###############################################################################
 
         ## sample_info table
-        unit_magnitude = {'#reads' : '', 'Thousandreads': ' Thousand','Mreads': ' Million'}
+        unit_magnitude = {'#reads' : '', 'Kreads': ' Thousand','Mreads': ' Million'}
         sample_header = ['NGI ID', 'User ID', proj.samples_unit, '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
 
