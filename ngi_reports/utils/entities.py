@@ -305,6 +305,9 @@ class Project:
             elif fc_inst.startswith('NS'):
                 fcObj.type = 'NextSeq500'
                 fc_runp = fc_details.get('RunParameters',{})
+            elif fc_inst.startswith('VH'):
+                fcObj.type = 'NextSeq2000'
+                fc_runp = fc_details.get('RunParameters',{})
             else:
                 fcObj.type = 'HiSeq2500'
                 fc_runp = fc_details.get('RunParameters',{}).get('Setup',{})
@@ -316,6 +319,9 @@ class Project:
                 fcObj.chemistry = {'WorkflowType' : fc_runp.get('WorkflowType'), 'FlowCellMode' : fc_runp.get('RfidsInfo', {}).get('FlowCellMode')}
             elif fcObj.type == 'NextSeq500':
                 fcObj.chemistry = {'Chemistry':  fc_runp.get('Chemistry').replace('NextSeq ', '')}
+            elif fcObj.type == 'NextSeq2000':
+                NS2000_FC_PAT = re.compile("P[2,3]")
+                fcObj.chemistry = {'Chemistry':  NS2000_FC_PAT.findall(fc_runp.get('FlowCellMode'))[0]}
             else:
                 fcObj.chemistry = {'Chemistry' : fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs'))}
 
@@ -328,7 +334,7 @@ class Project:
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion'),
                                         'ApplicationVersion': fc_runp.get('MCSVersion')
                                         }
-            elif fcObj.type == 'NextSeq500':
+            elif fcObj.type == 'NextSeq500' or fcObj.type == 'NextSeq2000':
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion', fc_runp.get('RtaVersion')),
                                         'ApplicationName': fc_runp.get('ApplicationName', fc_runp.get('Application', fc_runp.get('Setup').get('ApplicationName'))),
                                         'ApplicationVersion': fc_runp.get('ApplicationVersion', fc_runp.get('Setup').get('ApplicationVersion'))

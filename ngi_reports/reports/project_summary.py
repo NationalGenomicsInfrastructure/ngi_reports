@@ -77,6 +77,8 @@ class Report(ngi_reports.reports.BaseReport):
                 fc_chem = '\'{}\' workflow in \'{}\' mode flowcell'.format(fc.chemistry.get('WorkflowType'), fc.chemistry.get('FlowCellMode'))
             elif fc.type == 'NextSeq500':
                 fc_chem = '\'{}-Output\' chemistry'.format(fc.chemistry.get('Chemistry'))
+            elif fc.type == 'NextSeq2000':
+                fc_chem = '\'{}\' flowcell'.format(fc.chemistry.get('Chemistry'))
             else:
                 fc_chem = '\'{}\' chemistry'.format(fc.chemistry.get('Chemistry'))
 
