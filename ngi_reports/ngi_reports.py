@@ -14,6 +14,7 @@ import markdown
 from ngi_reports import __version__
 from ngi_reports.log import loggers
 from ngi_reports.utils import config as report_config
+from ngi_reports.utils.entities import Project
 
 LOG = loggers.minimal_logger('NGI Reports')
 
@@ -33,8 +34,11 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
     # Import the modules for this report type
     report_mod = __import__('ngi_reports.reports.{}'.format(report_type), fromlist=['ngi_reports.reports'])
 
+    proj = Project()
+    proj.populate(LOG, config._sections['organism_names'], **kwargs)
+
     # Make the report object
-    report = report_mod.Report(config, LOG, working_dir, **kwargs)
+    report = report_mod.Report(LOG, working_dir, **kwargs)
 
     # Work out all of the directory names
     output_dir = os.path.realpath(os.path.join(working_dir, report.report_dir))
@@ -59,7 +63,7 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
 
     # Get parsed markdown and print to file(s)
     LOG.debug('Converting markdown to HTML...')
-    output_mds = report.parse_template(template)
+    output_mds = report.generate_report_template(proj, template, config.get('ngi_reports', 'support_email'))
     for output_bn, output_md in list(output_mds.items()):
         try:
             with open('{}.md'.format(output_bn), 'w', encoding='utf-8') as fh:
@@ -128,7 +132,6 @@ def main():
     parser.add_argument('-u', '--uppmax_id', default=None, action="store", help="Given UPPMAX id will be used while generating report")
     parser.add_argument('-q', '--quality', default=None, action="store", type=int, help="Q30 threshold for samples to set status")
     parser.add_argument('-y', '--yield_from_fc', default=False, action="store_true", help="Compute the total for each sample from the retrived FC directly")
-    parser.add_argument('--not_as_million', default=False, action="store_true", help="Dont give the total reads for samples as million reads")
     parser.add_argument('--skip_fastq', action="store_true", help="Option to skip naming convention of fastq files from report")
     parser.add_argument('--exclude_fc', nargs="*", default=[], action="store", help="Exclude these FCs while processing, Format should be BH3JLWCCXX/000000000-AEUUP.")
     parser.add_argument('--no_txt', action="store_true", help="Use this option to not generate TXT files for tables")
