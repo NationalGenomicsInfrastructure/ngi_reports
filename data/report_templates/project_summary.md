@@ -138,6 +138,10 @@ Below you can find an explanation of the header column used in the table.
 {{ tables.lanes_info }}
 {% endif %}
 
+# Deviations
+
+No deviations have been reported for this project.
+
 {% if project.aborted_samples %}
 # Aborted/Not Sequenced samples
 
@@ -153,6 +157,10 @@ NGI ID | User ID | Status
 ## Samples and/or libraries that have failed reception control QC
 
 In cases where samples and/or libraries have failed the QC, the user is always consulted regarding how to proceed. If the user wishes to proceed to sequence the failed samples and/or libraries, NGI bears no responsibility regarding the quality and number of reads of the sequenced sample data.
+
+## User-provided samples, information and data
+
+The NGI does not take responsibility for how user-provided samples, information, or data may affect sequencing results.
 
 {% if not project.skip_fastq -%}
 ## Naming conventions
