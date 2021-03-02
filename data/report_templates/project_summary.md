@@ -160,7 +160,7 @@ In cases where samples and/or libraries have failed the QC, the user is always c
 
 ## User-provided samples, information and data
 
-The NGI does not take responsibility for how user-provided samples, information, or data may affect sequencing results.
+NGI does not take responsibility for how user-provided samples, information, or data may affect sequencing results.
 
 {% if not project.skip_fastq -%}
 ## Naming conventions
