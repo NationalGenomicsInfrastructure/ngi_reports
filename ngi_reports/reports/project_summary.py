@@ -220,7 +220,7 @@ class Report(ngi_reports.reports.BaseReport):
             if key in ['library_preparation','data_analysis'] and library_construction == 'Library was prepared by user.':
                 accredit_info[key] = 'Not Applicable'
             elif accredit in ['Yes','No']:
-                accredit_info[key] = '{} under ISO accreditation 17025'.format(['[cross] Not validated','[tick] Validated'][accredit == 'Yes'])
+                accredit_info[key] = '{} under ISO/IEC 17025'.format(['[cross] Not accredited','[tick] Accredited'][accredit == 'Yes'])
             elif accredit == 'N/A':
                 accredit_info[key] = 'Not Applicable'
             else:
