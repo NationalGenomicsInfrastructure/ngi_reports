@@ -138,7 +138,7 @@ Below you can find an explanation of the header column used in the table.
 {{ tables.lanes_info }}
 {% endif %}
 
-# Additions to, deviations or exclusions from the method(s)
+# Additions to, deviations or exclusions from the accredited method(s)
 
 None have been reported for this project.
 
