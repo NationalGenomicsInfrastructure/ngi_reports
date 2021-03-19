@@ -138,6 +138,10 @@ Below you can find an explanation of the header column used in the table.
 {{ tables.lanes_info }}
 {% endif %}
 
+# Additions to, deviations or exclusions from the accredited method(s)
+
+None have been reported for this project.
+
 {% if project.aborted_samples %}
 # Aborted/Not Sequenced samples
 
@@ -149,6 +153,8 @@ NGI ID | User ID | Status
 {% endif %}
 
 # General Information
+
+_The results apply to the sample(s) as received._ 
 
 ## Samples and/or libraries that have failed reception control QC
 
