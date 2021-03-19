@@ -336,8 +336,8 @@ class Project:
                                         }
             elif fcObj.type == 'NextSeq500' or fcObj.type == 'NextSeq2000':
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion', fc_runp.get('RtaVersion')),
-                                        'ApplicationName': fc_runp.get('ApplicationName', fc_runp.get('Application', fc_runp.get('Setup').get('ApplicationName'))),
-                                        'ApplicationVersion': fc_runp.get('ApplicationVersion', fc_runp.get('Setup').get('ApplicationVersion'))
+                                        'ApplicationName': fc_runp.get('ApplicationName') if fc_runp.get('ApplicationName') else fc_runp.get('Setup').get('ApplicationName'),
+                                        'ApplicationVersion': fc_runp.get('ApplicationVersion') if fc_runp.get('ApplicationVersion') else fc_runp.get('Setup').get('ApplicationVersion')
                                         }
             else:
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion', fc_runp.get('RtaVersion')),
