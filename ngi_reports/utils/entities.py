@@ -391,7 +391,7 @@ class Project:
                     lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A',{}))
                     laneObj.id = lane
                     laneObj.set_lane_info('cluster', 'Reads PF (M)' if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else 'Clusters PF', lane_sum,
-                                                str(r_num), False if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else True)
+                                                str(r_num), False if 'NovaSeq' in fcObj.type else True)
                     laneObj.set_lane_info('avg_qval', '% Bases >=Q30', lane_sum, str(r_num))
                     laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum, str(r_num))
                     if kwargs.get('fc_phix',{}).get(fcObj.name, {}):
