@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20210412.2
+Also include library prep option in the report
+
 ## 20210412.1
 Support the recently updated library construction methods in LIMS
 
