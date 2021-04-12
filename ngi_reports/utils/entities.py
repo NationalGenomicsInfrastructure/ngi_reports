@@ -473,8 +473,7 @@ class Project:
                         lib_list.append('* {}: {}'.format(name, value))
                 return ('\n'.join(lib_list))
             else:
-                log.error('Library method is not mentioned in expected format for project {}'.format(project_name))
-                return None
+                return '* {}'.format(library_construction_method)
         except KeyError:
             log.error('Could not find library construction method for project {} in statusDB'.format(project_name))
             return None
