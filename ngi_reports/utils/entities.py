@@ -182,6 +182,8 @@ class Project:
         self.reference['organism'] = organism_names.get(self.reference['genome'], None)
         self.user_ID               = proj_details.get('customer_project_reference','')
         self.num_lanes             = proj_details.get('sequence_units_ordered_(lanes)')
+        self.library_construction_method = proj_details.get('library_construction_method')
+        self.library_prep_option         = proj_details.get('library_prep_option', '')
 
         if 'hdd' in proj.get('uppnex_id','').lower():
             self.cluster = 'hdd'
@@ -189,7 +191,7 @@ class Project:
             self.cluster = 'grus'
 
         self.best_practice          = False if proj_details.get('best_practice_bioinformatics','No') == 'No' else True
-        self.library_construction   = self.get_library_method(self.ngi_name, self.application, proj_details['library_construction_method'])
+        self.library_construction   = self.get_library_method(self.ngi_name, self.application, self.library_construction_method, self.library_prep_option)
         self.is_finished_lib        = True if 'by user' in self.library_construction.lower() else False
 
         for key in self.accredited:
@@ -453,7 +455,7 @@ class Project:
 
 
 
-    def get_library_method(self, project_name, application, library_construction_method):
+    def get_library_method(self, project_name, application, library_construction_method, library_prep_option):
         """Get the library construction method and return as formatted string
         """
         if application == 'Finished library':
@@ -473,8 +475,10 @@ class Project:
                         lib_list.append('* {}: {}'.format(name, value))
                 return ('\n'.join(lib_list))
             else:
-                log.error('Library method is not mentioned in expected format for project {}'.format(project_name))
-                return None
+                if library_prep_option:
+                    return '* Method: {}\n* Option: {}'.format(library_construction_method, library_prep_option)
+                else:
+                    return '* Method: {}'.format(library_construction_method)
         except KeyError:
             log.error('Could not find library construction method for project {} in statusDB'.format(project_name))
             return None
