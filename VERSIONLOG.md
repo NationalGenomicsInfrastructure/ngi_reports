@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20220318.1
+Initiate total_reads as float
+
 ## 20210412.2
 Also include library prep option in the report
 

@@ -17,7 +17,7 @@ class Sample:
         self.ngi_id        = ''
         self.preps         = {}
         self.qscore        = ''
-        self.total_reads   = ''
+        self.total_reads   = 0.0
         self.initial_qc    = { 'initial_qc_status' : '',
                                 'concentration': '',
                                 'conc_units':'',
