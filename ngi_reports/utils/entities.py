@@ -431,14 +431,15 @@ class Project:
                     total_reads += qinfo[k]['reads']
                 avg_qval = float(total_qvalsbp)/total_bases if total_bases else float(total_qvalsbp)
                 self.samples[sample].qscore = '{:.2f}'.format(round(avg_qval, 2))
+                # Sample has been sequenced and should be removed from the aborted/not sequenced list
+                if sample in self.aborted_samples:
+                    log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
+                    del self.aborted_samples[sample]
                 ## Get/overwrite yield from the FCs computed instead of statusDB value
                 if total_reads:
                     self.samples[sample].total_reads = total_reads
                     if total_reads > max_total_reads:
                         max_total_reads = total_reads
-                    if sample in self.aborted_samples:
-                        log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
-                        del self.aborted_samples[sample]
             except (TypeError, KeyError):
                 log.error('Could not calcluate average Q30 for sample {}'.format(sample))
         #Cut down total reads to bite sized numbers
