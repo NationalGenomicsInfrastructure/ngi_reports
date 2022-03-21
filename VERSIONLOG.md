@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20220319.1
+Refactor logic for removing sample from the aborted_samples list
+
 ## 20220318.1
 Initiate total_reads as float
 
