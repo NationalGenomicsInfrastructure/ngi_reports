@@ -110,7 +110,7 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
+{{ sample.ngi_id }} | `{{ prep.barcode }}` | Lib. {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
 {% endif -%}
 {%- endfor %}
@@ -129,7 +129,7 @@ Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 -----|----------|------|-------------|------|----------|--------
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {% for lane in fc.lanes.values() -%}
-{{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | {{ fc.seq_meth }}
+{{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | Seq. {{ fc.seq_meth }}
 {% endfor -%}
 {%- endfor %}
 

@@ -127,9 +127,9 @@ class Report(ngi_reports.reports.BaseReport):
         self.tables_info['tables']['library_info'] = self.create_table_text(sorted(library_list, key=lambda d: d['ngi_id']), filter_keys=library_filter, header=library_header)
         self.tables_info['header_explanation']['library_info'] = '* _NGI ID:_ Internal NGI sample indentifier\n'\
                                                                  '* _Index:_ Barcode sequence used for the sample\n'\
-                                                                 '* _Lib Prep:_ NGI library indentifier\n'\
+                                                                 '* _Lib. Prep:_ NGI library indentifier. The first library prep will be marked "A", the second "B" and so on.\n'\
                                                                  '* _Avg. FS:_ Average fragment size of the library\n'\
-                                                                 '* _Lib QC:_ Reception control library quality control step status\n'
+                                                                 '* _Lib. QC:_ Reception control library quality control step status\n'
 
         ## lanes_info table
         lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', 'Phix', '>=Q30(%)', 'Method']
@@ -150,7 +150,7 @@ class Report(ngi_reports.reports.BaseReport):
                                                                '* _Clusters:_ Number of clusters that passed the read filters (millions)\n'\
                                                                '* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30\n'\
                                                                '* _PhiX:_ Average PhiX error rate for the lane\n'\
-                                                               '* _Method:_ Sequencing method used. See above for description\n'
+                                                               '* _Method:_ Sequencing method used. See above for description. (headline Sequencing). The first sequencing run will be marked "A", the second "B", and so on.\n'
 
         # Make the file basename
         output_bn = os.path.realpath(os.path.join(self.working_dir, self.report_dir, '{}_project_summary'.format(self.report_basename)))
