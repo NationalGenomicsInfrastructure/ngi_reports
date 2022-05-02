@@ -105,14 +105,14 @@ class Report(ngi_reports.reports.BaseReport):
 
         ## sample_info table
         unit_magnitude = {'#reads' : '', 'Kreads': ' Thousand','Mreads': ' Million'}
-        sample_header = ['NGI ID', 'User ID', proj.samples_unit, '>=Q30']
+        sample_header = ['NGI ID', 'User ID', proj.samples_unit, '≥Q30']
         sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
 
         self.tables_info['tables']['sample_info'] = self.create_table_text(proj.samples.values(), filter_keys=sample_filter, header=sample_header)
-        self.tables_info['header_explanation']['sample_info'] = '* _NGI ID:_ Internal NGI sample indentifier\n'\
-                                                                '* _User ID:_ User submitted name for a sample\n'\
+        self.tables_info['header_explanation']['sample_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
+                                                                '* _User ID:_ Sample name submitted by user\n'\
                                                                 '* _{}:_ Total{} reads (or pairs) for a sample\n'\
-                                                                '* _>=Q30:_ Aggregated percentage of bases that have quality score more the Q30'\
+                                                                '* _≥Q30:_ Aggregated percentage of bases that have a quality score ≥ Q30'\
                                                                 .format(proj.samples_unit, unit_magnitude[proj.samples_unit])
 
         ## library_info table
@@ -125,14 +125,14 @@ class Report(ngi_reports.reports.BaseReport):
                 p['ngi_id'] = s
                 library_list.append(p)
         self.tables_info['tables']['library_info'] = self.create_table_text(sorted(library_list, key=lambda d: d['ngi_id']), filter_keys=library_filter, header=library_header)
-        self.tables_info['header_explanation']['library_info'] = '* _NGI ID:_ Internal NGI sample indentifier\n'\
+        self.tables_info['header_explanation']['library_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
                                                                  '* _Index:_ Barcode sequence used for the sample\n'\
-                                                                 '* _Lib. Prep:_ NGI library indentifier. The first library prep will be marked "A", the second "B" and so on.\n'\
+                                                                 '* _Lib. Prep:_ NGI library identifier. The first library prep will be marked "A", the second "B" and so on.\n'\
                                                                  '* _Avg. FS:_ Average fragment size of the library\n'\
-                                                                 '* _Lib. QC:_ Reception control library quality control step status\n'
+                                                                 '* _Lib. QC:_ Library quality control status\n'
 
         ## lanes_info table
-        lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', 'Phix', '>=Q30(%)', 'Method']
+        lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', 'Phix', '≥Q30(%)', 'Method']
         lanes_filter = ['date', 'name', 'id', 'cluster', 'phix', 'avg_qval', 'seq_meth']
         lanes_list = []
         for f, v in list(proj.flowcells.items()):
@@ -148,9 +148,9 @@ class Report(ngi_reports.reports.BaseReport):
                                                                '* _Flowcell:_ Flowcell identifier\n'\
                                                                '* _Lane:_ Flowcell lane number\n'\
                                                                '* _Clusters:_ Number of clusters that passed the read filters (millions)\n'\
-                                                               '* _>=Q30:_ Aggregated percentage of bases that have a quality score of more than Q30\n'\
+                                                               '* _≥Q30:_ Aggregated percentage of bases that have a quality score ≥ Q30\n'\
                                                                '* _PhiX:_ Average PhiX error rate for the lane\n'\
-                                                               '* _Method:_ Sequencing method used. See above for description. (headline Sequencing). The first sequencing run will be marked "A", the second "B", and so on.\n'
+                                                               '* _Method:_ Sequencing method used. See description under Sequencing heading above.\n'
 
         # Make the file basename
         output_bn = os.path.realpath(os.path.join(self.working_dir, self.report_dir, '{}_project_summary'.format(self.report_basename)))

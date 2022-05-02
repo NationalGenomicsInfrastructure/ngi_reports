@@ -154,7 +154,7 @@ NGI ID | User ID | Status
 
 # General Information
 
-_The results apply to the sample(s) as received._ 
+The results apply to the sample(s) as received.
 
 ## Samples and/or libraries that have failed reception control QC
 
@@ -173,10 +173,10 @@ The naming of the files follow the convention:
 [NGI-NAME]_[BCL-CONVERSION-ID]_[LANE]_[READ]_[VOLUME].fastq.gz
 ```
 
-* _NGI-NAME:_ Internal NGI sample indentifier
-* _BCL-CONVERSION-ID:_ Indentifier set by bcl2fastq tool while demultiplexing
+* _NGI-NAME:_ Internal NGI sample identifier
+* _BCL-CONVERSION-ID:_ identifier set by bcl2fastq tool while demultiplexing
 * _LANE:_ Sequencing lane that the file originates from
-* _READ:_ Forward(1) or reverse(2) read indentifier
+* _READ:_ Forward(1) or reverse(2) read identifier
 * _VOLUME:_ Volume index when file is large enough to be split into volumes
 {%- endif %}
 
