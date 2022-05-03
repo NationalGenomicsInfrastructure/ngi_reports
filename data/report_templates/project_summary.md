@@ -174,7 +174,7 @@ The naming of the files follow the convention:
 ```
 
 * _NGI-NAME:_ Internal NGI sample identifier
-* _BCL-CONVERSION-ID:_ identifier set by bcl2fastq tool while demultiplexing
+* _BCL-CONVERSION-ID:_ Identifier set by bcl2fastq tool while demultiplexing
 * _LANE:_ Sequencing lane that the file originates from
 * _READ:_ Forward(1) or reverse(2) read identifier
 * _VOLUME:_ Volume index when file is large enough to be split into volumes
