@@ -1,5 +1,5 @@
 Markdown
-mdx_outline
+mdx_outline @ https://github.com/NationalGenomicsInfrastructure/mdx_outline/archive/master.zip
 jinja2
 couchdb
 pyyaml
