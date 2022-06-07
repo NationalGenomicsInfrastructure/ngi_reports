@@ -322,7 +322,7 @@ class Project:
             elif fcObj.type == 'NextSeq500':
                 fcObj.chemistry = {'Chemistry':  fc_runp.get('Chemistry').replace('NextSeq ', '')}
             elif fcObj.type == 'NextSeq2000':
-                NS2000_FC_PAT = re.compile("P[2,3]")
+                NS2000_FC_PAT = re.compile("P[1,2,3]")
                 fcObj.chemistry = {'Chemistry':  NS2000_FC_PAT.findall(fc_runp.get('FlowCellMode'))[0]}
             else:
                 fcObj.chemistry = {'Chemistry' : fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs'))}
