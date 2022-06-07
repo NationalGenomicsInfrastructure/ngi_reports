@@ -110,7 +110,7 @@ NGI ID | Index | Lib Prep | Avg. FS | Lib QC
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
+{{ sample.ngi_id }} | `{{ prep.barcode }}` | Lib. {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
 {% endif -%}
 {%- endfor %}
@@ -129,7 +129,7 @@ Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
 -----|----------|------|-------------|------|----------|--------
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {% for lane in fc.lanes.values() -%}
-{{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | {{ fc.seq_meth }}
+{{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | Seq. {{ fc.seq_meth }}
 {% endfor -%}
 {%- endfor %}
 
@@ -154,7 +154,7 @@ NGI ID | User ID | Status
 
 # General Information
 
-_The results apply to the sample(s) as received._ 
+The results apply to the sample(s) as received.
 
 ## Samples and/or libraries that have failed reception control QC
 
@@ -173,10 +173,10 @@ The naming of the files follow the convention:
 [NGI-NAME]_[BCL-CONVERSION-ID]_[LANE]_[READ]_[VOLUME].fastq.gz
 ```
 
-* _NGI-NAME:_ Internal NGI sample indentifier
-* _BCL-CONVERSION-ID:_ Indentifier set by bcl2fastq tool while demultiplexing
+* _NGI-NAME:_ Internal NGI sample identifier
+* _BCL-CONVERSION-ID:_ Identifier set by bcl2fastq tool while demultiplexing
 * _LANE:_ Sequencing lane that the file originates from
-* _READ:_ Forward(1) or reverse(2) read indentifier
+* _READ:_ Forward(1) or reverse(2) read identifier
 * _VOLUME:_ Volume index when file is large enough to be split into volumes
 {%- endif %}
 

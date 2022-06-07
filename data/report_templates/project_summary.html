@@ -313,7 +313,7 @@
       for (var h = 0; h < headInfo.length; h++){
         var textCont = headInfo[h].textContent;
         if(textCont.match(/Sequencing/)){
-          var listtext = '<h3>Sequencing</h3><ol type="A">';
+          var listtext = '<h3>Sequencing</h3>Seq.:<ol type="A">';
           for(const p of headInfo[h].parentNode.getElementsByTagName('p')){
             listtext += '<li><p>'+p.textContent.replace(/^[A-Z]\) /g, '')+'</p></li>';
           }
