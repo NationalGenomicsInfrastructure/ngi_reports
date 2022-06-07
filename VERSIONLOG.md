@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20220607.1
+Support NextSeq 2000 P1
+
 ## 20220319.1
 Refactor logic for removing sample from the aborted_samples list
 
