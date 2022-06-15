@@ -29,10 +29,9 @@ class statusdb_connection(object):
 
         self.user = config.get("username")
         self.pwrd = config.get("password")
-        self.port = config.get("port")
         self.url = config.get("url")
-        self.url_string = "http://{}:{}@{}:{}".format(self.user, self.pwrd, self.url, self.port)
-        self.display_url_string = "http://{}:{}@{}:{}".format(self.user, "*********", self.url, self.port)
+        self.url_string = "https://{}:{}@{}".format(self.user, self.pwrd, self.url)
+        self.display_url_string = "https://{}:{}@{}".format(self.user, "*********", self.url)
         self.connection = couchdb.Server(url=self.url_string)
         if not self.connection:
             raise SystemExit("Connection failed for url {}, also check the information in config".format(self.display_url_string))
