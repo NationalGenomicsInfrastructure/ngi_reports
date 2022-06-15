@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20220615.1
+Update statusdb URL to use https
+
 ## 20220607.1
 Support NextSeq 2000 P1
 
