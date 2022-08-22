@@ -194,7 +194,7 @@ Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) ca
 ## Data access at DDS
 
 Data have been uploaded to the **Data Delivery System**
-(DDS, [https://dds-dev.dckube.scilifelab.se/](https://dds-dev.dckube.scilifelab.se/)).
+(DDS, [https://delivery.scilifelab.se](https://delivery.scilifelab.se)).
 More details can be found on the following links
 
 - [DDS user guide](https://ngisweden.scilifelab.se/resources/data-delivery-dds/)

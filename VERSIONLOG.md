@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20220822.2
+Change URL of DDS web interface
+
 ## 20220822.1
 Support DDS in project_summary
 
