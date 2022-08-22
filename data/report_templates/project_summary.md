@@ -184,7 +184,7 @@ The naming of the files follow the convention:
 {% if project.cluster == 'grus' -%}
 ## Data access at UPPMAX
 
-Data from the sequencing have been be uploaded to the UPPNEX (UPPMAX Next
+Data have been uploaded to the UPPNEX (UPPMAX Next
 Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) called **GRUS**. More details can be found on the following links
 
 - [NGI data delivery note](https://ngisweden.scilifelab.se/info/Data%20delivery)
@@ -193,7 +193,7 @@ Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) ca
 {% elif project.cluster == 'dds' -%}
 ## Data access at DDS
 
-Data from the sequencing have been be uploaded to the **Data Delivery System**
+Data have been uploaded to the **Data Delivery System**
 (DDS, [https://dds-dev.dckube.scilifelab.se/](https://dds-dev.dckube.scilifelab.se/)).
 More details can be found on the following links
 
