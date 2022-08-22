@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20220822.1
+Support DDS in project_summary
+
 ## 20220615.1
 Update statusdb URL to use https
 

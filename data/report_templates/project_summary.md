@@ -190,6 +190,17 @@ Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) ca
 - [NGI data delivery note](https://ngisweden.scilifelab.se/info/Data%20delivery)
 - [UPPMAX GRUS user guide](https://www.uppmax.uu.se/support/user-guides/grus-user-guide/)
 
+{% elif project.cluster == 'dds' -%}
+## Data access at DDS
+
+Data from the sequencing have been be uploaded to the **Data Delivery System**
+(DDS, [https://dds-dev.dckube.scilifelab.se/](https://dds-dev.dckube.scilifelab.se/)).
+More details can be found on the following links
+
+- [DDS user guide](https://ngisweden.scilifelab.se/resources/data-delivery-dds/)
+- [Youtube tutorial for DDS](https://youtu.be/Mk5nhClsfTA)
+- [DDS official document](https://scilifelabdatacentre.github.io/dds_cli/)
+
 {%- endif %}
 
 ## Acknowledgements
