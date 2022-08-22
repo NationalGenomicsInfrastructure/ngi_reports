@@ -185,10 +185,14 @@ class Project:
         self.library_construction_method = proj_details.get('library_construction_method')
         self.library_prep_option         = proj_details.get('library_prep_option', '')
 
-        if 'hdd' in proj.get('uppnex_id','').lower():
+        if 'dds' in proj.get('delivery_type','').lower():
+            self.cluster = 'dds'
+        elif 'grus' in proj.get('delivery_type','').lower():
+            self.cluster = 'grus'
+        elif 'hdd' in proj.get('delivery_type','').lower():
             self.cluster = 'hdd'
         else:
-            self.cluster = 'grus'
+            self.cluster = 'unknown'
 
         self.best_practice          = False if proj_details.get('best_practice_bioinformatics','No') == 'No' else True
         self.library_construction   = self.get_library_method(self.ngi_name, self.application, self.library_construction_method, self.library_prep_option)
