@@ -385,10 +385,7 @@ class Project:
                             continue
                 
                 ## get (if any) samples that are on the fc, but are not recorded in LIMS (i.e. added bc from undet reads)
-                if list(self.samples) == fc_samples:
-                    additional_sample_on_fc = False
-                else:
-                    additional_sample_on_fc = True
+                if list(self.samples) != fc_samples:
                     list_additional_samples = list(set(fc_samples) - set(self.samples))
                     list_additional_samples.sort()              # generate a list of all additional samples
                     log.info('The flowcell {} contains {} sample(s) ({}) that has/have not been defined in LIMS. They will be added to the report.'.format(fc_details.get('RunInfo').get('Id'), len(list_additional_samples), ', '.join(list_additional_samples)))
@@ -400,10 +397,8 @@ class Project:
                         AsamObj.ngi_id        = additional_sample
                         AsamObj.customer_name = 'unknown' + str(undet_iteration) # additional samples will be named "unknown[number]" in the report
                         AsamObj.well_location = 'NA'
-                        AprepObj              = Prep()
-                        AprepObj.label        = 'NA'
-
-                        AsamObj.preps['NA'] = AprepObj
+                        AsamObj.preps['NA'] = Prep()
+                        AsamObj.preps['NA'].label = 'NA'
                         self.samples[additional_sample] = AsamObj
                         preps_samples_on_fc.append([additional_sample, 'NA'])
                         undet_iteration+=1
