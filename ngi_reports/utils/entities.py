@@ -378,7 +378,8 @@ class Project:
                 ## itterate through all samples in project to identify their prep_ID (only if they are on the flowcell)
                 for sample_ID in list(self.samples):
                      for prep_ID in list(self.samples.get(sample_ID).preps):
-                        if fcObj.name in self.samples.get(sample_ID).preps.get(prep_ID).seq_fc:
+                        sample_preps = self.samples.get(sample_ID).preps
+                        if fcObj.name in sample_preps.get(prep_ID).seq_fc:
                             preps_samples_on_fc.append([sample_ID, prep_ID])
                         else:
                             continue
