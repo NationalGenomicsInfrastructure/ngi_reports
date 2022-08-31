@@ -1,12 +1,10 @@
 """ Define various entities and populate them
 """
-from pickle import FALSE
 import re
 import sys
 import numpy as np
 from collections import defaultdict, OrderedDict
 from datetime import datetime
-import pdb
 
 from ngi_reports.utils import statusdb
 
@@ -275,10 +273,10 @@ class Project:
 
             # exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
             if kwargs.get('barcode_from_fc'):
-                listOfBarcodes = sum([all_barcodes.barcode for all_barcodes in list(samObj.preps.values())], [])
-                if len(list(dict.fromkeys(listOfBarcodes))) >= 1:
-                    listOfFlowcells = sum([all_flowcells.seq_fc for all_flowcells in list(samObj.preps.values())], [])
-                    if len(listOfFlowcells) != len(list(dict.fromkeys(listOfFlowcells))):               #the sample was run twice on the same flowcell, only possible with different barcodes for the same sample
+                list_of_barcodes = sum([all_barcodes.barcode for all_barcodes in list(samObj.preps.values())], [])
+                if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
+                    list_of_flowcells = sum([all_flowcells.seq_fc for all_flowcells in list(samObj.preps.values())], [])
+                    if len(list_of_flowcells) != len(list(dict.fromkeys(list_of_flowcells))):               #the sample was run twice on the same flowcell, only possible with different barcodes for the same sample
                         log.error('Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually')
                         sys.exit('Stopping execution...')
 
@@ -392,14 +390,14 @@ class Project:
                     additional_sample_on_fc = True
                     list_additional_samples = list(set(fc_samples) - set(self.samples))
                     list_additional_samples.sort()              # generate a list of all additional samples
-                    log.info('The flowcell {} containes {} sample(s) ({}) that has/have not been defined in LIMS. They will be added to the report.'.format(fc_details.get('RunInfo').get('Id'), len(list_additional_samples), ', '.join(list_additional_samples)))
+                    log.info('The flowcell {} contains {} sample(s) ({}) that has/have not been defined in LIMS. They will be added to the report.'.format(fc_details.get('RunInfo').get('Id'), len(list_additional_samples), ', '.join(list_additional_samples)))
 
-                    undet_itteration = 1
+                    undet_iteration = 1
                     # creating additional sample and prep Objects 
                     for additional_sample in list_additional_samples:
                         AsamObj               = Sample()
                         AsamObj.ngi_id        = additional_sample
-                        AsamObj.customer_name = 'unknown' + str(undet_itteration) # additional samples will be named "unknown[number]" in the report
+                        AsamObj.customer_name = 'unknown' + str(undet_iteration) # additional samples will be named "unknown[number]" in the report
                         AsamObj.well_location = 'NA'
                         AprepObj              = Prep()
                         AprepObj.label        = 'NA'
@@ -407,7 +405,7 @@ class Project:
                         AsamObj.preps['NA'] = AprepObj
                         self.samples[additional_sample] = AsamObj
                         preps_samples_on_fc.append([additional_sample, 'NA'])
-                        undet_itteration+=1
+                        undet_iteration+=1
                                 
             ## Collect quality info for samples and collect lanes of interest
             for stat in fc_details.get('illumina',{}).get('Demultiplex_Stats',{}).get('Barcode_lane_statistics',[]):
