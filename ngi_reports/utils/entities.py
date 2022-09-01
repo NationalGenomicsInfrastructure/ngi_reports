@@ -5,6 +5,7 @@ import sys
 import numpy as np
 from collections import defaultdict, OrderedDict
 from datetime import datetime
+import pdb
 
 from ngi_reports.utils import statusdb
 
@@ -273,7 +274,8 @@ class Project:
 
             # exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
             if kwargs.get('barcode_from_fc'):
-                list_of_barcodes = sum([all_barcodes.barcode for all_barcodes in list(samObj.preps.values())], [])
+            #    pdb.set_trace()
+                list_of_barcodes = sum([[all_barcodes.barcode for all_barcodes in list(samObj.preps.values())]], [])
                 if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
                     list_of_flowcells = sum([all_flowcells.seq_fc for all_flowcells in list(samObj.preps.values())], [])
                     if len(list_of_flowcells) != len(list(dict.fromkeys(list_of_flowcells))):               #the sample was run twice on the same flowcell, only possible with different barcodes for the same sample
@@ -385,9 +387,10 @@ class Project:
                             continue
                 
                 ## get (if any) samples that are on the fc, but are not recorded in LIMS (i.e. added bc from undet reads)
-                if list(self.samples) != fc_samples:
+                if len(set(list(self.samples))) != len(set(fc_samples)):
                     list_additional_samples = list(set(fc_samples) - set(self.samples))
                     list_additional_samples.sort()              # generate a list of all additional samples
+                   # pdb.set_trace()
                     log.info('The flowcell {} contains {} sample(s) ({}) that has/have not been defined in LIMS. They will be added to the report.'.format(fc_details.get('RunInfo').get('Id'), len(list_additional_samples), ', '.join(list_additional_samples)))
 
                     undet_iteration = 1
