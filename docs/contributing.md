@@ -6,11 +6,6 @@ Where possible, report scripts should be as minimal as possible. Try to keep
 functionality limited to things which can only be useful in the context of making
 reports (eg. parsing text files to extract specific information).
 
-All analysis and plotting should be handled by code in different repositories.
-Specifically, any scripts to generate plots should be added to the
-[visualizations](https://github.com/NationalGenomicsInfrastructure/visualizations) repository and
-then imported as a python package.
-
 ## Documentation
 As each report script will be quite diverse (expecting different input files
 and so on), good documentation is critical. You must state all file
