@@ -251,7 +251,11 @@ class Project:
             ## Go through each prep for each sample in the Projects database
             for prep_id, prep in list(sample.get('library_prep', {}).items()):
                 prepObj = Prep()
-                prepObj.label = prep_id
+
+                prepObj.label = 'Lib. ' + prep_id
+                if 'by user' in self.library_construction.lower():
+                     prepObj.label = 'NA'
+
                 if prep.get('reagent_label') and prep.get('prep_status'):
                     prepObj.barcode = prep.get('reagent_label', 'NA')
                     prepObj.qc_status = prep.get('prep_status', 'NA')
@@ -261,7 +265,6 @@ class Project:
                         prepObj.seq_fc = []
                         for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
                             prepObj.seq_fc.append(fc.split('_')[-1])
-
 
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
@@ -277,10 +280,6 @@ class Project:
                     else:
                         log.warn('No library validation step found {}'.format(sample_id))
 
-                prepObj.label = 'Lib. ' + prepObj.label
-
-                if 'by user' in self.library_construction.lower():
-                    prepObj.label = 'NA'
 
                 samObj.preps[prep_id] = prepObj
 
