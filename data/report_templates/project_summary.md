@@ -106,7 +106,7 @@ Below you can find an explanation of the header column used in the table.
 No library information to be displayed.
 {% else %}
 NGI ID | Index | Lib. Prep | Avg. FS(bp) | Lib. QC
--------|-------|-----------|---------|---------
+-------|-------|-----------|-------------|---------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
@@ -126,7 +126,7 @@ Below you can find an explanation of the header column used in the table.
 No lanes information to be displayed.
 {% else %}
 Date | Flowcell | Lane | Clusters(M) | >=Q30(%) | PhiX | Method
------|----------|------|-------------|------|----------|--------
+-----|----------|------|-------------|----------|------|-------
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {% for lane in fc.lanes.values() -%}
 {{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.avg_qval }} | {{ lane.phix }}  | Seq. {{ fc.seq_meth }}

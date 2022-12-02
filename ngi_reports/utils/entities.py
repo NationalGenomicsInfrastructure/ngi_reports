@@ -18,7 +18,7 @@ class Sample:
         self.preps         = {}
         self.qscore        = ''
         self.total_reads   = 0.0
-        self.initial_qc    = { 'initial_qc_status' : 'NA',
+        self.initial_qc    = { 'initial_qc_status' : '',
                                 'concentration': '',
                                 'conc_units':'',
                                 'volume_(ul)': '',
