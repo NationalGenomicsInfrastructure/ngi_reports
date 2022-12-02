@@ -261,8 +261,6 @@ class Project:
                         prepObj.seq_fc = []
                         for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
                             prepObj.seq_fc.append(fc.split('_')[-1])
-
-
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
 
