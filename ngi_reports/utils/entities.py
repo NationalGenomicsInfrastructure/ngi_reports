@@ -18,7 +18,7 @@ class Sample:
         self.preps         = {}
         self.qscore        = ''
         self.total_reads   = 0.0
-        self.initial_qc    = { 'initial_qc_status' : '',
+        self.initial_qc    = { 'initial_qc_status' : 'NA',
                                 'concentration': '',
                                 'conc_units':'',
                                 'volume_(ul)': '',
@@ -233,6 +233,8 @@ class Project:
             if sample.get('initial_qc'):
                 for item in samObj.initial_qc:
                     samObj.initial_qc[item] = sample['initial_qc'].get(item)
+                    if item == 'initial_qc_status' and sample['initial_qc']['initial_qc_status'] == 'UNKNOWN':
+                        samObj.initial_qc[item] = 'NA'
 
             #Library prep
             ## get total reads if available or mark sample as not sequenced
@@ -259,6 +261,8 @@ class Project:
                         prepObj.seq_fc = []
                         for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
                             prepObj.seq_fc.append(fc.split('_')[-1])
+
+
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
 
@@ -272,7 +276,12 @@ class Project:
                             log.warn('Insufficient info "{}" for sample {}'.format('average_size_bp', sample_id))
                     else:
                         log.warn('No library validation step found {}'.format(sample_id))
-           
+
+                prepObj.label = 'Lib. ' + prepObj.label
+
+                if 'by user' in self.library_construction.lower():
+                    prepObj.label = 'NA'
+
                 samObj.preps[prep_id] = prepObj
 
             # exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
