@@ -233,6 +233,8 @@ class Project:
             if sample.get('initial_qc'):
                 for item in samObj.initial_qc:
                     samObj.initial_qc[item] = sample['initial_qc'].get(item)
+                    if item == 'initial_qc_status' and sample['initial_qc']['initial_qc_status'] == 'UNKNOWN':
+                        samObj.initial_qc[item] = 'NA'
 
             #Library prep
             ## get total reads if available or mark sample as not sequenced
@@ -249,7 +251,11 @@ class Project:
             ## Go through each prep for each sample in the Projects database
             for prep_id, prep in list(sample.get('library_prep', {}).items()):
                 prepObj = Prep()
-                prepObj.label = prep_id
+
+                prepObj.label = 'Lib. ' + prep_id
+                if 'by user' in self.library_construction.lower():
+                     prepObj.label = 'NA'
+
                 if prep.get('reagent_label') and prep.get('prep_status'):
                     prepObj.barcode = prep.get('reagent_label', 'NA')
                     prepObj.qc_status = prep.get('prep_status', 'NA')
@@ -272,7 +278,7 @@ class Project:
                             log.warn('Insufficient info "{}" for sample {}'.format('average_size_bp', sample_id))
                     else:
                         log.warn('No library validation step found {}'.format(sample_id))
-           
+
                 samObj.preps[prep_id] = prepObj
 
             # exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
