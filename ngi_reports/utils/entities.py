@@ -279,7 +279,6 @@ class Project:
                     else:
                         log.warn('No library validation step found {}'.format(sample_id))
 
-
                 samObj.preps[prep_id] = prepObj
 
             # exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
