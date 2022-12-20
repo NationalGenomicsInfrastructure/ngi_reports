@@ -22,20 +22,19 @@ LOG = loggers.minimal_logger('NGI Reports')
 # create choices for report type based on available report template
 allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ] + ['ign_aggregate_report']
 
-def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
+def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
 
-    # Setup
-    template_fn = '{}.md'.format(report_type)
     LOG.info('Report type: {}'.format(report_type))
 
     # use default config or override it if file is specified
     config = report_config.load_config(config_file)
 
     # Import the modules for this report type
-    report_mod = __import__('ngi_reports.reports.{}'.format(report_type), fromlist=['ngi_reports.reports'])
+    report_mod = __import__('ngi_reports.reports.{}'.format(report_type), 
+                            fromlist=['ngi_reports.reports'])
 
     proj = Project()
-    proj.populate(LOG, config._sections['organism_names'], **kwargs)
+    proj.populate(LOG, config._sections['organism_names'], **kwargs) #TODO: here
 
     # Make the report object
     report = report_mod.Report(LOG, working_dir, **kwargs)
@@ -77,7 +76,7 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
         LOG.info('{} HTML report written to: {}'.format(output_bn.rsplit('/', 1)[1], html_out))
 
     # Generate CSV files for project_summary reports
-    if report_type == 'project_summary' and not kwargs['no_txt']:
+    if report_type == 'project_summary' or report_type == 'ont_project_summary' and not kwargs['no_txt']:
         try:
             report.create_txt_files()
             LOG.info('Generated TXT files...')
@@ -108,7 +107,7 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
     #Markdown meta returns a dict with values as lists
     html_out = jinja2_env.get_template(report_type+'.html').render(body=markeddown_text,
                                         meta={key: ''.join(value) for (key, value) in md_template.Meta.items()})
-    replace_list = {'[swedac]': swedac_text,
+    replace_list = {'[swedac]': swedac_text,  #TODO: check if this is skipped for ont
                     '[tick]'  : '<span class="icon_tick">&#10004;</span> ',
                     '[cross]' : '<span class="icon_cross">&#10008;</span> '
                     }
@@ -145,7 +144,7 @@ def main():
     kwargs = vars(parser.parse_args())
 
     if kwargs['markdown_file']:
-        print('HTML report written to: '+markdown_to_html(kwargs['report_type'], markdown_path=kwargs['markdown_file']))
+        print('HTML report written to: ' + markdown_to_html(kwargs['report_type'], markdown_path=kwargs['markdown_file']))
     else:
         make_reports(**kwargs)
 

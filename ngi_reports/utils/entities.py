@@ -144,10 +144,10 @@ class Project:
 
         if re.match('^P\d+$', project):
             self.ngi_id = project
-            id_view, pid_as_uppmax_dest = (True, True)
+            id_view = True
         else:
             self.ngi_name = project
-            id_view, pid_as_uppmax_dest = (False, False)
+            id_view = False
 
         proj = pcon.get_entry(project, use_id_view=id_view)
         if not proj:
@@ -159,7 +159,7 @@ class Project:
             log.error('The source for data for project {} is not LIMS.'.format(project))
             raise BaseException
 
-        proj_details = proj.get('details',{})
+        proj_details = proj.get('details', {})
 
         if 'aborted' in proj_details:
             log.warn('Project {} was aborted, so not proceeding.'.format(project))
@@ -171,20 +171,20 @@ class Project:
         for date in self.dates:
             self.dates[date] = proj_details.get(date, None)
 
-        if proj.get('project_summary',{}).get('all_samples_sequenced'):
-            self.dates['all_samples_sequenced'] = proj.get('project_summary',{}).get('all_samples_sequenced')
+        if proj.get('project_summary', {}).get('all_samples_sequenced'):
+            self.dates['all_samples_sequenced'] = proj.get('project_summary', {}).get('all_samples_sequenced')
 
 
-        self.contact               = proj.get('contact')
-        self.application           = proj.get('application')
-        self.num_samples           = proj.get('no_of_samples')
-        self.ngi_facility          = 'Genomics {} Stockholm'.format(proj_details.get('type')) if proj_details.get('type') else None
-        self.reference['genome']   = None if proj.get('reference_genome') == 'other' else proj.get('reference_genome')
+        self.contact = proj.get('contact')
+        self.application = proj.get('application')
+        self.num_samples = proj.get('no_of_samples')
+        self.ngi_facility = 'Genomics {} Stockholm'.format(proj_details.get('type')) if proj_details.get('type') else None
+        self.reference['genome'] = None if proj.get('reference_genome') == 'other' else proj.get('reference_genome')
         self.reference['organism'] = organism_names.get(self.reference['genome'], None)
-        self.user_ID               = proj_details.get('customer_project_reference','')
-        self.num_lanes             = proj_details.get('sequence_units_ordered_(lanes)')
+        self.user_ID = proj_details.get('customer_project_reference','')
+        self.num_lanes = proj_details.get('sequence_units_ordered_(lanes)')
         self.library_construction_method = proj_details.get('library_construction_method')
-        self.library_prep_option         = proj_details.get('library_prep_option', '')
+        self.library_prep_option = proj_details.get('library_prep_option', '')
 
         if 'dds' in proj.get('delivery_type','').lower():
             self.cluster = 'dds'
@@ -204,8 +204,10 @@ class Project:
 
         if 'hiseqx' in proj_details.get('sequencing_platform', ''):
             self.is_hiseqx = True
-
-        self.sequencing_setup = proj_details.get('sequencing_setup')
+        
+        #TODO: possibly add ONT specific stuff here
+        
+        self.sequencing_setup = proj_details.get('sequencing_setup') #TODO: Currently not added for ONT. either add (PCs?) or catch here to avoid keyerror
 
         for sample_id, sample in sorted(proj.get('samples', {}).items()):
             if kwargs.get('samples', []) and sample_id not in kwargs.get('samples', []):
@@ -263,7 +265,7 @@ class Project:
                     ## get flow cell information for each prep from project database (only if -b flag is set)
                     if kwargs.get('barcode_from_fc'):
                         prepObj.seq_fc = []
-                        for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
+                        for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'):
                             prepObj.seq_fc.append(fc.split('_')[-1])
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
@@ -286,7 +288,7 @@ class Project:
                 list_of_barcodes = sum([[all_barcodes.barcode for all_barcodes in list(samObj.preps.values())]], [])
                 if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
                     list_of_flowcells = sum([all_flowcells.seq_fc for all_flowcells in list(samObj.preps.values())], [])
-                    if len(list_of_flowcells) != len(list(dict.fromkeys(list_of_flowcells))):               #the sample was run twice on the same flowcell, only possible with different barcodes for the same sample
+                    if len(list_of_flowcells) != len(list(dict.fromkeys(list_of_flowcells))):  #the sample was run twice on the same flowcell, only possible with different barcodes for the same sample
                         log.error('Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually')
                         sys.exit('Stopping execution...')
 
@@ -299,8 +301,11 @@ class Project:
         assert fcon, 'Could not connect to {} database in StatusDB'.format('flowcell')
         xcon = statusdb.X_FlowcellRunMetricsConnection()
         assert xcon, 'Could not connect to {} database in StatusDB'.format('x_flowcells')
+        ontcon = statusdb.NanoporeRunConnection()
+        assert ontcon, 'Could not connect to {} database in StatusDB'.format('nanopore_runs')
         flowcell_info = fcon.get_project_flowcell(self.ngi_id, self.dates['open_date'])
         flowcell_info.update(xcon.get_project_flowcell(self.ngi_id, self.dates['open_date']))
+        flowcell_info.update(ontcon.get_project_flowcell(self.ngi_id, self.dates['open_date']))
 
         sample_qval = defaultdict(dict)
 
@@ -315,6 +320,8 @@ class Project:
             # get database document from appropriate database
             if fc['db'] == 'x_flowcells':
                 fc_details = xcon.get_entry(fc['run_name'])
+            elif fc['db'] == 'nanopore_runs':
+                fc_details = ontcon.get_entry(fc['run_name'])
             else:
                 fc_details = fcon.get_entry(fc['run_name'])
 
@@ -324,7 +331,7 @@ class Project:
                 fcObj.type = 'HiSeqX'
                 self.is_hiseqx = True
                 fc_runp = fc_details.get('RunParameters',{}).get('Setup',{})
-            elif '-' in fcObj.name :
+            elif '-' in fcObj.name:
                 fcObj.type = 'MiSeq'
                 fc_runp = fc_details.get('RunParameters',{})
             elif fc_inst.startswith('A'):
@@ -335,6 +342,12 @@ class Project:
                 fc_runp = fc_details.get('RunParameters',{})
             elif fc_inst.startswith('VH'):
                 fcObj.type = 'NextSeq2000'
+                fc_runp = fc_details.get('RunParameters',{})
+            elif 'PA' in fcObj.name:  #TODO: check if this ever occurs in illumina FCs
+                fcObj.type = 'PromethION'
+                fc_runp = fc_details.get('RunParameters',{})
+            elif 'MN' in fcObj.name:  #TODO: this could also be MN19414, unless we ever get another minion
+                fcObj.type = 'MinION'
                 fc_runp = fc_details.get('RunParameters',{})
             else:
                 fcObj.type = 'HiSeq2500'
@@ -350,11 +363,11 @@ class Project:
             elif fcObj.type == 'NextSeq2000':
                 NS2000_FC_PAT = re.compile("P[1,2,3]")
                 fcObj.chemistry = {'Chemistry':  NS2000_FC_PAT.findall(fc_runp.get('FlowCellMode'))[0]}
-            else:
+            else:  #TODO: add fc chemistry for ONT here?
                 fcObj.chemistry = {'Chemistry' : fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs'))}
 
             try:
-                fcObj.casava = list(fc_details['DemultiplexConfig'].values())[0]['Software']['Version']
+                fcObj.casava = list(fc_details['DemultiplexConfig'].values())[0]['Software']['Version'] 
             except (KeyError, IndexError):
                 continue
 
@@ -367,6 +380,8 @@ class Project:
                                         'ApplicationName': fc_runp.get('ApplicationName') if fc_runp.get('ApplicationName') else fc_runp.get('Setup').get('ApplicationName'),
                                         'ApplicationVersion': fc_runp.get('ApplicationVersion') if fc_runp.get('ApplicationVersion') else fc_runp.get('Setup').get('ApplicationVersion')
                                         }
+            elif fcObj.type == 'PromethION' or 'MinION':
+                fcObj.seq_software = {'guppy version, minkow version etc'}  #TODO: get versions
             else:
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion', fc_runp.get('RtaVersion')),
                                         'ApplicationName': fc_runp.get('ApplicationName', fc_runp.get('Application')),
@@ -413,7 +428,7 @@ class Project:
                         preps_samples_on_fc.append([additional_sample, 'NA'])
                         undet_iteration+=1
                                 
-            ## Collect quality info for samples and collect lanes of interest
+            ## Collect quality info for samples and collect lanes of interest  #TODO: add a similar section to get ONT barcode 
             for stat in fc_details.get('illumina',{}).get('Demultiplex_Stats',{}).get('Barcode_lane_statistics',[]):
 
                 if re.sub('_+','.',stat['Project'],1) != self.ngi_name and stat['Project'] != self.ngi_name:
@@ -500,7 +515,7 @@ class Project:
                     del self.samples[sample]
 
 
-        ## calculate average Q30 over all lanes and flowcell
+        ## calculate average Q30 over all lanes and flowcell  #TODO: only run this for illumina
         max_total_reads = 0
         for sample in sorted(sample_qval.keys()):
             try:
@@ -523,9 +538,10 @@ class Project:
                         max_total_reads = total_reads
             except (TypeError, KeyError):
                 log.error('Could not calcluate average Q30 for sample {}'.format(sample))
+        
         #Cut down total reads to bite sized numbers
         samples_divisor = 1
-        if max_total_reads > 1000:
+        if max_total_reads > 1000:  #TODO: get max_total_reads for ONT
             if max_total_reads > 1000000:
                 self.samples_unit = 'Mreads'
                 samples_divisor = 1000000
