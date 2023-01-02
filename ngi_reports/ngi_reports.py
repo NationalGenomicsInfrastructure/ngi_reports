@@ -34,7 +34,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
                             fromlist=['ngi_reports.reports'])
 
     proj = Project()
-    proj.populate(LOG, config._sections['organism_names'], **kwargs) #TODO: here
+    proj.populate(LOG, config._sections['organism_names'], **kwargs)
 
     # Make the report object
     report = report_mod.Report(LOG, working_dir, **kwargs)
@@ -70,7 +70,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
         except IOError as e:
             LOG.error("Error printing markdown report {} - skipping. {}".format(output_md, IOError(e)))
             continue
-        #Convert markdown to html
+        # Convert markdown to html
         html_out = markdown_to_html(report_type, jinja2_env=env, markdown_text=output_md, reports_dir=reports_dir,
                                     out_path='{}.html'.format(output_bn))
         LOG.info('{} HTML report written to: {}'.format(output_bn.rsplit('/', 1)[1], html_out))
@@ -105,7 +105,7 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
     markeddown_text = md_template.convert(markdown_text)
 
     #Markdown meta returns a dict with values as lists
-    html_out = jinja2_env.get_template(report_type+'.html').render(body=markeddown_text,
+    html_out = jinja2_env.get_template(report_type + '.html').render(body=markeddown_text,
                                         meta={key: ''.join(value) for (key, value) in md_template.Meta.items()})
     replace_list = {'[swedac]': swedac_text,  #TODO: check if this is skipped for ont
                     '[tick]'  : '<span class="icon_tick">&#10004;</span> ',

@@ -71,7 +71,11 @@ class statusdb_connection(object):
             if datetime.strptime(fc_date,'%y%m%d') < open_date:
                 break
             if project_id in self.proj_list[fc] and fc_name not in project_flowcells.keys():
-                project_flowcells[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date, 'db':self.db.name}
+                project_flowcells[fc_name] = {'name': fc_name,
+                                              'run_name': fc, 
+                                              'date': fc_date,
+                                              'db': self.db.name
+                                              }
 
         return project_flowcells
 
