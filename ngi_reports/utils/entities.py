@@ -313,7 +313,8 @@ class Project:
         flowcell_info.update(ontcon.get_project_flowcell(self.ngi_id, self.dates['open_date']))
 
         sample_qval = defaultdict(dict)
-
+        sample_stats = defaultdict(dict)
+        #import pdb; pdb.set_trace()
         for fc in list(flowcell_info.values()):
             if fc['name'] in kwargs.get('exclude_fc'):
                 continue
@@ -348,10 +349,10 @@ class Project:
             elif fc_inst.startswith('VH'):
                 fcObj.type = 'NextSeq2000'
                 fc_runp = fc_details.get('RunParameters', {})
-            elif '_PA' in fcObj.name:
+            elif '_PA' in fcObj.run_name:
                 fcObj.type = 'PromethION'
                 fc_runp = fc_details.get('protocol_run_info', {})
-            elif '_MN' in fcObj.name:
+            elif '_MN' in fcObj.run_name:
                 fcObj.type = 'MinION'
                 fc_runp = fc_details.get('protocol_run_info', {}) #TODO: check that this is same in prom and min
             else:
@@ -360,8 +361,14 @@ class Project:
 
             # Fetch run setup for the flowcell
             if fcObj.type == 'PromethION' or fcObj.type == 'MinION':
-                #TODO: Fetch run info for ONT FCs here (when we know what we need, like washes, adaptive sampling etc)
-                pass
+                fcObj.fc_type = fc_details.get('protocol_run_info').get('flow_cell').get('product_code')
+                run_arguments = fc_details.get('protocol_run_info').get('args')
+                for arg in run_arguments:
+                    if 'min_qscore' in arg:
+                        fcObj.qual_threshold = float(arg.split('=')[-1])  
+                fcObj.n50 = float(fc_details.get('acquisitions')[-1].get('read_length_histogram')[-1].get('plot').get('histogram_data')[0].get('n50'))
+                fcObj.total_reads = float(fc_details.get('acquisitions')[-1].get('acquisition_run_info').get('yield_summary').get('read_count'))
+
             else:
                 fcObj.run_setup = fc_details.get('RunInfo').get('Reads')
 
@@ -378,10 +385,11 @@ class Project:
             else:
                 fcObj.chemistry = {'Chemistry' : fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs'))}
 
-            try:
-                fcObj.casava = list(fc_details['DemultiplexConfig'].values())[0]['Software']['Version'] 
-            except (KeyError, IndexError):
-                continue
+            if fcObj.type != 'PromethION' and fcObj.type != 'MinION':
+                try:
+                    fcObj.casava = list(fc_details['DemultiplexConfig'].values())[0]['Software']['Version'] 
+                except (KeyError, IndexError):
+                    continue #TODO: check if this should be pass?
 
             if fcObj.type == 'MiSeq':
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion'),
@@ -392,12 +400,12 @@ class Project:
                                         'ApplicationName': fc_runp.get('ApplicationName') if fc_runp.get('ApplicationName') else fc_runp.get('Setup').get('ApplicationName'),
                                         'ApplicationVersion': fc_runp.get('ApplicationVersion') if fc_runp.get('ApplicationVersion') else fc_runp.get('Setup').get('ApplicationVersion')
                                         }
-            elif fcObj.type == 'PromethION' or 'MinION':
+            elif fcObj.type == 'PromethION' or fcObj.type == 'MinION':
                 ont_seq_versions = fc_details.get('software_versions', '')
                 fcObj.seq_software = {'MinKNOW version': ont_seq_versions.get('minknow', '').get('full', ''),
                                       'Guppy version': ont_seq_versions.get('guppy_build_version', '') #TODO: might be other basecallers in the future
                                           }  #TODO: get all the versions
-                fcObj.basecall_model = fc_runp.get('meta_info', '').get('tags', '').get('default basecall model')
+                fcObj.basecall_model = fc_runp.get('meta_info', '').get('tags', '').get('default basecall model').get('string_value')
             else:
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion', fc_runp.get('RtaVersion')),
                                         'ApplicationName': fc_runp.get('ApplicationName', fc_runp.get('Application')),
@@ -515,12 +523,24 @@ class Project:
                         if not v:
                             log.warn('Could not fetch {} for FC {} at lane {}'.format(k, fcObj.name, lane))
 
-            #TODO: Collect quality info for samples and collect lanes of interest (ONT) (figure out what's needed and where to get it)
-            
+
+            # Collect quality info for samples and collect lanes of interest (ONT)
+            # n50, lib qc
+            for stat in fc_details.get('ONT', {}).get('Demultiplex_Stats', {}).get('Barcode_lane_statistics', []):
+                sample = stat.get('Sample')
+                barcode = stat.get('Barcode sequence')
+                read_count = float(stat.get('read_count'))
+                basecalled_pass_read_count = float(stat.get('basecalled_pass_read_count'))
+                basecalled_fail_read_count = float(stat.get('basecalled_fail_read_count'))
+                perc_passed = basecalled_pass_read_count / read_count
+                
+                r_idx = '{}_{}'.format(fcObj.name, barcode)
+                sample_stats[sample][r_idx] = {'reads passed': perc_passed, 'reads': read_count, 'index': barcode}
+
             self.flowcells[fcObj.name] = fcObj
 
         if not self.flowcells:
-            log.warn('There is no flowcell to process for project {}'.format(self.ngi_name))
+            log.warn('There is no flowcell to process for project {}'.format(self.ngi_name)) #TODO: figure out why I don't gett flowcells
             self.missing_fc = True
 
         if sample_qval and kwargs.get('yield_from_fc'):
@@ -529,7 +549,7 @@ class Project:
                 if sample not in list(sample_qval.keys()):
                     del self.samples[sample]
 
-        # Calculate average Q30 over all lanes and flowcell (only Illumina)
+        # Calculate average Q30 over all lanes and flowcell (Illumina)
         max_total_reads = 0
         for sample in sorted(sample_qval.keys()):
             try:
@@ -552,10 +572,30 @@ class Project:
                         max_total_reads = total_reads
             except (TypeError, KeyError):
                 log.error('Could not calcluate average Q30 for sample {}'.format(sample))
+
+        # Calculate average reads and flowcell (ONT)
+        max_total_reads = 0
+        for sample in sorted(sample_stats.keys()):
+            try:
+                sample_info = sample_stats[sample]
+                total_reads = 0
+                for k in sample_info:
+                    total_reads += sample_info[k]['reads']
+                # Sample has been sequenced and should be removed from the aborted/not sequenced list
+                if sample in self.aborted_samples:
+                    log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
+                    del self.aborted_samples[sample]
+                # Get/overwrite yield from the FCs computed instead of statusDB value
+                if total_reads:
+                    self.samples[sample].total_reads = total_reads
+                    if total_reads > max_total_reads:
+                        max_total_reads = total_reads
+            except (TypeError, KeyError):
+                log.error('Could not find reads for sample {}'.format(sample))
         
-        #Cut down total reads to bite sized numbers
+        # Cut down total reads to bite sized numbers
         samples_divisor = 1
-        if max_total_reads > 1000:  #TODO: get total reads and max_total_reads for ONT
+        if max_total_reads > 1000:
             if max_total_reads > 1000000:
                 self.samples_unit = 'Mreads'
                 samples_divisor = 1000000

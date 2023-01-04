@@ -1,7 +1,7 @@
 """ Module for producing the ONT Project Summary Report
 """
 import os
-import ngi_reports.reports
+import ngi_reports.reports.project_summary
 
 from collections import defaultdict, OrderedDict
 from string import ascii_uppercase as alphabets
@@ -35,12 +35,12 @@ class Report(ngi_reports.reports.project_summary.Report):
         # Collect required information for all flowcells run for the project
         for fc in proj.flowcells.values():
             tmp_method = seq_template.format('SECTION', 
-                                             fc.type,  # Instrument type
-                                             fc.fc_type,  #Flow cell type #TODO: get somewhere
+                                             fc.type,
+                                             fc.fc_type,
                                              fc.seq_software.get('MinKNOW version'), 
                                              fc.seq_software.get('Guppy version'),
                                              fc.basecall_model,
-                                             fc.qual_threshold  #TODO: get somewhere
+                                             fc.qual_threshold
                                              )
 
             # To make sure the sequencing methods are unique
@@ -61,54 +61,22 @@ class Report(ngi_reports.reports.project_summary.Report):
 
         # sample_info table
         unit_magnitude = {'#reads': '', 'Kreads': ' Thousand', 'Mreads': ' Million'}
-        sample_header = ['NGI ID', 'User ID', proj.samples_unit]  #TODO: set samples_unit in entities.py
-        sample_filter = ['ngi_id', 'customer_name', 'total_reads']
-
-        self.tables_info['tables']['sample_info'] = self.create_table_text(proj.samples.values(), 
-                                                                           filter_keys=sample_filter, 
-                                                                           header=sample_header)
         self.tables_info['header_explanation']['sample_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
                                                                 '* _User ID:_ Sample name submitted by user\n'\
                                                                 '* _{}:_ Number of reads per sample ({})\n'\
                                                                 .format(proj.samples_unit, unit_magnitude[proj.samples_unit])
 
         # library_info table
-        library_header = ['NGI ID', 'Index', 'Avg. FS(bp)', 'N50', 'Lib. QC']
-        library_filter = ['ngi_id', 'barcode', 'avg_size', 'n50', 'qc_status']  #TODO: get n50 somewhere
-        library_list = []
-        for s, v in list(proj.samples.items()):
-            for p in list(v.preps.values()):
-                p = vars(p)
-                p['ngi_id'] = s
-                library_list.append(p)
-        self.tables_info['tables']['library_info'] = self.create_table_text(sorted(library_list, key=lambda d: d['ngi_id']), 
-                                                                            filter_keys=library_filter, 
-                                                                            header=library_header)
         self.tables_info['header_explanation']['library_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
                                                                  '* _Index:_ Barcode sequence used for the sample\n'\
                                                                  '* _Avg. FS:_ Average fragment size of the library\n'\
-                                                                 '* _N50:_ Estimated N50 (kb)\n'\
                                                                  '* _Lib. QC:_ Library quality control status\n'
 
         # lanes_info table
-        lanes_header = ['Date', 'Flow cell', 'Reads']
-        lanes_filter = ['date', 'name', 'reads'] #TODO: get reads (clusters for Illumina) from somewhere
-        lanes_list = []
-        for f, v in list(proj.flowcells.items()):
-            for l in list(v.lanes.values()):
-                l = vars(l)
-                l['date'] = v.date
-                l['name'] = v.name
-                l['reads'] = v.reads  #TODO: reads again (see above comment)
-                lanes_list.append(l)
-
-        self.tables_info['tables']['lanes_info'] = self.create_table_text(sorted(lanes_list, key=lambda d: '{}_{}'.format(d['date'], d['id'])), 
-                                                                          filter_keys=lanes_filter, 
-                                                                          header=lanes_header)
         self.tables_info['header_explanation']['lanes_info'] = '* _Date:_ Date of sequencing\n'\
                                                                '* _Flow cell:_ Flow cell identifier\n'\
-                                                               '* _Reads:_ Number of reads generated\n'  #TODO: set relevant scale
-
+                                                               '* _Reads:_ Number of reads generated\n'\
+                                                               '* _N50:_ Estimated N50 (kb)\n'
         # Make the file basename
         output_bn = os.path.realpath(os.path.join(self.working_dir, self.report_dir, '{}_project_summary'.format(self.report_basename)))
 

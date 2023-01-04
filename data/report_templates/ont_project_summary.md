@@ -73,7 +73,7 @@ delivery. These include checking the yield, sequence read quality and average re
 No sample information to be displayed.
 {% else %}
 NGI ID | User ID | {{ project.samples_unit }}
--------|---------|---------------------------
+-------|---------|----------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }}
 {% endfor %}
@@ -88,12 +88,12 @@ Below you can find an explanation of the header column used in the table.
 {% if not project.samples %}
 No library information to be displayed.
 {% else %}
-NGI ID | Index | Avg. FS (bp) | N50 | Lib. QC
--------|-------|--------------|-----|--------
+NGI ID | Index | Avg. FS (bp) | Lib. QC
+-------|-------|--------------|--------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.avg_size }} | {{ something.n50 }} | {{ prep.qc_status }}
+{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
 {% endif -%}
 {%- endfor %}
@@ -108,12 +108,10 @@ Below you can find an explanation of the header column used in the table.
 {% if project.missing_fc %}
 No flow cell information to be displayed.
 {% else %}
-Date | Flowcell | Reads (M)
------|----------|----------
+Date | Flowcell | Reads | N50
+-----|----------|-------|----
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
-{% for lane in fc.lanes.values() -%}
-{{ fc.date }} | `{{ fc.name }}` or {{ lane.id }} | {{ lane.cluster }}
-{% endfor -%}
+{{ fc.date }} | `{{ fc.run_name }}` | {{ fc.total_reads }} | {{ fc.n50 }}
 {%- endfor %}
 
 Below you can find an explanation of the header column used in the table.
