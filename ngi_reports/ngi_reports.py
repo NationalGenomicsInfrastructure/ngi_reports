@@ -107,7 +107,7 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
     #Markdown meta returns a dict with values as lists
     html_out = jinja2_env.get_template(report_type + '.html').render(body=markeddown_text,
                                         meta={key: ''.join(value) for (key, value) in md_template.Meta.items()})
-    replace_list = {'[swedac]': swedac_text,  #TODO: check if this is skipped for ont
+    replace_list = {'[swedac]': swedac_text,
                     '[tick]'  : '<span class="icon_tick">&#10004;</span> ',
                     '[cross]' : '<span class="icon_cross">&#10008;</span> '
                     }

@@ -75,7 +75,7 @@ class statusdb_connection(object):
                                                     'run_name': fc, 
                                                     'date': fc_date,
                                                     'db': self.db.name,
-                                                    'time': fc_time,  # TODO: Added because they exist. Remove if not needed.
+                                                    'time': fc_time,
                                                     'position': position,
                                                     'flowcell hash': fc_hash
                                                     }

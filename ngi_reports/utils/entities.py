@@ -208,10 +208,8 @@ class Project:
 
         if 'hiseqx' in proj_details.get('sequencing_platform', ''):
             self.is_hiseqx = True
-        
-        #TODO: possibly add ONT specific stuff here if needed
-        
-        self.sequencing_setup = proj_details.get('sequencing_setup') #TODO: Currently not added for ONT. either add (PCs?) or catch here to avoid keyerror
+                
+        self.sequencing_setup = proj_details.get('sequencing_setup')
 
         for sample_id, sample in sorted(proj.get('samples', {}).items()):
             if kwargs.get('samples', []) and sample_id not in kwargs.get('samples', []):
@@ -379,9 +377,6 @@ class Project:
             elif fcObj.type == 'NextSeq2000':
                 NS2000_FC_PAT = re.compile("P[1,2,3]")
                 fcObj.chemistry = {'Chemistry':  NS2000_FC_PAT.findall(fc_runp.get('FlowCellMode'))[0]}
-            elif fcObj.type == 'PromethION' or fcObj.type == 'MinION':
-                #TODO: add fc chemistry or similar for ONT here if needed.
-                pass
             else:
                 fcObj.chemistry = {'Chemistry' : fc_runp.get('ReagentKitVersion', fc_runp.get('Sbs'))}
 
@@ -389,7 +384,7 @@ class Project:
                 try:
                     fcObj.casava = list(fc_details['DemultiplexConfig'].values())[0]['Software']['Version'] 
                 except (KeyError, IndexError):
-                    continue #TODO: check if this should be pass?
+                    continue
 
             if fcObj.type == 'MiSeq':
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion'),
@@ -403,8 +398,8 @@ class Project:
             elif fcObj.type == 'PromethION' or fcObj.type == 'MinION':
                 ont_seq_versions = fc_details.get('software_versions', '')
                 fcObj.seq_software = {'MinKNOW version': ont_seq_versions.get('minknow', '').get('full', ''),
-                                      'Guppy version': ont_seq_versions.get('guppy_build_version', '') #TODO: might be other basecallers in the future
-                                          }  #TODO: get all the versions
+                                      'Guppy version': ont_seq_versions.get('guppy_build_version', '')
+                                          }
                 fcObj.basecall_model = fc_runp.get('meta_info', '').get('tags', '').get('default basecall model').get('string_value')
             else:
                 fcObj.seq_software = {'RTAVersion': fc_runp.get('RTAVersion', fc_runp.get('RtaVersion')),
@@ -540,7 +535,7 @@ class Project:
             self.flowcells[fcObj.name] = fcObj
 
         if not self.flowcells:
-            log.warn('There is no flowcell to process for project {}'.format(self.ngi_name)) #TODO: figure out why I don't gett flowcells
+            log.warn('There is no flowcell to process for project {}'.format(self.ngi_name))
             self.missing_fc = True
 
         if sample_qval and kwargs.get('yield_from_fc'):

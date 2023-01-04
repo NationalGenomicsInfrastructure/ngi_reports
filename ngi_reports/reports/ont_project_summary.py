@@ -12,7 +12,6 @@ class Report(ngi_reports.reports.project_summary.Report):
         super(Report, self).__init__(LOG, working_dir, **kwargs)
         
     def generate_report_template(self, proj, template, support_email):
-        #TODO: modify for ONT
         if not self.signature:
             self.LOG.error('It is required to provide Signature/Name while generating \'project_summary\' report, see -s opition in help')
             raise SystemExit
@@ -58,7 +57,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         ###############################################################################
         ##### Create table text and header explanation from collected information #####
         ###############################################################################
-
+        #TODO: add back the weird header stuff, it's used for the txt files...
         # sample_info table
         unit_magnitude = {'#reads': '', 'Kreads': ' Thousand', 'Mreads': ' Million'}
         self.tables_info['header_explanation']['sample_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
