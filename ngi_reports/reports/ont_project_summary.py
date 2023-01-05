@@ -28,8 +28,7 @@ class Report(ngi_reports.reports.project_summary.Report):
 
         # Get sequecing method for the flowcell
         seq_template = '{}) Samples were sequenced on {}, flowcell type {}, MinKNOW version {}. Basecalling was performed '\
-                       'using Guppy version {}, {} model. The quality scale used is Phred and the quality score threshold is {}, '\
-                       'more information can be found [here](https://labs.epi2me.io/quality-scores/).'
+                       'using Guppy version {}, {} model. The quality scale used is Phred and the quality score threshold is {}.'
                        
         # Collect required information for all flowcells run for the project
         for fc in proj.flowcells.values():
@@ -59,7 +58,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         ###############################################################################
         #TODO: add back the weird header stuff, it's used for the txt files...
         # sample_info table
-        unit_magnitude = {'#reads': '', 'Kreads': ' Thousand', 'Mreads': ' Million'}
+        unit_magnitude = {'#reads': '', 'Kreads': 'Thousand', 'Mreads': 'Million'}
         sample_header = ['NGI ID', 'User ID', proj.samples_unit]
         sample_filter = ['ngi_id', 'customer_name', 'total_reads']
         self.tables_info['tables']['sample_info'] = self.create_table_text(proj.samples.values(), 

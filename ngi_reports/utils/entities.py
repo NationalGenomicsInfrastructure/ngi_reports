@@ -252,7 +252,7 @@ class Project:
                     continue
 
             # Go through each prep for each sample in the Projects database
-            for prep_id, prep in list(sample.get('library_prep', {}).items()):
+            for prep_id, prep in list(sample.get('library_prep', {}).items()): #TODO: make sure it can handle multiple ONT preps
                 prepObj = Prep()
 
                 prepObj.label = 'Lib. ' + prep_id
@@ -312,7 +312,6 @@ class Project:
 
         sample_qval = defaultdict(dict)
         sample_stats = defaultdict(dict)
-        #import pdb; pdb.set_trace()
         for fc in list(flowcell_info.values()):
             if fc['name'] in kwargs.get('exclude_fc'):
                 continue
@@ -350,22 +349,24 @@ class Project:
             elif '_PA' in fcObj.run_name:
                 fcObj.type = 'PromethION'
                 fc_runp = fc_details.get('protocol_run_info', {})
+                final_acquisition = fc_details.get('acquisitions')[-1]
             elif '_MN' in fcObj.run_name:
                 fcObj.type = 'MinION'
                 fc_runp = fc_details.get('protocol_run_info', {}) #TODO: check that this is same in prom and min
+                final_acquisition = fc_details.get('acquisitions')[-1]
             else:
                 fcObj.type = 'HiSeq2500'
                 fc_runp = fc_details.get('RunParameters', {}).get('Setup', {})
 
             # Fetch run setup for the flowcell
             if fcObj.type == 'PromethION' or fcObj.type == 'MinION':
-                fcObj.fc_type = fc_details.get('protocol_run_info').get('flow_cell').get('product_code')
-                run_arguments = fc_details.get('protocol_run_info').get('args')
+                fcObj.fc_type = fc_runp.get('flow_cell').get('product_code')
+                run_arguments = fc_runp.get('args')
                 for arg in run_arguments:
                     if 'min_qscore' in arg:
                         fcObj.qual_threshold = float(arg.split('=')[-1])  
-                fcObj.n50 = float(fc_details.get('acquisitions')[-1].get('read_length_histogram')[-1].get('plot').get('histogram_data')[0].get('n50'))
-                fcObj.total_reads = float(fc_details.get('acquisitions')[-1].get('acquisition_run_info').get('yield_summary').get('read_count'))
+                fcObj.n50 = float(final_acquisition.get('read_length_histogram')[-1].get('plot').get('histogram_data')[0].get('n50'))
+                fcObj.total_reads = float(final_acquisition.get('acquisition_run_info').get('yield_summary').get('read_count'))
 
             else:
                 fcObj.run_setup = fc_details.get('RunInfo').get('Reads')
@@ -408,7 +409,7 @@ class Project:
                                         }
 
             # Collect info of samples and their library prep / LIMS indexes on the FC (only if -b option is set)
-            if kwargs.get('barcode_from_fc'):
+            if kwargs.get('barcode_from_fc'): #TODO: possibly make this work for ont?
                 log.info('\'barcodes_from_fc\' option was given so index sequences for the report will be taken from the flowcell instead of LIMS')
                 preps_samples_on_fc = []
                 list_additional_samples = []
@@ -523,14 +524,9 @@ class Project:
             # n50, lib qc
             for stat in fc_details.get('ONT', {}).get('Demultiplex_Stats', {}).get('Barcode_lane_statistics', []):
                 sample = stat.get('Sample')
-                barcode = stat.get('Barcode sequence')
                 read_count = float(stat.get('read_count'))
-                basecalled_pass_read_count = float(stat.get('basecalled_pass_read_count'))
-                basecalled_fail_read_count = float(stat.get('basecalled_fail_read_count'))
-                perc_passed = basecalled_pass_read_count / read_count
-                
-                r_idx = '{}_{}'.format(fcObj.name, barcode)
-                sample_stats[sample][r_idx] = {'reads passed': perc_passed, 'reads': read_count, 'index': barcode}
+                r_idx = '{}_{}'.format(fcObj.name, sample)
+                sample_stats[sample][r_idx] = {'reads': read_count}  #TODO: could include more stats here if we want
 
             self.flowcells[fcObj.name] = fcObj
 

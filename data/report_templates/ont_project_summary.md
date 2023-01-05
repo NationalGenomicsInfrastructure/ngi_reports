@@ -141,8 +141,8 @@ The results apply to the sample(s) as received.
 
 In cases where samples and/or libraries have failed the QC, the user is always consulted regarding how to proceed. If the user wishes to proceed to sequence the failed samples and/or libraries, NGI bears no responsibility regarding the quality and number of reads of the sequenced sample data.
 
-{% if not project.skip_fastq -%}
-## Naming conventions
+<!-- {% if not project.skip_fastq -%}
+## Naming conventions - not decided yet, skip for now (won't show up in html)
 
 The data is delivered in FastQ format using Phred quality scores.
 
@@ -153,7 +153,7 @@ The naming of the files follow the convention:
 ```
 
 * _NGI-NAME:_ Internal NGI sample identifier
-{%- endif %}
+{%- endif %} -->
 
 
 {% if project.cluster == 'grus' -%}
