@@ -20,7 +20,11 @@ LOG = loggers.minimal_logger('NGI Reports')
 
 ## CONSTANTS
 # create choices for report type based on available report template
-allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ] + ['ign_aggregate_report']
+allowed_report_types = [ fl.replace(".md","") for fl in 
+                        os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), 
+                                                                 os.pardir, 
+                                                                 'data', 
+                                                                 'report_templates'))) ] + ['ign_aggregate_report']
 
 def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
 
@@ -86,12 +90,14 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     # Change back to previous working dir
     os.chdir(old_cwd)
 
-def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_path=None, reports_dir=None, out_path=None):
+def markdown_to_html(report_type, jinja2_env=None, 
+                     markdown_text=None, markdown_path=None, 
+                     reports_dir=None, out_path=None):
     #get path to template dir
     if not reports_dir:
         reports_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))
     #get swedac text to add to report
-    with open(reports_dir+'/swedac.html', 'r') as f:
+    with open(reports_dir + '/swedac.html', 'r') as f:
         swedac_text = f.read()
     #initialise jinja env
     if not jinja2_env:
@@ -101,7 +107,9 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
         with open(markdown_path, 'r') as f:
             markdown_text = f.read()
 
-    md_template = markdown.Markdown(extensions=['meta', 'tables', 'def_list', 'fenced_code', 'mdx_outline'])
+    md_template = markdown.Markdown(extensions=['meta', 'tables', 
+                                                'def_list', 'fenced_code', 
+                                                'mdx_outline'])
     markeddown_text = md_template.convert(markdown_text)
 
     #Markdown meta returns a dict with values as lists
@@ -121,10 +129,8 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
 
 def main():
     parser = argparse.ArgumentParser("Make an NGI Report")
-    parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>',
-        help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
-    parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
-        help="Working Directory. Default: cwd when script is executed.")
+    parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>', help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
+    parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(), help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument('-c', '--config_file', default=None, action="store", help="Configuration file to use instead of default (~/.ngi_config/ngi_reports.conf)")
     parser.add_argument('-p', '--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('-s', '--signature', default=None, action="store", help="Signature/Name for person who generates 'project_summary' report")

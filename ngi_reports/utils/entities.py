@@ -131,7 +131,6 @@ class Project:
         self.user_ID = ''
 
     def populate(self, log, organism_names, **kwargs):
-
         project = kwargs.get('project', '')
         if not project:
             log.error('A project must be provided, so not proceeding.')
@@ -247,15 +246,15 @@ class Project:
             except KeyError:
                 log.warn('Sample {} doesnt have total reads, so adding it to NOT sequenced samples list.'.format(sample_id))
                 self.aborted_samples[sample_id] = AbortedSampleInfo(customer_name, 'Not sequenced')
-                # don't gather unnecessary information if not going to be looked up
+                # Don't gather unnecessary information if not going to be looked up
                 if not kwargs.get('yield_from_fc'):
                     continue
 
             # Go through each prep for each sample in the Projects database
             for prep_id, prep in list(sample.get('library_prep', {}).items()): #TODO: make sure it can handle multiple ONT preps
                 prepObj = Prep()
-
                 prepObj.label = 'Lib. ' + prep_id
+                
                 if 'by user' in self.library_construction.lower():
                      prepObj.label = 'NA'
 
@@ -328,7 +327,7 @@ class Project:
             else:
                 fc_details = fcon.get_entry(fc['run_name'])
 
-            # set the fc type
+            # Set the fc type
             fc_inst = fc_details.get('RunInfo', {}).get('Instrument', '')
             if fc_inst.startswith('ST-'):
                 fcObj.type = 'HiSeqX'
@@ -409,7 +408,7 @@ class Project:
                                         }
 
             # Collect info of samples and their library prep / LIMS indexes on the FC (only if -b option is set)
-            if kwargs.get('barcode_from_fc'): #TODO: possibly make this work for ont?
+            if kwargs.get('barcode_from_fc'): #TODO: possibly make this work for ont? or add a warning if someone tries to use it with ont
                 log.info('\'barcodes_from_fc\' option was given so index sequences for the report will be taken from the flowcell instead of LIMS')
                 preps_samples_on_fc = []
                 list_additional_samples = []
@@ -514,14 +513,13 @@ class Project:
 
                     fcObj.lanes[lane] = laneObj
 
-                    ## Check if the above created lane object has all needed info
+                    # Check if the above created lane object has all needed info
                     for k,v in vars(laneObj).items():
                         if not v:
                             log.warn('Could not fetch {} for FC {} at lane {}'.format(k, fcObj.name, lane))
 
 
             # Collect quality info for samples and collect lanes of interest (ONT)
-            # n50, lib qc
             for stat in fc_details.get('ONT', {}).get('Demultiplex_Stats', {}).get('Barcode_lane_statistics', []):
                 sample = stat.get('Sample')
                 read_count = float(stat.get('read_count'))
@@ -556,7 +554,7 @@ class Project:
                 if sample in self.aborted_samples:
                     log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
                     del self.aborted_samples[sample]
-                ## Get/overwrite yield from the FCs computed instead of statusDB value
+                # Get/overwrite yield from the FCs computed instead of statusDB value
                 if total_reads:
                     self.samples[sample].total_reads = total_reads
                     if total_reads > max_total_reads:

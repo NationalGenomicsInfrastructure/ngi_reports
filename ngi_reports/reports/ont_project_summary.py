@@ -3,7 +3,7 @@
 import os
 import ngi_reports.reports.project_summary
 
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 from string import ascii_uppercase as alphabets
 
 
@@ -56,7 +56,6 @@ class Report(ngi_reports.reports.project_summary.Report):
         ###############################################################################
         ##### Create table text and header explanation from collected information #####
         ###############################################################################
-        #TODO: add back the weird header stuff, it's used for the txt files...
         # sample_info table
         unit_magnitude = {'#reads': '', 'Kreads': 'Thousand', 'Mreads': 'Million'}
         sample_header = ['NGI ID', 'User ID', proj.samples_unit]
