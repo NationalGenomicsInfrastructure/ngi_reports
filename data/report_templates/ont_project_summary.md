@@ -108,11 +108,12 @@ Below you can find an explanation of the header column used in the table.
 {% if project.missing_fc %}
 No flow cell information to be displayed.
 {% else %}
-Date | Flowcell | Reads | N50
+Date | Flow cell | Reads | N50
 -----|----------|-------|----
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {{ fc.date }} | `{{ fc.run_name }}` | {{ fc.total_reads }} | {{ fc.n50 }}
-{%- endfor %}
+{% endfor -%}
+
 
 Below you can find an explanation of the header column used in the table.
 

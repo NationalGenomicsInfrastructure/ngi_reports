@@ -66,6 +66,8 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
 
     # Get parsed markdown and print to file(s)
     LOG.debug('Converting markdown to HTML...')
+    for fc in proj.flowcells.values():
+       print(fc.date)
     output_mds = report.generate_report_template(proj, template, config.get('ngi_reports', 'support_email'))
     for output_bn, output_md in list(output_mds.items()):
         try:

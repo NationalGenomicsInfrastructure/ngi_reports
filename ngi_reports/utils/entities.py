@@ -251,7 +251,7 @@ class Project:
                     continue
 
             # Go through each prep for each sample in the Projects database
-            for prep_id, prep in list(sample.get('library_prep', {}).items()): #TODO: make sure it can handle multiple ONT preps
+            for prep_id, prep in list(sample.get('library_prep', {}).items()):
                 prepObj = Prep()
                 prepObj.label = 'Lib. ' + prep_id
                 
@@ -351,7 +351,7 @@ class Project:
                 final_acquisition = fc_details.get('acquisitions')[-1]
             elif '_MN' in fcObj.run_name:
                 fcObj.type = 'MinION'
-                fc_runp = fc_details.get('protocol_run_info', {}) #TODO: check that this is same in prom and min
+                fc_runp = fc_details.get('protocol_run_info', {})
                 final_acquisition = fc_details.get('acquisitions')[-1]
             else:
                 fcObj.type = 'HiSeq2500'
@@ -359,7 +359,7 @@ class Project:
 
             # Fetch run setup for the flowcell
             if fcObj.type == 'PromethION' or fcObj.type == 'MinION':
-                fcObj.fc_type = fc_runp.get('flow_cell').get('product_code')
+                fcObj.fc_type = fc_runp.get('flow_cell').get('user_specified_product_code')  # product_code not specified for minion
                 run_arguments = fc_runp.get('args')
                 for arg in run_arguments:
                     if 'min_qscore' in arg:

@@ -75,9 +75,6 @@ class statusdb_connection(object):
                                                     'run_name': fc, 
                                                     'date': fc_date,
                                                     'db': self.db.name,
-                                                    'time': fc_time,
-                                                    'position': position,
-                                                    'flowcell hash': fc_hash
                                                     }
         else:
             date_sorted_fcs = sorted(list(self.proj_list.keys()), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)

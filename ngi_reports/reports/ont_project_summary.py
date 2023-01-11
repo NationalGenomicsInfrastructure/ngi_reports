@@ -86,17 +86,17 @@ class Report(ngi_reports.reports.project_summary.Report):
                                                                  '* _Lib. QC:_ Library quality control status\n'
 
         # lanes_info table
-        lanes_header = ['Date', 'Flow cell', 'Reads']
-        lanes_filter = ['date', 'name', 'reads']
+        lanes_header = ['Date', 'Flow cell', 'Reads', 'N50']
+        lanes_filter = ['date', 'name', 'reads', 'n50']
         lanes_list = []
         for f, v in list(proj.flowcells.items()):
             l = {}
             l['date'] = v.date
             l['name'] = v.run_name
             l['reads'] = v.total_reads
+            l['n50'] = v.n50
             lanes_list.append(l)
-
-        self.tables_info['tables']['lanes_info'] = self.create_table_text(sorted(lanes_list, key=lambda d: d['name']), 
+        self.tables_info['tables']['lanes_info'] = self.create_table_text(sorted(lanes_list, key=lambda d: d['date']), 
                                                                           filter_keys=lanes_filter, 
                                                                           header=lanes_header)
         self.tables_info['header_explanation']['lanes_info'] = '* _Date:_ Date of sequencing\n'\
