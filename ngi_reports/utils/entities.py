@@ -408,7 +408,7 @@ class Project:
                                         }
 
             # Collect info of samples and their library prep / LIMS indexes on the FC (only if -b option is set)
-            if kwargs.get('barcode_from_fc'): #TODO: possibly make this work for ont? or add a warning if someone tries to use it with ont
+            if kwargs.get('barcode_from_fc'):
                 log.info('\'barcodes_from_fc\' option was given so index sequences for the report will be taken from the flowcell instead of LIMS')
                 preps_samples_on_fc = []
                 list_additional_samples = []

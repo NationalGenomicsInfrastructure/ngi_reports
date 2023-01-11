@@ -102,7 +102,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         self.tables_info['header_explanation']['lanes_info'] = '* _Date:_ Date of sequencing\n'\
                                                                '* _Flow cell:_ Flow cell identifier\n'\
                                                                '* _Reads:_ Number of reads generated\n'\
-                                                               '* _N50:_ Estimated N50 (kb)\n' #TODO: check unit
+                                                               '* _N50:_ Estimated N50\n'
         # Make the file basename
         output_bn = os.path.realpath(os.path.join(self.working_dir, self.report_dir, '{}_project_summary'.format(self.report_basename)))
 

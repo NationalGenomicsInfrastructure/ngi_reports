@@ -145,7 +145,7 @@ def main():
     parser.add_argument('--fc_phix', default={}, action="store", type=json.loads, help="Overwrite or use Phix values for mentioned flowcells/lanes provided as a json string, having each flowcell as a key. Example: --fc_phix '{\"BH3JLWCCXX\": {\"1\": \"0.42\", \"3\": \"0.46\"}}'")
     parser.add_argument('--version', action='version', version="NGI reports version - {}".format(__version__))
     parser.add_argument('-md', '--markdown_file', default=None, help="Regenerate the html report from the given markdown file")
-    parser.add_argument('-b', '--barcode_from_fc', default=False, action="store_true", help="retrieve the index from the FC directly")
+    parser.add_argument('-b', '--barcode_from_fc', default=False, action="store_true", help="Retrieve the index from the FC directly (ONLY Illumina)")
 
     kwargs = vars(parser.parse_args())
 
