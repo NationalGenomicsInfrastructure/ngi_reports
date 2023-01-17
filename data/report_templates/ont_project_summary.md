@@ -78,6 +78,7 @@ NGI ID | User ID | {{ project.samples_unit }}
 {{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }}
 {% endfor %}
 
+
 Below you can find an explanation of the header column used in the table.
 
 {{ tables.sample_info }}
@@ -97,6 +98,7 @@ NGI ID | Index | Avg. FS (bp) | Lib. QC
 {% endfor -%}
 {% endif -%}
 {%- endfor %}
+
 
 Below you can find an explanation of the header column used in the table.
 
