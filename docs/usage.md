@@ -33,7 +33,7 @@ If you need to manually edit any reports, make your changes to the markdown
 files and then run the following command:
 
 ```
-ngi_reports <report_type> --regenerate_html_from_md --markdown_file <path/to/mdfile>
+ngi_reports <report_type> -md <path/to/mdfile>
 ```
 
 The command for regenerating the Project Summary report is aliased as `make_report` on Uppmax.
