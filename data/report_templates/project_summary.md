@@ -71,6 +71,10 @@ To ensure that all sequenced data meets our guarantee of data quality and quanti
 a number of standardised bioinformatics quality control checks are performed before
 delivery. These include checking the yield, sequence read quality and cross-sample contamination.
 
+### Data Analysis
+When Best Practice analysis is applicable, information about the pipeline that has been used (version etc.) can
+be found in the corresponding MultiQC report.
+
 ### Accredited workflow
 
 Library preparation
