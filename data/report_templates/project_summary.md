@@ -72,8 +72,7 @@ a number of standardised bioinformatics quality control checks are performed bef
 delivery. These include checking the yield, sequence read quality and cross-sample contamination.
 
 ### Data Analysis
-When Best Practice analysis is applicable, information about the pipeline that has been used (version etc.) can
-be found in the corresponding MultiQC report.
+When Best Practice analysis is applicable, information about the pipeline that has been used (version etc.) can be found in the corresponding MultiQC report.
 
 ### Accredited workflow
 
