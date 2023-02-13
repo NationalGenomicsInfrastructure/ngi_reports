@@ -265,6 +265,9 @@ class Project:
                         prepObj.seq_fc = []
                         for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
                             prepObj.seq_fc.append(fc.split('_')[-1])
+                        if len(prepObj.seq_fc)< 1:
+                            log.error('Sequenced flowcell not defined for the project. Please run ngi_pipelines without the -b flag and amend the report manually')
+                            sys.exit('Stopping execution...')
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
 
@@ -289,6 +292,9 @@ class Project:
                     if len(list_of_flowcells) != len(list(dict.fromkeys(list_of_flowcells))):               #the sample was run twice on the same flowcell, only possible with different barcodes for the same sample
                         log.error('Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually')
                         sys.exit('Stopping execution...')
+                else:
+                    log.error('Barcodes not defined in sample sheet. Please run ngi_pipelines without the -b flag and amend the report manually')
+                    sys.exit('Stopping execution...')
 
             if not samObj.preps:
                 log.warn('No library prep information was available for sample {}'.format(sample_id))
