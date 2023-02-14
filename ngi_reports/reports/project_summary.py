@@ -192,7 +192,11 @@ class Report(ngi_reports.reports.BaseReport):
             row = []
             for k in filter_keys:
                 if type(i) is dict:
-                    row.append(i.get(k,'NA'))
+                    if '.' in k:
+                        k_list = k.split('.')
+                        row.append(reduce(lambda d, k2: d.get(k2, {}), k_list, i))
+                    else:
+                        row.append(i.get(k,'NA'))
                 else:
                     row.append(getattr(i, k, 'NA'))
             row = list(map(str, row))
