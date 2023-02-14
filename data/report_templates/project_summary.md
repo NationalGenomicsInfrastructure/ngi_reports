@@ -71,6 +71,9 @@ To ensure that all sequenced data meets our guarantee of data quality and quanti
 a number of standardised bioinformatics quality control checks are performed before
 delivery. These include checking the yield, sequence read quality and cross-sample contamination.
 
+### Data Analysis
+When Best Practice analysis is applicable, information about the pipeline that has been used (version etc.) can be found in the corresponding MultiQC report.
+
 ### Accredited workflow
 
 Library preparation
@@ -89,10 +92,10 @@ Data Analysis
 {% if not project.samples %}
 No sample information to be displayed.
 {% else %}
-NGI ID | User ID | {{ project.samples_unit }} | >=Q30(%)
--------|---------|--------|----------
+NGI ID | User ID | RC | {{ project.samples_unit }} | >=Q30(%)
+-------|---------|----|----------------------------|---------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
-{{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }} | {{ sample.qscore }}
+{{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.initial_qc.initial_qc_status }} | {{ sample.total_reads }} | {{ sample.qscore }}
 {% endfor %}
 
 Below you can find an explanation of the header column used in the table.
@@ -105,12 +108,12 @@ Below you can find an explanation of the header column used in the table.
 {% if not project.samples %}
 No library information to be displayed.
 {% else %}
-NGI ID | Index | Lib Prep | Avg. FS | Lib QC
--------|-------|----------|---------|--------
+NGI ID | Index | Lib. Prep | Avg. FS(bp) | Lib. QC
+-------|-------|-----------|-------------|---------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | `{{ prep.barcode }}` | Lib. {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
+{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} | {{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
 {% endif -%}
 {%- endfor %}
@@ -125,11 +128,11 @@ Below you can find an explanation of the header column used in the table.
 {% if project.missing_fc %}
 No lanes information to be displayed.
 {% else %}
-Date | Flowcell | Lane | Clusters(M) | PhiX | >=Q30(%) | Method
------|----------|------|-------------|------|----------|--------
+Date | Flowcell | Lane | Clusters(M) | >=Q30(%) | PhiX | Method
+-----|----------|------|-------------|----------|------|-------
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {% for lane in fc.lanes.values() -%}
-{{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.phix }} | {{ lane.avg_qval }} | Seq. {{ fc.seq_meth }}
+{{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.avg_qval }} | {{ lane.phix }}  | Seq. {{ fc.seq_meth }}
 {% endfor -%}
 {%- endfor %}
 
@@ -156,7 +159,7 @@ NGI ID | User ID | Status
 
 The results apply to the sample(s) as received.
 
-## Samples and/or libraries that have failed reception control QC
+## Samples and/or libraries that have failed RC (Reception control) and/or Lib. QC (Library quality control)
 
 In cases where samples and/or libraries have failed the QC, the user is always consulted regarding how to proceed. If the user wishes to proceed to sequence the failed samples and/or libraries, NGI bears no responsibility regarding the quality and number of reads of the sequenced sample data.
 

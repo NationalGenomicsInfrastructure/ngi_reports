@@ -105,18 +105,19 @@ class Report(ngi_reports.reports.BaseReport):
 
         ## sample_info table
         unit_magnitude = {'#reads' : '', 'Kreads': ' Thousand','Mreads': ' Million'}
-        sample_header = ['NGI ID', 'User ID', proj.samples_unit, '≥Q30']
-        sample_filter = ['ngi_id', 'customer_name', 'total_reads', 'qscore']
+        sample_header = ['NGI ID', 'User ID', 'RC', proj.samples_unit, '>=Q30']
+        sample_filter = ['ngi_id', 'customer_name', 'initial_qc.initial_qc_status', 'total_reads', 'qscore']
 
         self.tables_info['tables']['sample_info'] = self.create_table_text(proj.samples.values(), filter_keys=sample_filter, header=sample_header)
         self.tables_info['header_explanation']['sample_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
                                                                 '* _User ID:_ Sample name submitted by user\n'\
+                                                                '* _RC:_ Reception control status. Value "NA" means this is a finished library and results are presented in Lib. QC below.\n'\
                                                                 '* _{}:_ Total{} reads (or pairs) for a sample\n'\
-                                                                '* _≥Q30:_ Aggregated percentage of bases that have a quality score ≥ Q30'\
+                                                                '* _>=Q30:_ Aggregated percentage of bases that have a quality score >= Q30'\
                                                                 .format(proj.samples_unit, unit_magnitude[proj.samples_unit])
 
         ## library_info table
-        library_header = ['NGI ID', 'Index', 'Lib Prep', 'Avg. FS', 'Lib QC']
+        library_header = ['NGI ID', 'Index', 'Lib. Prep', 'Avg. FS(bp)', 'Lib. QC']
         library_filter = ['ngi_id', 'barcode', 'label', 'avg_size', 'qc_status']
         library_list = []
         for s, v in list(proj.samples.items()):
@@ -128,11 +129,11 @@ class Report(ngi_reports.reports.BaseReport):
         self.tables_info['header_explanation']['library_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
                                                                  '* _Index:_ Barcode sequence used for the sample\n'\
                                                                  '* _Lib. Prep:_ NGI library identifier. The first library prep will be marked "A", the second "B" and so on.\n'\
-                                                                 '* _Avg. FS:_ Average fragment size of the library\n'\
+                                                                 '* _Avg. FS:_ Average fragment size of the library. Value "NA" means this was not measured.\n'\
                                                                  '* _Lib. QC:_ Library quality control status\n'
 
         ## lanes_info table
-        lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', 'Phix', '≥Q30(%)', 'Method']
+        lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', '>=Q30(%)', 'Phix', 'Method']
         lanes_filter = ['date', 'name', 'id', 'cluster', 'phix', 'avg_qval', 'seq_meth']
         lanes_list = []
         for f, v in list(proj.flowcells.items()):
@@ -148,7 +149,7 @@ class Report(ngi_reports.reports.BaseReport):
                                                                '* _Flowcell:_ Flowcell identifier\n'\
                                                                '* _Lane:_ Flowcell lane number\n'\
                                                                '* _Clusters:_ Number of clusters that passed the read filters (millions)\n'\
-                                                               '* _≥Q30:_ Aggregated percentage of bases that have a quality score ≥ Q30\n'\
+                                                               '* _>=Q30:_ Aggregated percentage of bases that have a quality score ≥ Q30\n'\
                                                                '* _PhiX:_ Average PhiX error rate for the lane\n'\
                                                                '* _Method:_ Sequencing method used. See description under Sequencing heading above.\n'
 

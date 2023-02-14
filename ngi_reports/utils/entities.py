@@ -35,6 +35,7 @@ class Prep:
         self.barcode     = 'NA'
         self.label       = ''
         self.qc_status   = 'NA'
+        self.seq_fc      = 'NA'
 
 class Flowcell:
     """Flowcell class
@@ -232,6 +233,8 @@ class Project:
             if sample.get('initial_qc'):
                 for item in samObj.initial_qc:
                     samObj.initial_qc[item] = sample['initial_qc'].get(item)
+                    if item == 'initial_qc_status' and sample['initial_qc']['initial_qc_status'] == 'UNKNOWN':
+                        samObj.initial_qc[item] = 'NA'
 
             #Library prep
             ## get total reads if available or mark sample as not sequenced
@@ -248,10 +251,20 @@ class Project:
             ## Go through each prep for each sample in the Projects database
             for prep_id, prep in list(sample.get('library_prep', {}).items()):
                 prepObj = Prep()
-                prepObj.label = prep_id
+
+                prepObj.label = 'Lib. ' + prep_id
+                if 'by user' in self.library_construction.lower():
+                     prepObj.label = 'NA'
+
                 if prep.get('reagent_label') and prep.get('prep_status'):
                     prepObj.barcode = prep.get('reagent_label', 'NA')
                     prepObj.qc_status = prep.get('prep_status', 'NA')
+                    
+                    ## get flow cell information for each prep from project database (only if -b flag is set)
+                    if kwargs.get('barcode_from_fc'):
+                        prepObj.seq_fc = []
+                        for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
+                            prepObj.seq_fc.append(fc.split('_')[-1])
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
 
@@ -267,6 +280,15 @@ class Project:
                         log.warn('No library validation step found {}'.format(sample_id))
 
                 samObj.preps[prep_id] = prepObj
+
+            # exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
+            if kwargs.get('barcode_from_fc'):
+                list_of_barcodes = sum([[all_barcodes.barcode for all_barcodes in list(samObj.preps.values())]], [])
+                if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
+                    list_of_flowcells = sum([all_flowcells.seq_fc for all_flowcells in list(samObj.preps.values())], [])
+                    if len(list_of_flowcells) != len(list(dict.fromkeys(list_of_flowcells))):               #the sample was run twice on the same flowcell, only possible with different barcodes for the same sample
+                        log.error('Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually')
+                        sys.exit('Stopping execution...')
 
             if not samObj.preps:
                 log.warn('No library prep information was available for sample {}'.format(sample_id))
@@ -351,6 +373,46 @@ class Project:
                                         'ApplicationVersion': fc_runp.get('ApplicationVersion')
                                         }
 
+            ## collect info of samples and their library prep / LIMS indexes on the FC (only if -b option is set)
+            if kwargs.get('barcode_from_fc'):
+                log.info('\'barcodes_from_fc\' option was given so index sequences for the report will be taken from the flowcell instead of LIMS')
+                preps_samples_on_fc = []
+                list_additional_samples = []
+
+                ## get all samples from flow cell that belong to the project
+                fc_samples = []
+                for fc_sample in fc_details.get('samplesheet_csv'):
+                    if fc_sample.get('Sample_Name').split('_')[0] == self.ngi_id:
+                        fc_samples.append(fc_sample.get('Sample_Name'))
+                
+                ## iterate through all samples in project to identify their prep_ID (only if they are on the flowcell)
+                for sample_ID in list(self.samples):
+                     for prep_ID in list(self.samples.get(sample_ID).preps):
+                        sample_preps = self.samples.get(sample_ID).preps
+                        if fcObj.name in sample_preps.get(prep_ID).seq_fc:
+                            preps_samples_on_fc.append([sample_ID, prep_ID])
+                        else:
+                            continue
+                
+                ## get (if any) samples that are on the fc, but are not recorded in LIMS (i.e. added bc from undet reads)
+                if len(set(list(self.samples))) != len(set(fc_samples)):
+                    list_additional_samples = list(set(fc_samples) - set(self.samples))
+                    list_additional_samples.sort()              # generate a list of all additional samples
+                    log.info('The flowcell {} contains {} sample(s) ({}) that has/have not been defined in LIMS. They will be added to the report.'.format(fc_details.get('RunInfo').get('Id'), len(list_additional_samples), ', '.join(list_additional_samples)))
+
+                    undet_iteration = 1
+                    # creating additional sample and prep Objects 
+                    for additional_sample in list_additional_samples:
+                        AsamObj               = Sample()
+                        AsamObj.ngi_id        = additional_sample
+                        AsamObj.customer_name = 'unknown' + str(undet_iteration) # additional samples will be named "unknown[number]" in the report
+                        AsamObj.well_location = 'NA'
+                        AsamObj.preps['NA'] = Prep()
+                        AsamObj.preps['NA'].label = 'NA'
+                        self.samples[additional_sample] = AsamObj
+                        preps_samples_on_fc.append([additional_sample, 'NA'])
+                        undet_iteration+=1
+                                
             ## Collect quality info for samples and collect lanes of interest
             for stat in fc_details.get('illumina',{}).get('Demultiplex_Stats',{}).get('Barcode_lane_statistics',[]):
 
@@ -367,6 +429,20 @@ class Project:
                     sample = stat.get('Sample ID')
                     barcode = stat.get('Index')
                     qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
+                    
+                ## if '-b' flag is set, we override the barcodes from LIMS with the barcodes from the flowcell for all samples
+                if kwargs.get('barcode_from_fc'):
+                    new_barcode = '-'.join(barcode.split('+')) # change the barcode layout to match the one used for the report
+                    lib_prep = []                               # adding the now required library prep, set to NA for all non-LIMS samples
+                    if sample in list_additional_samples:
+                        lib_prep.append('NA')
+                    else:                                       # adding library prep for LIMS samples, we identified them earlier
+                        for sub_prep_sample in preps_samples_on_fc:
+                            if sub_prep_sample[0] == sample:
+                                lib_prep.append(sub_prep_sample[1])
+                        
+                    for prep_o_samples in lib_prep:             # changing the barcode happens here!
+                        self.samples.get(sample).preps.get(prep_o_samples).barcode = new_barcode
 
                 #skip if there are no lanes or samples
                 if not lane or not sample or not barcode:
@@ -422,6 +498,7 @@ class Project:
             for sample in list(self.samples.keys()):
                 if sample not in list(sample_qval.keys()):
                     del self.samples[sample]
+
 
         ## calculate average Q30 over all lanes and flowcell
         max_total_reads = 0
