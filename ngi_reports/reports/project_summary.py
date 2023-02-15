@@ -203,7 +203,7 @@ class Report(ngi_reports.reports.BaseReport):
                             except AttributeError:
                                 self.LOG.error('Bad key {}'.format(k))
                         else:
-                            row.append(getattr(i, k, 'NA'))
+                            row.append(getattr(i, k_list[0], 'NA'))
                     else:
                         row.append(getattr(i, k, 'NA'))
             row = list(map(str, row))
