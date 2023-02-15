@@ -194,7 +194,11 @@ class Report(ngi_reports.reports.BaseReport):
                 if type(i) is dict:
                     row.append(i.get(k,'NA'))
                 else:
-                    row.append(getattr(i, k, 'NA'))
+                    if '.' in k:
+                        k_list = k.split('.')
+                        row.append(getattr(i, k_list[0]).get(k_list[1], 'NA'))
+                    else:
+                        row.append(getattr(i, k, 'NA'))
             row = list(map(str, row))
             op_string.append(sep.join(row))
         return '\n'.join(op_string)
