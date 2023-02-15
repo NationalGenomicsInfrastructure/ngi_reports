@@ -263,11 +263,12 @@ class Project:
                     ## get flow cell information for each prep from project database (only if -b flag is set)
                     if kwargs.get('barcode_from_fc'):
                         prepObj.seq_fc = []
-                        for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
-                            prepObj.seq_fc.append(fc.split('_')[-1])
-                        if len(prepObj.seq_fc)< 1:
-                            log.error('Sequenced flowcell not defined for the project. Please run ngi_pipelines without the -b flag and amend the report manually')
-                            sys.exit('Stopping execution...')
+                        if not sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
+                            log.error('Sequenced flowcell not defined for the project. Run ngi_pipelines without the \"-b\" flag and amend the report manually.')
+                            sys.exit('Stopping execution...')                        
+                        else:
+                            for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
+                                prepObj.seq_fc.append(fc.split('_')[-1])
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
 
