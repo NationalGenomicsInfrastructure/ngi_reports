@@ -8,6 +8,7 @@ the SciLifeLab repo
 from collections import defaultdict, OrderedDict
 import os
 from string import ascii_uppercase as alphabets
+from functools import reduce
 
 import ngi_reports.reports
 
@@ -192,13 +193,19 @@ class Report(ngi_reports.reports.BaseReport):
             row = []
             for k in filter_keys:
                 if type(i) is dict:
+                    row.append(i.get(k,'NA'))
+                else:
                     if '.' in k:
                         k_list = k.split('.')
-                        row.append(reduce(lambda d, k2: d.get(k2, {}), k_list, i))
+                        if type(getattr(i, k_list[0])) is dict:
+                            try:
+                                row.append(reduce(lambda d, k2: d.get(k2, {}), k_list[1:], getattr(i, k_list[0])) if reduce(lambda d, k2: d.get(k2, {}), k_list[1:], getattr(i, k_list[0])) else 'NA')
+                            except AttributeError:
+                                self.LOG.error('Bad key {}'.format(k))
+                        else:
+                            row.append(getattr(i, k, 'NA'))
                     else:
-                        row.append(i.get(k,'NA'))
-                else:
-                    row.append(getattr(i, k, 'NA'))
+                        row.append(getattr(i, k, 'NA'))
             row = list(map(str, row))
             op_string.append(sep.join(row))
         return '\n'.join(op_string)
