@@ -20,19 +20,22 @@ LOG = loggers.minimal_logger('NGI Reports')
 
 ## CONSTANTS
 # create choices for report type based on available report template
-allowed_report_types = [ fl.replace(".md","") for fl in os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))) ] + ['ign_aggregate_report']
+allowed_report_types = [ fl.replace(".md","") for fl in 
+                        os.listdir(os.path.realpath(os.path.join(os.path.dirname(__file__), 
+                                                                 os.pardir, 
+                                                                 'data', 
+                                                                 'report_templates'))) ] + ['ign_aggregate_report']
 
-def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
+def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
 
-    # Setup
-    template_fn = '{}.md'.format(report_type)
     LOG.info('Report type: {}'.format(report_type))
 
     # use default config or override it if file is specified
     config = report_config.load_config(config_file)
 
     # Import the modules for this report type
-    report_mod = __import__('ngi_reports.reports.{}'.format(report_type), fromlist=['ngi_reports.reports'])
+    report_mod = __import__('ngi_reports.reports.{}'.format(report_type), 
+                            fromlist=['ngi_reports.reports'])
 
     proj = Project()
     proj.populate(LOG, config._sections['organism_names'], **kwargs)
@@ -63,6 +66,8 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
 
     # Get parsed markdown and print to file(s)
     LOG.debug('Converting markdown to HTML...')
+    for fc in proj.flowcells.values():
+       print(fc.date)
     output_mds = report.generate_report_template(proj, template, config.get('ngi_reports', 'support_email'))
     for output_bn, output_md in list(output_mds.items()):
         try:
@@ -71,13 +76,13 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
         except IOError as e:
             LOG.error("Error printing markdown report {} - skipping. {}".format(output_md, IOError(e)))
             continue
-        #Convert markdown to html
+        # Convert markdown to html
         html_out = markdown_to_html(report_type, jinja2_env=env, markdown_text=output_md, reports_dir=reports_dir,
                                     out_path='{}.html'.format(output_bn))
         LOG.info('{} HTML report written to: {}'.format(output_bn.rsplit('/', 1)[1], html_out))
 
     # Generate CSV files for project_summary reports
-    if report_type == 'project_summary' and not kwargs['no_txt']:
+    if report_type == 'project_summary' or report_type == 'ont_project_summary' and not kwargs['no_txt']:
         try:
             report.create_txt_files()
             LOG.info('Generated TXT files...')
@@ -87,12 +92,14 @@ def make_reports (report_type, working_dir=os.getcwd(), config_file=None, **kwar
     # Change back to previous working dir
     os.chdir(old_cwd)
 
-def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_path=None, reports_dir=None, out_path=None):
+def markdown_to_html(report_type, jinja2_env=None, 
+                     markdown_text=None, markdown_path=None, 
+                     reports_dir=None, out_path=None):
     #get path to template dir
     if not reports_dir:
         reports_dir = os.path.realpath(os.path.join(os.path.dirname(__file__), os.pardir, 'data', 'report_templates'))
     #get swedac text to add to report
-    with open(reports_dir+'/swedac.html', 'r') as f:
+    with open(reports_dir + '/swedac.html', 'r') as f:
         swedac_text = f.read()
     #initialise jinja env
     if not jinja2_env:
@@ -102,11 +109,13 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
         with open(markdown_path, 'r') as f:
             markdown_text = f.read()
 
-    md_template = markdown.Markdown(extensions=['meta', 'tables', 'def_list', 'fenced_code', 'mdx_outline'])
+    md_template = markdown.Markdown(extensions=['meta', 'tables', 
+                                                'def_list', 'fenced_code', 
+                                                'mdx_outline'])
     markeddown_text = md_template.convert(markdown_text)
 
     #Markdown meta returns a dict with values as lists
-    html_out = jinja2_env.get_template(report_type+'.html').render(body=markeddown_text,
+    html_out = jinja2_env.get_template(report_type + '.html').render(body=markeddown_text,
                                         meta={key: ''.join(value) for (key, value) in md_template.Meta.items()})
     replace_list = {'[swedac]': swedac_text,
                     '[tick]'  : '<span class="icon_tick">&#10004;</span> ',
@@ -122,10 +131,8 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
 
 def main():
     parser = argparse.ArgumentParser("Make an NGI Report")
-    parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>',
-        help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
-    parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(),
-        help="Working Directory. Default: cwd when script is executed.")
+    parser.add_argument('report_type', choices=allowed_report_types, metavar='<report type>', help="Type of report to generate. Choose from: {}".format(', '.join(allowed_report_types)))
+    parser.add_argument("-d", "--dir", dest="working_dir", default=os.getcwd(), help="Working Directory. Default: cwd when script is executed.")
     parser.add_argument('-c', '--config_file', default=None, action="store", help="Configuration file to use instead of default (~/.ngi_config/ngi_reports.conf)")
     parser.add_argument('-p', '--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('-s', '--signature', default=None, action="store", help="Signature/Name for person who generates 'project_summary' report")
@@ -140,12 +147,12 @@ def main():
     parser.add_argument('--fc_phix', default={}, action="store", type=json.loads, help="Overwrite or use Phix values for mentioned flowcells/lanes provided as a json string, having each flowcell as a key. Example: --fc_phix '{\"BH3JLWCCXX\": {\"1\": \"0.42\", \"3\": \"0.46\"}}'")
     parser.add_argument('--version', action='version', version="NGI reports version - {}".format(__version__))
     parser.add_argument('-md', '--markdown_file', default=None, help="Regenerate the html report from the given markdown file")
-    parser.add_argument('-b', '--barcode_from_fc', default=False, action="store_true", help="retrieve the index from the FC directly")
+    parser.add_argument('-b', '--barcode_from_fc', default=False, action="store_true", help="Retrieve the index from the FC directly (ONLY Illumina)")
 
     kwargs = vars(parser.parse_args())
 
     if kwargs['markdown_file']:
-        print('HTML report written to: '+markdown_to_html(kwargs['report_type'], markdown_path=kwargs['markdown_file']))
+        print('HTML report written to: ' + markdown_to_html(kwargs['report_type'], markdown_path=kwargs['markdown_file']))
     else:
         make_reports(**kwargs)
 
