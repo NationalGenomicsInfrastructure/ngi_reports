@@ -213,7 +213,7 @@ such as publications, presentations, posters, etc., using the following statemen
 
 > The authors acknowledge support from the National Genomics Infrastructure in {% if project.ngi_facility -%} {{ project.ngi_facility }} {%- endif %}
 > funded by Science for Life Laboratory, the Knut and Alice Wallenberg Foundation and the Swedish Research Council,
-> and SNIC/Uppsala Multidisciplinary Center for Advanced Computational Science for assistance with massively parallel sequencing
+> and NAISS/Uppsala Multidisciplinary Center for Advanced Computational Science for assistance with massively parallel sequencing
 > and access to the UPPMAX computational infrastructure
 
 This acknowledgement is used for reporting purposes by the NGI and is critical for the future funding of the facility.
