@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20230609.1
+Add support for NovaSeqXPlus
+
 ## 20230214.1
 Fix bug that RC flag is not shown in sample_info.txt
 
