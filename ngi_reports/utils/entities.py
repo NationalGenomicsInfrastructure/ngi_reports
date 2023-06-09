@@ -360,7 +360,7 @@ class Project:
                                    'FlowCellMode': fc_runparameters.get('RfidsInfo', {}).get('FlowCellMode')
                                    }
             elif fcObj.type == 'NovaSeqXPlus':
-                fcObj.chemistry = {} #TODO: what goes here?
+                fcObj.chemistry = {'RecipeName': fc_runparameters.get('RecipeName')}
             elif fcObj.type == 'NextSeq500':
                 fcObj.chemistry = {'Chemistry': fc_runparameters.get('Chemistry').replace('NextSeq ', '')}
             elif fcObj.type == 'NextSeq2000':
@@ -385,7 +385,7 @@ class Project:
                                       }
             elif fcObj.type == 'NovaSeqXPlus':
                 fcObj.seq_software = {'ApplicationName': fc_runparameters.get('Application'),
-                                      'ApplicationVersion': fc_runparameters.get('SystemSuiteVersion')
+                                      'ApplicationVersion': fc_runparameters.get('SystemSuiteVersion') 
                                       }
             else:
                 fcObj.seq_software = {'RTAVersion': fc_runparameters.get('RTAVersion', fc_runparameters.get('RtaVersion')),
