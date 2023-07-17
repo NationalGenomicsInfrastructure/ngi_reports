@@ -75,6 +75,8 @@ class Report(ngi_reports.reports.BaseReport):
 
             if fc.type == 'NovaSeq6000':
                 fc_chem = '\'{}\' workflow in \'{}\' mode flowcell'.format(fc.chemistry.get('WorkflowType'), fc.chemistry.get('FlowCellMode'))
+            elif fc.type == 'NovaSeqXPlus':
+                fc_chem = '\'{}\' mode'.format(fc.chemistry.get('RecipeName'))
             elif fc.type == 'NextSeq500':
                 fc_chem = '\'{}-Output\' chemistry'.format(fc.chemistry.get('Chemistry'))
             elif fc.type == 'NextSeq2000':
@@ -83,7 +85,10 @@ class Report(ngi_reports.reports.BaseReport):
                 fc_chem = '\'{}\' chemistry'.format(fc.chemistry.get('Chemistry'))
 
             applicationName = 'MSC' if fc.type == "MiSeq" else fc.seq_software.get('ApplicationName')
-            seq_software = "{} {}/RTA {}".format(applicationName, fc.seq_software.get('ApplicationVersion'), fc.seq_software.get('RTAVersion'))
+            if fc.type == 'NovaSeqXPlus':
+                seq_software = "{} {}".format(applicationName, fc.seq_software.get('ApplicationVersion'))
+            else:
+                seq_software = "{} {}/RTA {}".format(applicationName, fc.seq_software.get('ApplicationVersion'), fc.seq_software.get('RTAVersion'))
             tmp_method = seq_template.format('SECTION', fc.type, seq_software, run_setup_text, fc_chem, fc.casava)
 
             ## to make sure the sequencing methods are unique
@@ -194,7 +199,11 @@ class Report(ngi_reports.reports.BaseReport):
                 if type(i) is dict:
                     row.append(i.get(k,'NA'))
                 else:
-                    row.append(getattr(i, k, 'NA'))
+                    if '.' in k:
+                        k_list = k.split('.')
+                        row.append(getattr(i, k_list[0]).get(k_list[1], 'NA'))
+                    else:
+                        row.append(getattr(i, k, 'NA'))
             row = list(map(str, row))
             op_string.append(sep.join(row))
         return '\n'.join(op_string)
