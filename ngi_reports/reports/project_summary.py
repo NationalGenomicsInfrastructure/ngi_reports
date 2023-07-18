@@ -107,7 +107,12 @@ class Report(ngi_reports.reports.BaseReport):
         unit_magnitude = {'#reads' : '', 'Kreads': ' Thousand','Mreads': ' Million'}
         sample_header = ['NGI ID', 'User ID', 'RC', proj.samples_unit, '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'initial_qc.initial_qc_status', 'total_reads', 'qscore']
-
+        for s, v in list(proj.samples.items()):
+            v = vars(v)
+            if v['initial_qc']['initial_qc_status'] == 'PASSED':
+                v['initial_qc']['initial_qc_status'] = 'Pass'
+            elif v['initial_qc']['initial_qc_status'] == 'FAILED':
+                v['initial_qc']['initial_qc_status'] = 'Fail'
         self.tables_info['tables']['sample_info'] = self.create_table_text(proj.samples.values(), filter_keys=sample_filter, header=sample_header)
         self.tables_info['header_explanation']['sample_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
                                                                 '* _User ID:_ Sample name submitted by user\n'\
@@ -124,6 +129,10 @@ class Report(ngi_reports.reports.BaseReport):
             for p in list(v.preps.values()):
                 p = vars(p)
                 p['ngi_id'] = s
+                if p['qc_status'] == 'PASSED':
+                    p['qc_status'] = 'Pass'
+                elif p['qc_status'] == 'FAILED':
+                    p['qc_status'] = 'Fail'
                 library_list.append(p)
         self.tables_info['tables']['library_info'] = self.create_table_text(sorted(library_list, key=lambda d: d['ngi_id']), filter_keys=library_filter, header=library_header)
         self.tables_info['header_explanation']['library_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\

@@ -111,8 +111,8 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
     replace_list = {'[swedac]': swedac_text,
                     '[tick]'  : '<span class="icon_tick">&#10004;</span> ',
                     '[cross]' : '<span class="icon_cross">&#10008;</span> ',
-                    'PASSED' : '<span class="pass">Pass</span> ',
-                    'FAILED' : '<span class="fail">Fail</span> ',
+                    'Pass' : '<span class="pass">Pass</span> ',
+                    'Fail' : '<span class="fail">Fail</span> ',
                     }
     for key in replace_list:
         html_out = html_out.replace(key, replace_list[key])
