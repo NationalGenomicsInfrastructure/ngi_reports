@@ -76,7 +76,7 @@ class Report(ngi_reports.reports.BaseReport):
             if fc.type == 'NovaSeq6000':
                 fc_chem = '\'{}\' workflow in \'{}\' mode flowcell'.format(fc.chemistry.get('WorkflowType'), fc.chemistry.get('FlowCellMode'))
             elif fc.type == 'NovaSeqXPlus':
-                fc_chem = '\'{}\' mode'.format(fc.chemistry.get('RecipeName'))
+                fc_chem = '\'{}\' mode flowcell'.format(fc.chemistry.get('RecipeName').replace(' Sequencing',''))
             elif fc.type == 'NextSeq500':
                 fc_chem = '\'{}-Output\' chemistry'.format(fc.chemistry.get('Chemistry'))
             elif fc.type == 'NextSeq2000':
