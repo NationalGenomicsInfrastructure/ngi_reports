@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20230802.1
+Minor refactor on NovaSeqXPlus mode in ngi_reports
+
 ## 20230609.1
 Add support for NovaSeqXPlus
 
