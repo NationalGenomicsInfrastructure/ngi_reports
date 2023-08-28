@@ -113,6 +113,7 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
                     '[cross]' : '<span class="icon_cross">&#10008;</span> ',
                     'Pass' : '<span class="pass">Pass</span> ',
                     'Fail' : '<span class="fail">Fail</span> ',
+                    'NA' : '<code>NA</code> '
                     }
     for key in replace_list:
         html_out = html_out.replace(key, replace_list[key])
