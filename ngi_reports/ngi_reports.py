@@ -110,7 +110,10 @@ def markdown_to_html(report_type, jinja2_env=None, markdown_text=None, markdown_
                                         meta={key: ''.join(value) for (key, value) in md_template.Meta.items()})
     replace_list = {'[swedac]': swedac_text,
                     '[tick]'  : '<span class="icon_tick">&#10004;</span> ',
-                    '[cross]' : '<span class="icon_cross">&#10008;</span> '
+                    '[cross]' : '<span class="icon_cross">&#10008;</span> ',
+                    '[pass]' : '<span class="pass">Pass</span>',
+                    '[fail]' : '<span class="fail">Fail</span>',
+                    '[na]' : '<code>NA</code>'
                     }
     for key in replace_list:
         html_out = html_out.replace(key, replace_list[key])
