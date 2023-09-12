@@ -76,7 +76,7 @@ class Report(ngi_reports.reports.BaseReport):
             if fc.type == 'NovaSeq6000':
                 fc_chem = '\'{}\' workflow in \'{}\' mode flowcell'.format(fc.chemistry.get('WorkflowType'), fc.chemistry.get('FlowCellMode'))
             elif fc.type == 'NovaSeqXPlus':
-                fc_chem = '\'{}\' mode'.format(fc.chemistry.get('RecipeName'))
+                fc_chem = '\'{}\' mode flowcell'.format(fc.chemistry.get('RecipeName').replace(' Sequencing',''))
             elif fc.type == 'NextSeq500':
                 fc_chem = '\'{}-Output\' chemistry'.format(fc.chemistry.get('Chemistry'))
             elif fc.type == 'NextSeq2000':
@@ -112,7 +112,14 @@ class Report(ngi_reports.reports.BaseReport):
         unit_magnitude = {'#reads' : '', 'Kreads': ' Thousand','Mreads': ' Million'}
         sample_header = ['NGI ID', 'User ID', 'RC', proj.samples_unit, '>=Q30']
         sample_filter = ['ngi_id', 'customer_name', 'initial_qc.initial_qc_status', 'total_reads', 'qscore']
-
+        for s, v in list(proj.samples.items()):
+            v = vars(v)
+            if v['initial_qc']['initial_qc_status'] == 'PASSED':
+                v['initial_qc']['initial_qc_status'] = '[pass]'
+            elif v['initial_qc']['initial_qc_status'] == 'FAILED':
+                v['initial_qc']['initial_qc_status'] = '[fail]'
+            elif v['initial_qc']['initial_qc_status'] == 'NA':
+                v['initial_qc']['initial_qc_status'] = '[na]'
         self.tables_info['tables']['sample_info'] = self.create_table_text(proj.samples.values(), filter_keys=sample_filter, header=sample_header)
         self.tables_info['header_explanation']['sample_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
                                                                 '* _User ID:_ Sample name submitted by user\n'\
@@ -129,6 +136,12 @@ class Report(ngi_reports.reports.BaseReport):
             for p in list(v.preps.values()):
                 p = vars(p)
                 p['ngi_id'] = s
+                if p['qc_status'] == 'PASSED':
+                    p['qc_status'] = '[pass]'
+                elif p['qc_status'] == 'FAILED':
+                    p['qc_status'] = '[fail]'
+                elif p['qc_status'] == 'NA':
+                    p['qc_status'] = '[na]'
                 library_list.append(p)
         self.tables_info['tables']['library_info'] = self.create_table_text(sorted(library_list, key=lambda d: d['ngi_id']), filter_keys=library_filter, header=library_header)
         self.tables_info['header_explanation']['library_info'] = '* _NGI ID:_ Internal NGI sample identifier\n'\
@@ -139,7 +152,7 @@ class Report(ngi_reports.reports.BaseReport):
 
         ## lanes_info table
         lanes_header = ['Date', 'FC id', 'Lane', 'Cluster(M)', '>=Q30(%)', 'Phix', 'Method']
-        lanes_filter = ['date', 'name', 'id', 'cluster', 'phix', 'avg_qval', 'seq_meth']
+        lanes_filter = ['date', 'name', 'id', 'cluster', 'avg_qval', 'phix', 'seq_meth']
         lanes_list = []
         for f, v in list(proj.flowcells.items()):
             for l in list(v.lanes.values()):
