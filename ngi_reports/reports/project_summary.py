@@ -259,6 +259,10 @@ class Report(ngi_reports.reports.BaseReport):
             :param str op_dir: Path where the TXT files should be created, current dir is default
         """
         for tb_nm, tb_cont in list(self.tables_info['tables'].items()):
+            if '[pass]' or '[fail]' or '[na]' in tb_cont:
+                tb_cont = tb_cont.replace('[pass]', 'Pass')
+                tb_cont = tb_cont.replace('[fail]', 'Fail')
+                tb_cont = tb_cont.replace('[na]', 'NA')
             op_fl = '{}_{}.txt'.format(self.report_basename, tb_nm)
             if op_dir:
                 op_fl = os.path.join(op_dir, op_fl)
