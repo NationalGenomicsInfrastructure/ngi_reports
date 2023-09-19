@@ -93,7 +93,7 @@ Data Analysis
 No sample information to be displayed.
 {% else %}
 NGI ID | User ID | RC | {{ project.samples_unit }} | >=Q30(%)
--------|---------|----|----------------------------|---------
+:-------|:---------|:----|:----------------------------|:---------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.initial_qc.initial_qc_status }} | {{ sample.total_reads }} | {{ sample.qscore }}
 {% endfor %}
@@ -109,7 +109,7 @@ Below you can find an explanation of the header column used in the table.
 No library information to be displayed.
 {% else %}
 NGI ID | Index | Lib. Prep | Avg. FS(bp) | Lib. QC
--------|-------|-----------|-------------|---------
+:-------|:-------|:-----------|:-------------|:---------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
@@ -129,7 +129,7 @@ Below you can find an explanation of the header column used in the table.
 No lanes information to be displayed.
 {% else %}
 Date | Flowcell | Lane | Clusters(M) | >=Q30(%) | PhiX | Method
------|----------|------|-------------|----------|------|-------
+:-----|:----------|:------|:-------------|:----------|:------|:-------
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {% for lane in fc.lanes.values() -%}
 {{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.cluster }} | {{ lane.avg_qval }} | {{ lane.phix }}  | Seq. {{ fc.seq_meth }}
@@ -149,7 +149,7 @@ None have been reported for this project.
 # Aborted/Not Sequenced samples
 
 NGI ID | User ID | Status
--------|---------|-------
+:-------|:---------|:-------
 {% for sample, info in project.aborted_samples.items() -%}
 {{ sample }} | {{ info.user_id }} | {{ info.status }}
 {% endfor -%}
@@ -221,3 +221,8 @@ This acknowledgement is used for reporting purposes by the NGI and is critical f
 # Further Help
 If you have any queries, please get in touch at
 [{{ report_info.support_email }}](mailto:{{ report_info.support_email }}).
+
+
+Postal address | Visiting address | Shipping address
+:-------|:---------|:-------
+NGI Stockholm<br>NGI-Alfa3<br>Science for Life Laboratory<br>Box 1031<br>17121 Solna, Sweden | SciLifeLab Stockholm<br>Science for Life Laboratory,<br>Tomtebodavägen 23A,<br>17165 Solna, Sweden | Att: Mattias Ormestad<br>NGI-SciLifeLab<br>Tomtebodavägen 23B,<br>17165 Solna, Sweden
