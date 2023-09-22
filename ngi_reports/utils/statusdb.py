@@ -65,13 +65,13 @@ class statusdb_connection(object):
             open_date = datetime.strptime("2015-01-01", "%Y-%m-%d")
 
         project_flowcells = {}
-        date_sorted_fcs = sorted(list(self.proj_list.keys()), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
+        date_sorted_fcs = sorted(list(self.proj_list.keys()), key=lambda k: datetime.strptime(k.split('_')[0][-6:], "%y%m%d"), reverse=True)
         for fc in date_sorted_fcs:
             fc_date, fc_name = fc.split('_')
-            if datetime.strptime(fc_date,'%y%m%d') < open_date:
+            if datetime.strptime(fc_date[-6:],'%y%m%d') < open_date:
                 break
             if project_id in self.proj_list[fc] and fc_name not in project_flowcells.keys():
-                project_flowcells[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date, 'db':self.db.name}
+                project_flowcells[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date[-6:], 'db':self.db.name}
 
         return project_flowcells
 

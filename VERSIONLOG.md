@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20230922.1
+Fix bug with NovaSeqXPlus FC date
+
 ## 20230802.1
 Minor refactor on NovaSeqXPlus mode in ngi_reports
 
