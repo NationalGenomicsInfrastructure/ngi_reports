@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20231017.1
+Refactor delivery report to harmonize with project agreement
+
 ## 20230802.1
 Minor refactor on NovaSeqXPlus mode in ngi_reports
 
