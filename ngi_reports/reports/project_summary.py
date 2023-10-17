@@ -38,6 +38,7 @@ class Report(ngi_reports.reports.BaseReport):
 
         ## Helper vars
         seq_methods = OrderedDict()
+        dem_methods = OrderedDict()
 
         ## Get information for the report
         self.report_basename              = proj.ngi_name
@@ -47,8 +48,9 @@ class Report(ngi_reports.reports.BaseReport):
         self.report_info['accredit']      = self.get_accredit_info(proj.accredited, proj.library_construction, proj.ngi_name)
 
         ## Get sequecing method for the flowcell
-        seq_template = '{}) Samples were sequenced on {} ({}) with a {} setup '\
-                       'using {}. The Bcl to FastQ conversion was performed using {} from the CASAVA software '\
+        seq_template = '{}) Samples were sequenced on {} ({}) with a {} setup using {}.'
+        ## Get demultiplexing method for the flowcell
+        dem_template = '{}) The Bcl to FastQ conversion was performed using {} from the CASAVA software '\
                        'suite. The quality scale used is Sanger / phred33 / Illumina 1.8+.'
         ## Collect required information for all flowcell run for the project
         for fc in proj.flowcells.values():
@@ -89,20 +91,28 @@ class Report(ngi_reports.reports.BaseReport):
                 seq_software = "{} {}".format(applicationName, fc.seq_software.get('ApplicationVersion'))
             else:
                 seq_software = "{} {}/RTA {}".format(applicationName, fc.seq_software.get('ApplicationVersion'), fc.seq_software.get('RTAVersion'))
-            tmp_method = seq_template.format('SECTION', fc.type, seq_software, run_setup_text, fc_chem, fc.casava)
+            tmp_seq_method = seq_template.format('SECTION', fc.type, seq_software, run_setup_text, fc_chem)
+            tmp_dem_method = dem_template.format('SECTION', fc.casava)
 
             ## to make sure the sequencing methods are unique
-            if tmp_method not in list(seq_methods.keys()):
-                seq_methods[tmp_method] = alphabets[len(list(seq_methods.keys()))]
-            fc.seq_meth = seq_methods[tmp_method]
+            if tmp_seq_method not in list(seq_methods.keys()):
+                seq_methods[tmp_seq_method] = alphabets[len(list(seq_methods.keys()))]
+            fc.seq_meth = seq_methods[tmp_seq_method]
+
+            ## to make sure the demux methods are unique
+            if tmp_dem_method not in list(dem_methods.keys()):
+                dem_methods[tmp_dem_method] = alphabets[len(list(dem_methods.keys()))]
+            fc.dem_meth = dem_methods[tmp_dem_method]
 
 
         ## give proper section name for the methods
         self.report_info['sequencing_methods'] = "\n\n".join([m.replace('SECTION',seq_methods[m]) for m in seq_methods])
-        ## Check if sequencing info is complete
+        self.report_info['demultiplexing_methods'] = "\n\n".join([m.replace('SECTION',dem_methods[m]) for m in dem_methods])
+        ## Check if sequencing and demultiplexing info is complete
         if not self.report_info['sequencing_methods']:
             self.LOG.warn('Sequencing methods may have some missing information, kindly check your inputs.')
-
+        if not self.report_info['demultiplexing_methods']:
+            self.LOG.warn('Demultiplexing methods may have some missing information, kindly check your inputs.')
 
         ###############################################################################
         ##### Create table text and header explanation from collected information #####
