@@ -188,8 +188,6 @@ class Project:
 
         if 'dds' in proj.get('delivery_type','').lower():
             self.cluster = 'dds'
-        elif 'grus' in proj.get('delivery_type','').lower():
-            self.cluster = 'grus'
         elif 'hdd' in proj.get('delivery_type','').lower():
             self.cluster = 'hdd'
         else:
