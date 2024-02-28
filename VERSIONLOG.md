@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20240228.1
+Remove GRUS and reference to NGI UPPMAX ID from report
+
 ## 20231017.1
 Refactor delivery report to harmonize with project agreement
 

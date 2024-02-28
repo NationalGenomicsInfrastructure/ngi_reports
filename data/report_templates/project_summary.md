@@ -71,8 +71,7 @@ Output FastQ files are transferred securely to [UPPMAX](http://www.uppmax.uu.se/
 where a number of standardised bioinformatics quality control checks are performed
 to ensure that data meets our guarantee of data quality and quantity before delivery.
 
-Data delivery is done via the UPPMAX storage cluster **GRUS** or
-the SciLifeLab **Data Delivery System (DDS)**, from which users may download the data.
+Data delivery is done via the SciLifeLab **Data Delivery System (DDS)**, from which users may download the data.
 
 ### Data Analysis
 When Best Practice analysis is applicable, information about the pipeline that has been used (version etc.) can be found in the corresponding MultiQC report.
@@ -187,16 +186,6 @@ The naming of the files follow the convention:
 {%- endif %}
 
 
-{% if project.cluster == 'grus' -%}
-## Data access at UPPMAX
-
-Data have been uploaded to the UPPNEX (UPPMAX Next
-Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) called **GRUS**. More details can be found on the following links
-
-- [NGI data delivery note](https://ngisweden.scilifelab.se/info/Data%20delivery)
-- [UPPMAX GRUS user guide](https://www.uppmax.uu.se/support/user-guides/grus-user-guide/)
-
-{% elif project.cluster == 'dds' -%}
 ## Data access at DDS
 
 Data have been uploaded to the **Data Delivery System**
@@ -207,7 +196,6 @@ More details can be found on the following links
 - [Youtube tutorial for DDS](https://youtu.be/Mk5nhClsfTA)
 - [DDS official document](https://scilifelabdatacentre.github.io/dds_cli/)
 
-{%- endif %}
 
 ## Acknowledgements
 
