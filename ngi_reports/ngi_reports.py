@@ -132,7 +132,6 @@ def main():
     parser.add_argument('-c', '--config_file', default=None, action="store", help="Configuration file to use instead of default (~/.ngi_config/ngi_reports.conf)")
     parser.add_argument('-p', '--project', default=None, action="store", help="Project name to generate 'project_summary' report")
     parser.add_argument('-s', '--signature', default=None, action="store", help="Signature/Name for person who generates 'project_summary' report")
-    parser.add_argument('-u', '--uppmax_id', default=None, action="store", help="Given UPPMAX id will be used while generating report")
     parser.add_argument('-q', '--quality', default=None, action="store", type=int, help="Q30 threshold for samples to set status")
     parser.add_argument('-y', '--yield_from_fc', default=False, action="store_true", help="Compute the total for each sample from the retrived FC directly")
     parser.add_argument('--skip_fastq', action="store_true", help="Option to skip naming convention of fastq files from report")
