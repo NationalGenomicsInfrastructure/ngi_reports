@@ -96,6 +96,7 @@ class Project:
         self.aborted_samples = OrderedDict()
         self.samples = OrderedDict()
         self.flowcells = {}
+        self.proj_lane_info = {}
         self.accredited = { 'library_preparation': 'N/A',
                             'data_processing': 'N/A',
                             'sequencing': 'N/A',
@@ -120,6 +121,7 @@ class Project:
         self.ngi_facility = ''
         self.ngi_name = ''
         self.samples_unit  = '#reads'
+        self.reads_unit = '#reads'
         self.num_samples = 0
         self.num_lanes = 0
         self.ngi_id = ''
@@ -535,6 +537,13 @@ class Project:
             try:
                 qinfo = sample_qval[sample]
                 total_qvalsbp, total_bases, total_reads = (0, 0, 0)
+                for k, v in qinfo.items():
+                    fc_id = k.split('_')[0]
+                    if fc_id not in self.proj_lane_info:
+                        self.proj_lane_info[fc_id] = {'qval': 0, 'reads': 0, 'count': 0}
+                    self.proj_lane_info[fc_id]['qval'] += v['qval']
+                    self.proj_lane_info[fc_id]['reads'] += v['reads']
+                    self.proj_lane_info[fc_id]['count'] += 1
                 for k in qinfo:
                     total_qvalsbp += qinfo[k]['qval'] * qinfo[k]['bases']
                     total_bases += qinfo[k]['bases']
@@ -561,9 +570,25 @@ class Project:
             else:
                 self.samples_unit = 'Kreads'
                 samples_divisor = 1000
+
         for sample in self.samples:
             self.samples[sample].total_reads = '{:.2f}'.format(self.samples[sample].total_reads/float(samples_divisor))
 
+        reads_divisor = 1
+        if self.proj_lane_info[fc_id]['reads'] > 1000:
+            if self.proj_lane_info[fc_id]['reads'] > 1000000:
+                self.reads_unit = 'Mreads'
+                reads_divisor = 1000000
+            else:
+                self.reads_unit = 'Kreads'
+                reads_divisor = 1000
+
+        for fc_id in self.proj_lane_info:
+            if self.proj_lane_info[fc_id]['count'] != 0:
+                self.proj_lane_info[fc_id]['qval'] /= self.proj_lane_info[fc_id]['count']
+                self.proj_lane_info[fc_id]['qval'] = round(self.proj_lane_info[fc_id]['qval'], 2)
+                self.proj_lane_info[fc_id]['reads'] = round(self.proj_lane_info[fc_id]['reads'] / reads_divisor, 2)
+                self.proj_lane_info[fc_id][self.reads_unit] = self.reads_unit
 
 
     def get_library_method(self, project_name, application, library_construction_method, library_prep_option):
