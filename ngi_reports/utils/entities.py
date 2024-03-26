@@ -562,32 +562,16 @@ class Project:
             except (TypeError, KeyError):
                 log.error('Could not calcluate average Q30 for sample {}'.format(sample))
         # Cut down total reads to bite sized numbers
-        samples_divisor = 1
-        if max_total_reads > 1000:
-            if max_total_reads > 1000000:
-                self.samples_unit = 'Mreads'
-                samples_divisor = 1000000
-            else:
-                self.samples_unit = 'Kreads'
-                samples_divisor = 1000
+        samples_divisor = 1000000 if max_total_reads > 1000000 else 1000 if max_total_reads > 1000 else 1
+        for sample_obj in self.samples.values():
+            sample_obj.total_reads = '{:.2f}'.format(sample_obj.total_reads / samples_divisor)
 
-        for sample in self.samples:
-            self.samples[sample].total_reads = '{:.2f}'.format(self.samples[sample].total_reads/float(samples_divisor))
-
-        reads_divisor = 1
-        if self.proj_lane_info[fc_id]['reads'] > 1000:
-            if self.proj_lane_info[fc_id]['reads'] > 1000000:
-                self.reads_unit = 'Mreads'
-                reads_divisor = 1000000
-            else:
-                self.reads_unit = 'Kreads'
-                reads_divisor = 1000
-
-        for fc_id in self.proj_lane_info:
-            if self.proj_lane_info[fc_id]['count'] != 0:
-                self.proj_lane_info[fc_id]['qval'] /= self.proj_lane_info[fc_id]['count']
-                self.proj_lane_info[fc_id]['qval'] = round(self.proj_lane_info[fc_id]['qval'], 2)
-                self.proj_lane_info[fc_id]['reads'] = round(self.proj_lane_info[fc_id]['reads'] / reads_divisor, 2)
+        reads_divisor = 1000000 if total_reads > 1000000 else 1000 if total_reads > 1000 else 1
+        for fc_id, info in self.proj_lane_info.items():
+            if info['count'] != 0:
+                info['qval'] /= info['count']
+                info['qval'] = round(info['qval'], 2)
+                info['reads'] = round(info['reads'] / reads_divisor, 2)
                 self.proj_lane_info[fc_id][self.reads_unit] = self.reads_unit
 
 
