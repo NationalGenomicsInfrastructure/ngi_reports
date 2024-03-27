@@ -133,13 +133,8 @@ No lanes information to be displayed.
 Date | Flowcell | Lane | Clusters(M) | >=Q30(%) | PhiX | Method
 :-----|:----------|:------|:-------------|:----------|:------|:-------
 {%- for fc in project.flowcells.values()|sort(attribute='date') %}
-{%- set first_row = true %}
-{%- for lane_id, lane_info in project.proj_lane_info.items() %}
-{%- if lane_id in fc.lanes %}
-{%- set lane = fc.lanes[lane_id] %}
-{{ "" if first_row else "\n" }}{{ fc.date }} | `{{ fc.name }}` | {{ lane_id }} | {{ lane_info.reads }} | {{ lane_info.qval }} | {{ lane.phix }} | Seq. {{ fc.seq_meth }}
-{%- set first_row = false %}
-{%- endif %}
+{%- for lane in fc.lanes.values() %}
+{{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.total_reads_proj }} | {{ lane.weighted_avg_qval_proj }} | {{ lane.phix }} | Seq. {{ fc.seq_meth }}
 {%- endfor %}
 {% endfor %}
 

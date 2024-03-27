@@ -61,6 +61,10 @@ class Lane:
         self.cluster  = ''
         self.id       = ''
         self.phix     = ''
+        self.weighted_avg_qval_proj     = 0
+        self.total_reads_proj           = 0
+        self.total_reads_with_qval_proj = 0
+        self.reads_unit                 = '#reads'
 
     def set_lane_info(self, to_set, key, lane_info, reads, as_million=False):
         """Set the average value of gives key from given lane info
@@ -96,7 +100,6 @@ class Project:
         self.aborted_samples = OrderedDict()
         self.samples = OrderedDict()
         self.flowcells = {}
-        self.proj_lane_info = {}
         self.accredited = { 'library_preparation': 'N/A',
                             'data_processing': 'N/A',
                             'sequencing': 'N/A',
@@ -121,7 +124,6 @@ class Project:
         self.ngi_facility = ''
         self.ngi_name = ''
         self.samples_unit  = '#reads'
-        self.reads_unit = '#reads'
         self.num_samples = 0
         self.num_lanes = 0
         self.ngi_id = ''
@@ -509,14 +511,31 @@ class Project:
                     laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum, str(r_num))
                     if kwargs.get('fc_phix',{}).get(fcObj.name, {}):
                         laneObj.phix = kwargs.get('fc_phix').get(fcObj.name).get(lane)
-
+                    #Calculate weighted Q30 value and add it to lane data                
+                    laneObj.total_reads_proj += pfrd
+                    if pfrd and qval:
+                        laneObj.weighted_avg_qval_proj += pfrd * qval
+                        laneObj.total_reads_with_qval_proj += pfrd
                     fcObj.lanes[lane] = laneObj
 
                     # Check if the above created lane object has all needed info
                     for k,v in vars(laneObj).items():
                         if not v:
                             log.warn('Could not fetch {} for FC {} at lane {}'.format(k, fcObj.name, lane))
-
+                #Add total reads and Q30 to lane data
+                else:
+                    laneObj = fcObj.lanes[lane]
+                    laneObj.total_reads_proj += pfrd
+                    if pfrd and qval:
+                        laneObj.weighted_avg_qval_proj += pfrd * qval
+                        laneObj.total_reads_with_qval_proj += pfrd
+            #Add units, round off values, and add to flowcells object
+            for lane in fcObj.lanes:
+                laneObj = fcObj.lanes[lane]
+                laneObj.reads_unit, lane_divisor = self.get_units_and_divisor(laneObj.total_reads_proj)
+                laneObj.total_reads_proj = round(laneObj.total_reads_proj / lane_divisor, 2)
+                laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
+                laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
             self.flowcells[fcObj.name] = fcObj
 
         if not self.flowcells:
@@ -537,13 +556,6 @@ class Project:
             try:
                 qinfo = sample_qval[sample]
                 total_qvalsbp, total_bases, total_reads = (0, 0, 0)
-                for k, v in qinfo.items():
-                    fc_id = k.split('_')[0]
-                    if fc_id not in self.proj_lane_info:
-                        self.proj_lane_info[fc_id] = {'qval': 0, 'reads': 0, 'count': 0}
-                    self.proj_lane_info[fc_id]['qval'] += v['qval']
-                    self.proj_lane_info[fc_id]['reads'] += v['reads']
-                    self.proj_lane_info[fc_id]['count'] += 1
                 for k in qinfo:
                     total_qvalsbp += qinfo[k]['qval'] * qinfo[k]['bases']
                     total_bases += qinfo[k]['bases']
@@ -562,34 +574,23 @@ class Project:
             except (TypeError, KeyError):
                 log.error('Could not calcluate average Q30 for sample {}'.format(sample))
         # Cut down total reads to bite sized numbers
-        samples_divisor = 1
-        if max_total_reads > 1000:
-            if max_total_reads > 1000000:
-                self.samples_unit = 'Mreads'
-                samples_divisor = 1000000
-            else:
-                self.samples_unit = 'Kreads'
-                samples_divisor = 1000
+        self.samples_unit, samples_divisor = self.get_units_and_divisor(max_total_reads)
 
         for sample in self.samples:
             self.samples[sample].total_reads = '{:.2f}'.format(self.samples[sample].total_reads/float(samples_divisor))
 
-        reads_divisor = 1
-        if self.proj_lane_info[fc_id]['reads'] > 1000:
-            if self.proj_lane_info[fc_id]['reads'] > 1000000:
-                self.reads_unit = 'Mreads'
-                reads_divisor = 1000000
+    def get_units_and_divisor(self, reads):
+        """Add millions or thousands unit to reads data"""
+        divisor = 1
+        unit  = '#reads'
+        if reads > 1000:
+            if reads > 1000000:
+                unit = 'Mreads'
+                divisor = 1000000
             else:
-                self.reads_unit = 'Kreads'
-                reads_divisor = 1000
-
-        for fc_id in self.proj_lane_info:
-            if self.proj_lane_info[fc_id]['count'] != 0:
-                self.proj_lane_info[fc_id]['qval'] /= self.proj_lane_info[fc_id]['count']
-                self.proj_lane_info[fc_id]['qval'] = round(self.proj_lane_info[fc_id]['qval'], 2)
-                self.proj_lane_info[fc_id]['reads'] = round(self.proj_lane_info[fc_id]['reads'] / reads_divisor, 2)
-                self.proj_lane_info[fc_id][self.reads_unit] = self.reads_unit
-
+                unit = 'Kreads'
+                divisor = 1000
+        return (unit, divisor)
 
     def get_library_method(self, project_name, application, library_construction_method, library_prep_option):
         """Get the library construction method and return as formatted string
