@@ -44,7 +44,7 @@ def proceed_or_not(question):
         elif choice in no:
             return False
         else:
-            sys.stdout.write("Please respond with 'yes' or 'no' ")
+            sys.stderr.write("Please respond with 'yes' or 'no' ")
 
 
 def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
@@ -76,9 +76,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
 
     # check if the current dir is correct
     if not working_base_dir == report.project:
-        question = "The current directory {} does not belong to the chosen project {}. Continue? ".format(
-            working_dir, report.project
-        )
+        question = f"The current directory {working_dir} does not belong to the chosen project {report.project}. Continue? "
         if proceed_or_not(question):
             LOG.info(
                 "The reports for project {} will be generated in the current directory {}".format(
@@ -87,9 +85,9 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
             )
         else:
             LOG.error(
-                "Exiting the script as the current directory does not belong to the chosen project"
+                "Exiting the script as the current directory does not belong to the chosen project!"
             )
-            return
+            sys.exit(1)
     else:
         LOG.info(
             "The reports for project {} will be generated in the current directory {}".format(
