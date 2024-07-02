@@ -198,9 +198,9 @@ class Project:
             self.cluster = 'unknown'
 
         self.best_practice = False if proj_details.get('best_practice_bioinformatics','No') == 'No' else True
-        self.library_construction = self.get_library_method(self.ngi_name, 
-                                                            self.application, 
-                                                            self.library_construction_method, 
+        self.library_construction = self.get_library_method(self.ngi_name,
+                                                            self.application,
+                                                            self.library_construction_method,
                                                             self.library_prep_option)
         self.is_finished_lib = True if 'by user' in self.library_construction.lower() else False
 
@@ -264,14 +264,14 @@ class Project:
                 if prep.get('reagent_label') and prep.get('prep_status'):
                     prepObj.barcode = prep.get('reagent_label', 'NA')
                     prepObj.qc_status = prep.get('prep_status', 'NA')
-                    
+
                     # Get flow cell information for each prep from project database (only if -b flag is set)
                     if kwargs.get('barcode_from_fc'):
                         prepObj.seq_fc = []
-                        if not sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
+                        if not sample.get('library_prep').get(prep_id).get('sequenced_fc'):
                             log.error('Sequenced flowcell not defined for the project. Run ngi_pipelines without the \"-b\" flag and amend the report manually.')
-                            sys.exit('Stopping execution...')                        
-                        for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'): 
+                            sys.exit('Stopping execution...')
+                        for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'):
                             prepObj.seq_fc.append(fc.split('_')[-1])
                 else:
                     log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
@@ -358,7 +358,7 @@ class Project:
             fcObj.run_setup = fc_details.get('RunInfo').get('Reads')
 
             if fcObj.type == 'NovaSeq6000':
-                fcObj.chemistry = {'WorkflowType': fc_runparameters.get('WorkflowType'), 
+                fcObj.chemistry = {'WorkflowType': fc_runparameters.get('WorkflowType'),
                                    'FlowCellMode': fc_runparameters.get('RfidsInfo', {}).get('FlowCellMode')
                                    }
             elif fcObj.type == 'NovaSeqXPlus':
@@ -387,7 +387,7 @@ class Project:
                                       }
             elif fcObj.type == 'NovaSeqXPlus':
                 fcObj.seq_software = {'ApplicationName': fc_runparameters.get('Application'),
-                                      'ApplicationVersion': fc_runparameters.get('SystemSuiteVersion') 
+                                      'ApplicationVersion': fc_runparameters.get('SystemSuiteVersion')
                                       }
             else:
                 fcObj.seq_software = {'RTAVersion': fc_runparameters.get('RTAVersion', fc_runparameters.get('RtaVersion')),
@@ -406,7 +406,7 @@ class Project:
                 for fc_sample in fc_details.get('samplesheet_csv'):
                     if fc_sample.get('Sample_Name').split('_')[0] == self.ngi_id:
                         fc_samples.append(fc_sample.get('Sample_Name'))
-                
+
                 # Iterate through all samples in project to identify their prep_ID (only if they are on the flowcell)
                 for sample_ID in list(self.samples):
                      for prep_ID in list(self.samples.get(sample_ID).preps):
@@ -415,19 +415,19 @@ class Project:
                             preps_samples_on_fc.append([sample_ID, prep_ID])
                         else:
                             continue
-                
+
                 # Get (if any) samples that are on the fc, but are not recorded in LIMS (i.e. added bc from undet reads)
                 if len(set(list(self.samples))) != len(set(fc_samples)):
                     list_additional_samples = list(set(fc_samples) - set(self.samples))
                     list_additional_samples.sort()
                     log.info('The flowcell {} contains {} sample(s) ({}) that '
-                             'has/have not been defined in LIMS. They will be added to the report.'.format(fc_details.get('RunInfo').get('Id'), 
-                                                                                                           len(list_additional_samples), 
+                             'has/have not been defined in LIMS. They will be added to the report.'.format(fc_details.get('RunInfo').get('Id'),
+                                                                                                           len(list_additional_samples),
                                                                                                            ', '.join(list_additional_samples)
                                                                                                            ))
 
                     undet_iteration = 1
-                    # Creating additional sample and prep Objects 
+                    # Creating additional sample and prep Objects
                     for additional_sample in list_additional_samples:
                         AsamObj = Sample()
                         AsamObj.ngi_id = additional_sample
@@ -438,7 +438,7 @@ class Project:
                         self.samples[additional_sample] = AsamObj
                         preps_samples_on_fc.append([additional_sample, 'NA'])
                         undet_iteration += 1
-                                
+
             # Collect quality info for samples and collect lanes of interest
             for stat in fc_details.get('illumina', {}).get('Demultiplex_Stats', {}).get('Barcode_lane_statistics', []):
                 if re.sub('_+', '.', stat['Project'], 1) != self.ngi_name and stat['Project'] != self.ngi_name:
@@ -454,7 +454,7 @@ class Project:
                     sample = stat.get('Sample ID')
                     barcode = stat.get('Index')
                     qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
-                    
+
                 # If '-b' flag is set, we override the barcodes from LIMS with the barcodes from the flowcell for all samples
                 if kwargs.get('barcode_from_fc'):
                     new_barcode = '-'.join(barcode.split('+'))  # Change the barcode layout to match the one used for the report
@@ -465,7 +465,7 @@ class Project:
                         for sub_prep_sample in preps_samples_on_fc:
                             if sub_prep_sample[0] == sample:
                                 lib_prep.append(sub_prep_sample[1])
-                        
+
                     for prep_o_samples in lib_prep:             # Changing the barcode happens here!
                         self.samples.get(sample).preps.get(prep_o_samples).barcode = new_barcode
 
@@ -486,8 +486,8 @@ class Project:
                     pfrd = int(stat.get(base_key).replace(',', ''))
                     pfrd = pfrd/2 if fc['db'] == 'flowcell' else pfrd
                     base = pfrd * sum(r_len_list)
-                    sample_qval[sample][r_idx] = {'qval': qval, 
-                                                  'reads': pfrd, 
+                    sample_qval[sample][r_idx] = {'qval': qval,
+                                                  'reads': pfrd,
                                                   'bases': base
                                                   }
 
@@ -497,21 +497,19 @@ class Project:
                              )
                     pass
                 # Collect lanes of interest to proceed later
-                fc_lane_summary = fc_details.get('lims_data', {}).get('run_summary', {})
+                fc_lane_summary_lims = fc_details.get('lims_data', {}).get('run_summary', {})
+                fc_lane_summary_demux = fc_details.get('illumina', {}).get('Demultiplex_Stats', {}).get('Lanes_stats', {})
                 if lane not in fcObj.lanes:
                     laneObj = Lane()
-                    lane_sum = fc_lane_summary.get(lane, fc_lane_summary.get('A', {}))
+                    lane_sum_lims = fc_lane_summary_lims.get(lane, fc_lane_summary_lims.get('A', {}))
+                    lane_sum_demux = [d for d in fc_lane_summary_demux if d['Lane'] == str(lane)][0]
                     laneObj.id = lane
-                    laneObj.set_lane_info('cluster', 
-                                          'Reads PF (M)' if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else 'Clusters PF', 
-                                          lane_sum,
-                                          str(r_num), 
-                                          False if 'NovaSeq' in fcObj.type or 'NextSeq' in fcObj.type else True)
-                    laneObj.set_lane_info('avg_qval', '% Bases >=Q30', lane_sum, str(r_num))
-                    laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum, str(r_num))
+                    laneObj.cluster = '{:.2f}'.format(round(float(lane_sum_demux.get('PF Clusters', '0').replace(",", ""))/1000000, 2))
+                    laneObj.avg_qval = '{:.2f}'.format(round(float(lane_sum_demux.get('% >= Q30bases', '0.00')), 2))
+                    laneObj.set_lane_info('fc_phix', '% Error Rate', lane_sum_lims, str(r_num))
                     if kwargs.get('fc_phix',{}).get(fcObj.name, {}):
                         laneObj.phix = kwargs.get('fc_phix').get(fcObj.name).get(lane)
-                    #Calculate weighted Q30 value and add it to lane data                
+                    #Calculate weighted Q30 value and add it to lane data
                     laneObj.total_reads_proj += pfrd
                     if pfrd and qval:
                         laneObj.weighted_avg_qval_proj += pfrd * qval

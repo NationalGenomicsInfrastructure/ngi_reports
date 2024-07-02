@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20240702.2
+Improve method for fetching lane yield and Q30
+
 ## 20240702.1
 Fix bug that the lane yield and Q30 values are inconsistent in the html and txt files
 
