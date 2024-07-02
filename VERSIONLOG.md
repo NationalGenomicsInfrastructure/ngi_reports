@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20240702.1
+Fix bug that the lane yield and Q30 values are inconsistent in the html and txt files
+
 ## 20231017.1
 Refactor delivery report to harmonize with project agreement
 
