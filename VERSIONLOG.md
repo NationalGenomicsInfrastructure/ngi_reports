@@ -3,6 +3,9 @@
 ## 20240702.1
 Fix bug that the lane yield and Q30 values are inconsistent in the html and txt files
 
+## 20240228.1
+Remove GRUS and reference to NGI UPPMAX ID from report
+
 ## 20231017.1
 Refactor delivery report to harmonize with project agreement
 
