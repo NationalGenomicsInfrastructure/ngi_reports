@@ -214,7 +214,7 @@ class Report(ngi_reports.reports.BaseReport):
             "Phix",
             "Method",
         ]
-        lanes_filter = ["date", "name", "id", "cluster", "avg_qval", "phix", "seq_meth"]
+        lanes_filter = ["date", "name", "id", "total_reads_proj", "weighted_avg_qval_proj", "phix", "seq_meth"]
         lanes_list = []
         for f, v in list(proj.flowcells.items()):
             for l in list(v.lanes.values()):
