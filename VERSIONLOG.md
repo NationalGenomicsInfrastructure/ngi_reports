@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20240809.1
+Try fixing the extra empty line between fcs in html report
+
 ## 20240702.2
 Improve method for fetching lane yield and Q30
 
