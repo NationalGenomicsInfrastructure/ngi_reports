@@ -53,7 +53,10 @@ class Report(ngi_reports.reports.BaseReport):
         dem_template = '{}) The Bcl to FastQ conversion was performed using {} from the CASAVA software '\
                        'suite. The quality scale used is Sanger / phred33 / Illumina 1.8+.'
         ## Collect required information for all flowcell run for the project
-        for fc in proj.flowcells.values():
+
+        sorted_project_fcs = dict(sorted(proj.flowcells.items(), key=lambda item: item[1].date))
+
+        for fc in sorted_project_fcs.values():
             ## Sort by the order of readss
             run_setup = sorted(fc.run_setup, key=lambda k: k['Number'])
             run_setup_text = ''
