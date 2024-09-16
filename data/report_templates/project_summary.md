@@ -136,7 +136,7 @@ Date | Flowcell | Lane | Clusters(M) | >=Q30(%) | PhiX | Method
 {% for lane in fc.lanes.values() -%}
 {{ fc.date }} | `{{ fc.name }}` | {{ lane.id }} | {{ lane.total_reads_proj }} | {{ lane.weighted_avg_qval_proj }} | {{ lane.phix }} | Seq. {{ fc.seq_meth }}
 {% endfor -%}
-{% endfor %}
+{%- endfor %}
 
 Below you can find an explanation of the header column used in the table.
 
