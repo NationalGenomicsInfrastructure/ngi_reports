@@ -178,8 +178,7 @@ class Project:
         if proj.get('project_summary',{}).get('all_samples_sequenced'):
             self.dates['all_samples_sequenced'] = proj.get('project_summary',{}).get('all_samples_sequenced')
 
-
-        self.contact = proj.get('order_details').get('owner').get('email')
+        self.contact = proj.get('order_details', {}).get('owner', {}).get('email', 'NA')
         self.application = proj.get('application')
         self.num_samples = proj.get('no_of_samples')
         self.ngi_facility = 'Genomics {} Stockholm'.format(proj_details.get('type')) if proj_details.get('type') else None

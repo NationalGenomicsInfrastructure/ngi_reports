@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20240926.1
+Fix issue with empty owner under order_details
+
 ## 20240809.1
 Try fixing the extra empty line between fcs in html report
 
