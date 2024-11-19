@@ -135,10 +135,10 @@ class Project:
         self.user_ID = ''
 
     def populate(self, log, organism_names, **kwargs):
-
+        self.log = log
         project = kwargs.get('project', '')
         if not project:
-            log.error('A project must be provided, so not proceeding.')
+            self.log.error('A project must be provided, so not proceeding.')
             sys.exit('A project was not provided, stopping execution...')
         self.skip_fastq = kwargs.get('skip_fastq')
         self.cluster = kwargs.get('cluster')
@@ -155,18 +155,18 @@ class Project:
 
         proj = pcon.get_entry(project, use_id_view=id_view)
         if not proj:
-            log.error('No such project name/id "{}", check if provided information is right'.format(project))
+            self.log.error('No such project name/id "{}", check if provided information is right'.format(project))
             sys.exit('Project not found in statusdb, stopping execution...')
         self.ngi_name = proj.get('project_name')
 
         if proj.get('source') != 'lims':
-            log.error('The source for data for project {} is not LIMS.'.format(project))
+            self.log.error('The source for data for project {} is not LIMS.'.format(project))
             raise BaseException
 
-        proj_details = proj.get('details',{})
+        proj_details = proj.get('details', {})
 
         if 'aborted' in proj_details:
-            log.warn('Project {} was aborted, so not proceeding.'.format(project))
+            self.log.warn('Project {} was aborted, so not proceeding.'.format(project))
             sys.exit('Project {} was aborted, stopping execution...'.format(project))
 
         if not id_view:
@@ -175,8 +175,8 @@ class Project:
         for date in self.dates:
             self.dates[date] = proj_details.get(date, None)
 
-        if proj.get('project_summary',{}).get('all_samples_sequenced'):
-            self.dates['all_samples_sequenced'] = proj.get('project_summary',{}).get('all_samples_sequenced')
+        if proj.get('project_summary', {}).get('all_samples_sequenced'):
+            self.dates['all_samples_sequenced'] = proj.get('project_summary', {}).get('all_samples_sequenced')
 
         self.contact = proj.get('order_details', {}).get('owner', {}).get('email', 'NA')
         self.application = proj.get('application')
@@ -208,12 +208,12 @@ class Project:
 
         if 'hiseqx' in proj_details.get('sequencing_platform', ''):
             self.is_hiseqx = True
-
+                
         self.sequencing_setup = proj_details.get('sequencing_setup')
 
         for sample_id, sample in sorted(proj.get('samples', {}).items()):
             if kwargs.get('samples', []) and sample_id not in kwargs.get('samples', []):
-                log.info('Will not include sample {} as it is not in given list'.format(sample_id))
+                self.log.info('Will not include sample {} as it is not in given list'.format(sample_id))
                 continue
 
             customer_name = sample.get('customer_name','NA')
@@ -221,10 +221,11 @@ class Project:
             if self.dates['first_initial_qc_start_date'] is not None:
                 self.dates['first_initial_qc_start_date'] = sample.get('first_initial_qc_start_date')
 
-            log.info('Processing sample {}'.format(sample_id))
+            # Check if the sample is aborted before processing
+            self.log.info('Processing sample {}'.format(sample_id))
             # Check if the sample is aborted before processing
             if sample.get('details',{}).get('status_(manual)') == 'Aborted':
-                log.info('Sample {} is aborted, so skipping it'.format(sample_id))
+                self.log.info('Sample {} is aborted, so skipping it'.format(sample_id))
                 self.aborted_samples[sample_id] = AbortedSampleInfo(customer_name, 'Aborted')
                 continue
 
@@ -246,7 +247,7 @@ class Project:
                 # Check if sample was sequenced. More accurate value will be calculated from flowcell yield
                 total_reads = float(sample['details']['total_reads_(m)'])
             except KeyError:
-                log.warn('Sample {} doesnt have total reads, so adding it to NOT sequenced samples list.'.format(sample_id))
+                self.log.warn('Sample {} doesnt have total reads, so adding it to NOT sequenced samples list.'.format(sample_id))
                 self.aborted_samples[sample_id] = AbortedSampleInfo(customer_name, 'Not sequenced')
                 # Don't gather unnecessary information if not going to be looked up
                 if not kwargs.get('yield_from_fc'):
@@ -255,8 +256,8 @@ class Project:
             # Go through each prep for each sample in the Projects database
             for prep_id, prep in list(sample.get('library_prep', {}).items()):
                 prepObj = Prep()
-
                 prepObj.label = 'Lib. ' + prep_id
+                
                 if 'by user' in self.library_construction.lower():
                      prepObj.label = 'NA'
 
@@ -268,23 +269,25 @@ class Project:
                     if kwargs.get('barcode_from_fc'):
                         prepObj.seq_fc = []
                         if not sample.get('library_prep').get(prep_id).get('sequenced_fc'):
-                            log.error('Sequenced flowcell not defined for the project. Run ngi_pipelines without the \"-b\" flag and amend the report manually.')
+                            self.log.error('Sequenced flowcell not defined for the project. Run ngi_pipelines without the \"-b\" flag and amend the report manually.')
                             sys.exit('Stopping execution...')
                         for fc in sample.get('library_prep').get(prep_id).get('sequenced_fc'):
                             prepObj.seq_fc.append(fc.split('_')[-1])
                 else:
-                    log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
+                    self.log.warn('Could not fetch barcode/prep status for sample {} in prep {}'.format(sample_id, prep_id))
 
                 if 'pcr-free' not in self.library_construction.lower():
                     if prep.get('library_validation'):
                         lib_valids = prep['library_validation']
-                        keys = sorted([k for k in list(lib_valids.keys()) if re.match('^[\d\-]*$',k)], key=lambda k: datetime.strptime(lib_valids[k]['start_date'], '%Y-%m-%d'), reverse=True)
+                        keys = sorted([k for k in list(lib_valids.keys()) if re.match('^[\d\-]*$',k)], 
+                                      key=lambda k: datetime.strptime(lib_valids[k]['start_date'], '%Y-%m-%d'), 
+                                      reverse=True)
                         try:
                             prepObj.avg_size = re.sub(r'(\.[0-9]{,2}).*$', r'\1', str(lib_valids[keys[0]]['average_size_bp']))
                         except:
-                            log.warn('Insufficient info "{}" for sample {}'.format('average_size_bp', sample_id))
+                            self.log.warn('Insufficient info "{}" for sample {}'.format('average_size_bp', sample_id))
                     else:
-                        log.warn('No library validation step found {}'.format(sample_id))
+                        self.log.warn('No library validation step found {}'.format(sample_id))
 
                 samObj.preps[prep_id] = prepObj
 
@@ -294,14 +297,14 @@ class Project:
                 if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
                     list_of_flowcells = sum([all_flowcells.seq_fc for all_flowcells in list(samObj.preps.values())], [])
                     if len(list_of_flowcells) != len(list(dict.fromkeys(list_of_flowcells))):  # The sample was run twice on the same flowcell, only possible with different barcodes for the same sample
-                        log.error('Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually')
+                        self.log.error('Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually')
                         sys.exit('Stopping execution...')
                 else:
-                    log.error('Barcodes not defined in sample sheet. Please run ngi_pipelines without the -b flag and amend the report manually')
+                    self.log.error('Barcodes not defined in sample sheet. Please run ngi_pipelines without the -b flag and amend the report manually')
                     sys.exit('Stopping execution...')
 
             if not samObj.preps:
-                log.warn('No library prep information was available for sample {}'.format(sample_id))
+                self.log.warn('No library prep information was available for sample {}'.format(sample_id))
             self.samples[sample_id] = samObj
 
         # Get Flowcell data
@@ -309,11 +312,14 @@ class Project:
         assert fcon, 'Could not connect to {} database in StatusDB'.format('flowcell')
         xcon = statusdb.X_FlowcellRunMetricsConnection()
         assert xcon, 'Could not connect to {} database in StatusDB'.format('x_flowcells')
+        ontcon = statusdb.NanoporeRunConnection()
+        assert ontcon, 'Could not connect to {} database in StatusDB'.format('nanopore_runs')
         flowcell_info = fcon.get_project_flowcell(self.ngi_id, self.dates['open_date'])
         flowcell_info.update(xcon.get_project_flowcell(self.ngi_id, self.dates['open_date']))
+        flowcell_info.update(ontcon.get_project_flowcell(self.ngi_id, self.dates['open_date']))
 
         sample_qval = defaultdict(dict)
-
+        sample_stats = defaultdict(dict)
         for fc in list(flowcell_info.values()):
             if fc['name'] in kwargs.get('exclude_fc'):
                 continue
@@ -325,6 +331,8 @@ class Project:
             # Get database document from appropriate database
             if fc['db'] == 'x_flowcells':
                 fc_details = xcon.get_entry(fc['run_name'])
+            elif fc['db'] == 'nanopore_runs':
+                fc_details = ontcon.get_entry(fc['run_name'])
             else:
                 fc_details = fcon.get_entry(fc['run_name'])
 
@@ -349,12 +357,30 @@ class Project:
             elif fc_instrument.startswith('VH'):
                 fcObj.type = 'NextSeq2000'
                 fc_runparameters = fc_details.get('RunParameters',{})
+            elif '_PA' in fcObj.run_name:
+                fcObj.type = 'PromethION'
+                fc_runparameters = fc_details.get('protocol_run_info', {})
+                final_acquisition = fc_details.get('acquisitions')[-1]
+            elif '_MN' in fcObj.run_name:
+                fcObj.type = 'MinION'
+                fc_runparameters = fc_details.get('protocol_run_info', {})
+                final_acquisition = fc_details.get('acquisitions')[-1]
             else:
                 fcObj.type = 'HiSeq2500'
                 fc_runparameters = fc_details.get('RunParameters',{}).get('Setup',{})
 
             # Fetch run setup for the flowcell
-            fcObj.run_setup = fc_details.get('RunInfo').get('Reads')
+            if fcObj.type == 'PromethION' or fcObj.type == 'MinION':
+                fcObj.fc_type = fc_runparameters.get('flow_cell').get('user_specified_product_code')  # product_code not specified for minion
+                run_arguments = fc_runparameters.get('args')
+                for arg in run_arguments:
+                    if 'min_qscore' in arg:
+                        fcObj.qual_threshold = float(arg.split('=')[-1])  
+                fcObj.n50 = float(final_acquisition.get('read_length_histogram')[-1].get('plot').get('histogram_data')[0].get('n50'))
+                fcObj.total_reads = float(final_acquisition.get('acquisition_run_info').get('yield_summary').get('read_count'))
+
+            else:
+                fcObj.run_setup = fc_details.get('RunInfo').get('Reads')
 
             if fcObj.type == 'NovaSeq6000':
                 fcObj.chemistry = {'WorkflowType': fc_runparameters.get('WorkflowType'),
@@ -370,10 +396,11 @@ class Project:
             else:
                 fcObj.chemistry = {'Chemistry': fc_runparameters.get('ReagentKitVersion', fc_runparameters.get('Sbs'))}
 
-            try:
-                fcObj.casava = list(fc_details['DemultiplexConfig'].values())[0]['Software']['Version']
-            except (KeyError, IndexError):
-                continue
+            if fcObj.type != 'PromethION' and fcObj.type != 'MinION':
+                try:
+                    fcObj.casava = list(fc_details['DemultiplexConfig'].values())[0]['Software']['Version'] 
+                except (KeyError, IndexError):
+                    continue
 
             if fcObj.type == 'MiSeq':
                 fcObj.seq_software = {'RTAVersion': fc_runparameters.get('RTAVersion'),
@@ -388,6 +415,12 @@ class Project:
                 fcObj.seq_software = {'ApplicationName': fc_runparameters.get('Application'),
                                       'ApplicationVersion': fc_runparameters.get('SystemSuiteVersion')
                                       }
+            elif fcObj.type == 'PromethION' or fcObj.type == 'MinION':
+                ont_seq_versions = fc_details.get('software_versions', '')
+                fcObj.seq_software = {'MinKNOW version': ont_seq_versions.get('minknow', '').get('full', ''),
+                                      'Guppy version': ont_seq_versions.get('guppy_build_version', '')
+                                          }
+                fcObj.basecall_model = fc_runparameters.get('meta_info', '').get('tags', '').get('default basecall model').get('string_value')
             else:
                 fcObj.seq_software = {'RTAVersion': fc_runparameters.get('RTAVersion', fc_runparameters.get('RtaVersion')),
                                       'ApplicationName': fc_runparameters.get('ApplicationName', fc_runparameters.get('Application')),
@@ -396,7 +429,7 @@ class Project:
 
             # Collect info of samples and their library prep / LIMS indexes on the FC (only if -b option is set)
             if kwargs.get('barcode_from_fc'):
-                log.info('\'barcodes_from_fc\' option was given so index sequences for the report will be taken from the flowcell instead of LIMS')
+                self.log.info('\'barcodes_from_fc\' option was given so index sequences for the report will be taken from the flowcell instead of LIMS')
                 preps_samples_on_fc = []
                 list_additional_samples = []
 
@@ -405,7 +438,6 @@ class Project:
                 for fc_sample in fc_details.get('samplesheet_csv'):
                     if fc_sample.get('Sample_Name').split('_')[0] == self.ngi_id:
                         fc_samples.append(fc_sample.get('Sample_Name'))
-
                 # Iterate through all samples in project to identify their prep_ID (only if they are on the flowcell)
                 for sample_ID in list(self.samples):
                      for prep_ID in list(self.samples.get(sample_ID).preps):
@@ -419,7 +451,7 @@ class Project:
                 if len(set(list(self.samples))) != len(set(fc_samples)):
                     list_additional_samples = list(set(fc_samples) - set(self.samples))
                     list_additional_samples.sort()
-                    log.info('The flowcell {} contains {} sample(s) ({}) that '
+                    self.log.info('The flowcell {} contains {} sample(s) ({}) that '
                              'has/have not been defined in LIMS. They will be added to the report.'.format(fc_details.get('RunInfo').get('Id'),
                                                                                                            len(list_additional_samples),
                                                                                                            ', '.join(list_additional_samples)
@@ -438,7 +470,7 @@ class Project:
                         preps_samples_on_fc.append([additional_sample, 'NA'])
                         undet_iteration += 1
 
-            # Collect quality info for samples and collect lanes of interest
+            # Collect quality info for samples and collect lanes of interest (Illumina)
             for stat in fc_details.get('illumina', {}).get('Demultiplex_Stats', {}).get('Barcode_lane_statistics', []):
                 if re.sub('_+', '.', stat['Project'], 1) != self.ngi_name and stat['Project'] != self.ngi_name:
                     continue
@@ -448,12 +480,10 @@ class Project:
                     sample = stat.get('Sample')
                     barcode = stat.get('Barcode sequence')
                     qval_key, base_key = ('% >= Q30bases', 'PF Clusters')
-
                 else:
                     sample = stat.get('Sample ID')
                     barcode = stat.get('Index')
                     qval_key, base_key = ('% of >= Q30 Bases (PF)', '# Reads')
-
                 # If '-b' flag is set, we override the barcodes from LIMS with the barcodes from the flowcell for all samples
                 if kwargs.get('barcode_from_fc'):
                     new_barcode = '-'.join(barcode.split('+'))  # Change the barcode layout to match the one used for the report
@@ -464,13 +494,12 @@ class Project:
                         for sub_prep_sample in preps_samples_on_fc:
                             if sub_prep_sample[0] == sample:
                                 lib_prep.append(sub_prep_sample[1])
-
                     for prep_o_samples in lib_prep:             # Changing the barcode happens here!
                         self.samples.get(sample).preps.get(prep_o_samples).barcode = new_barcode
 
                 # Skip if there are no lanes or samples
                 if not lane or not sample or not barcode:
-                    log.warn('Insufficient info/malformed data in Barcode_lane_statistics in FC {}, skipping...'.format(fcObj.name))
+                    self.log.warn('Insufficient info/malformed data in Barcode_lane_statistics in FC {}, skipping...'.format(fcObj.name))
                     continue
 
                 if kwargs.get('samples', []) and sample not in kwargs.get('samples', []):
@@ -491,7 +520,7 @@ class Project:
                                                   }
 
                 except (TypeError, ValueError, AttributeError) as e:
-                    log.warn('Something went wrong while fetching Q30 for sample {} with '
+                    self.log.warn('Something went wrong while fetching Q30 for sample {} with '
                              'barcode {} in FC {} at lane {}. Error was: \n{}'.format(sample, barcode, fcObj.name, lane, e)
                              )
                     pass
@@ -518,7 +547,7 @@ class Project:
                     # Check if the above created lane object has all needed info
                     for k,v in vars(laneObj).items():
                         if not v:
-                            log.warn('Could not fetch {} for FC {} at lane {}'.format(k, fcObj.name, lane))
+                            self.log.warn('Could not fetch {} for FC {} at lane {}'.format(k, fcObj.name, lane))
                 #Add total reads and Q30 to lane data
                 else:
                     laneObj = fcObj.lanes[lane]
@@ -527,21 +556,29 @@ class Project:
                         laneObj.weighted_avg_qval_proj += pfrd * qval
                         laneObj.total_reads_with_qval_proj += pfrd
             #Add units, round off values, and add to flowcells object
-            for lane in fcObj.lanes:
+            for lane in fcObj.lanes:  #TODO: check if this works for ONT
                 laneObj = fcObj.lanes[lane]
                 laneObj.reads_unit, lane_divisor = self.get_units_and_divisor(laneObj.total_reads_proj)
                 laneObj.total_reads_proj = round(laneObj.total_reads_proj / lane_divisor, 2)
                 laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
                 laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
+
+
+            # Collect quality info for samples and collect lanes of interest (ONT)
+            for stat in fc_details.get('ONT', {}).get('Demultiplex_Stats', {}).get('Barcode_lane_statistics', []):
+                sample = stat.get('Sample')
+                read_count = float(stat.get('read_count'))
+                r_idx = '{}_{}'.format(fcObj.name, sample)
+                sample_stats[sample][r_idx] = {'reads': read_count}  #TODO: could include more stats here if we want
+
             self.flowcells[fcObj.name] = fcObj
 
         if not self.flowcells:
-            log.warn('There is no flowcell to process for project {}'.format(self.ngi_name))
+            self.log.warn('There is no flowcell to process for project {}'.format(self.ngi_name))
             self.missing_fc = True
 
-
         if sample_qval and kwargs.get('yield_from_fc'):
-            log.info('\'yield_from_fc\' option was given so will compute the yield from collected flowcells')
+            self.log.info('\'yield_from_fc\' option was given so will compute the yield from collected flowcells')
             for sample in list(self.samples.keys()):
                 if sample not in list(sample_qval.keys()):
                     del self.samples[sample]
@@ -561,7 +598,7 @@ class Project:
                 self.samples[sample].qscore = '{:.2f}'.format(round(avg_qval, 2))
                 # Sample has been sequenced and should be removed from the aborted/not sequenced list
                 if sample in self.aborted_samples:
-                    log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
+                    self.log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
                     del self.aborted_samples[sample]
                 # Get/overwrite yield from the FCs computed instead of statusDB value
                 if total_reads:
@@ -569,7 +606,28 @@ class Project:
                     if total_reads > max_total_reads:
                         max_total_reads = total_reads
             except (TypeError, KeyError):
-                log.error('Could not calcluate average Q30 for sample {}'.format(sample))
+                self.log.error('Could not calcluate average Q30 for sample {}'.format(sample))
+        
+        # Calculate average reads and flowcell (ONT)
+        max_total_reads = 0
+        for sample in sorted(sample_stats.keys()):
+            try:
+                sample_info = sample_stats[sample]
+                total_reads = 0
+                for k in sample_info:
+                    total_reads += sample_info[k]['reads']
+                # Sample has been sequenced and should be removed from the aborted/not sequenced list
+                if sample in self.aborted_samples:
+                    self.log.info('Sample {} was sequenced, so removing it from NOT sequenced samples list'.format(sample))
+                    del self.aborted_samples[sample]
+                # Get/overwrite yield from the FCs computed instead of statusDB value
+                if total_reads:
+                    self.samples[sample].total_reads = total_reads
+                    if total_reads > max_total_reads:
+                        max_total_reads = total_reads
+            except (TypeError, KeyError):
+                self.log.error('Could not find reads for sample {}'.format(sample))
+    
         # Cut down total reads to bite sized numbers
         self.samples_unit, samples_divisor = self.get_units_and_divisor(max_total_reads)
 
@@ -601,7 +659,7 @@ class Project:
             if lib_meth:
                 lib_meth_list = lib_meth.groups()[:4] #not interested in the document number
                 lib_list = []
-                for name,value in zip(lib_head, lib_meth_list):
+                for name, value in zip(lib_head, lib_meth_list):
                     value = value.strip() #remove empty space(s) at the ends
                     if value == 'By user':
                         return 'Library was prepared by user.'
@@ -614,5 +672,5 @@ class Project:
                 else:
                     return '* Method: {}'.format(library_construction_method)
         except KeyError:
-            log.error('Could not find library construction method for project {} in statusDB'.format(project_name))
+            self.log.error('Could not find library construction method for project {} in statusDB'.format(project_name))
             return None

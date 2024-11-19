@@ -28,7 +28,6 @@ class Report(ngi_reports.reports.BaseReport):
         self.project = kwargs.get("project")
 
     def generate_report_template(self, proj, template, support_email):
-
         ## Check and exit if signature not provided
         if not self.signature:
             self.LOG.error(

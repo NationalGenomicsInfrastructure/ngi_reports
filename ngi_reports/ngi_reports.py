@@ -143,7 +143,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
         )
 
     # Generate CSV files for project_summary reports
-    if report_type == "project_summary" and not kwargs["no_txt"]:
+    if report_type == 'project_summary' or report_type == 'ont_project_summary' and not kwargs['no_txt']:
         try:
             report.create_txt_files()
             LOG.info("Generated TXT files...")
@@ -316,7 +316,7 @@ def main():
         "--barcode_from_fc",
         default=False,
         action="store_true",
-        help="retrieve the index from the FC directly",
+        help="retrieve the index from the FC directly (ONLY Illumina)",
     )
 
     kwargs = vars(parser.parse_args())

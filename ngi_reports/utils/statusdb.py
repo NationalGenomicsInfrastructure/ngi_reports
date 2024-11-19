@@ -40,7 +40,6 @@ class statusdb_connection(object):
         """Retrieve entry from given db for a given name.
 
         :param name: unique name identifier (primary key, not the uuid)
-        :param db: name of db to fetch data from
         """
         if use_id_view:
             view = self.id_view
@@ -65,14 +64,37 @@ class statusdb_connection(object):
             open_date = datetime.strptime("2015-01-01", "%Y-%m-%d")
 
         project_flowcells = {}
-        date_sorted_fcs = sorted(list(self.proj_list.keys()), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
-        for fc in date_sorted_fcs:
-            fc_date, fc_name = fc.split('_')
-            if datetime.strptime(fc_date,'%y%m%d') < open_date:
-                break
-            if project_id in self.proj_list[fc] and fc_name not in project_flowcells.keys():
-                project_flowcells[fc_name] = {'name':fc_name,'run_name':fc, 'date':fc_date, 'db':self.db.name}
-
+        if type(self) == NanoporeRunConnection:
+            found_fcs = []
+            for k in self.proj_list.keys():
+                try:
+                    date = datetime.strptime(k.split('_')[0], "%Y%m%d")
+                    found_fcs.append(k)
+                except ValueError:
+                    continue  #TODO: Rever this, it shouldn't be needed i production
+            date_sorted_fcs = sorted(found_fcs, key=lambda k: datetime.strptime(k.split('_')[0], "%Y%m%d"), reverse=True)
+            for fc in date_sorted_fcs:
+                fc_date, fc_time, position, fc_name, fc_hash = fc.split('_') # 20220721_1216_1G_PAM62368_3ae8de85
+                if datetime.strptime(fc_date, '%Y%m%d') < open_date:
+                    break
+                if project_id in self.proj_list[fc] and fc_name not in project_flowcells.keys():
+                    project_flowcells[fc_name] = {'name': fc_name,
+                                                    'run_name': fc, 
+                                                    'date': fc_date,
+                                                    'db': self.db.name,
+                                                    }
+        else:
+            date_sorted_fcs = sorted(list(self.proj_list.keys()), key=lambda k: datetime.strptime(k.split('_')[0], "%y%m%d"), reverse=True)
+            for fc in date_sorted_fcs:
+                fc_date, fc_name = fc.split('_')
+                if datetime.strptime(fc_date,'%y%m%d') < open_date:  # 220404_000000000-K797K
+                    break
+                if project_id in self.proj_list[fc] and fc_name not in project_flowcells.keys():
+                    project_flowcells[fc_name] = {'name': fc_name,
+                                                'run_name': fc, 
+                                                'date': fc_date,
+                                                'db': self.db.name
+                                                }
         return project_flowcells
 
 class ProjectSummaryConnection(statusdb_connection):
@@ -100,3 +122,12 @@ class X_FlowcellRunMetricsConnection(statusdb_connection):
         self.db = self.connection[dbname]
         self.name_view = {k.key:k.id for k in self.db.view("names/name", reduce=False)}
         self.proj_list = {k.key:k.value for k in self.db.view("names/project_ids_list", reduce=False) if k.key}
+
+class NanoporeRunConnection(statusdb_connection):
+    def __init__(self, dbname='nanopore_runs'):
+        super(NanoporeRunConnection, self).__init__()
+        self.db = self.connection[dbname]
+        self.name_view = {k.key:k.id for k in self.db.view("names/name", reduce=False)}
+        self.proj_list = {k.key:k.value for k in self.db.view("names/project_ids_list", reduce=False) if k.key}
+        #self.stats_view = {k.key:k.value for k in self.db.view("info/all_stats", reduce=False) if k.key}
+        #self.barcode_view = {k.key:k.value for k in self.db.view("info/barcodes", reduce=False) if k.key}
