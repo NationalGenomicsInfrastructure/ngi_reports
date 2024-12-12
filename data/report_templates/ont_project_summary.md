@@ -143,31 +143,6 @@ The results apply to the sample(s) as received.
 
 In cases where samples and/or libraries have failed the QC, the user is always consulted regarding how to proceed. If the user wishes to proceed to sequence the failed samples and/or libraries, NGI bears no responsibility regarding the quality and number of reads of the sequenced sample data.
 
-<!-- {% if not project.skip_fastq -%}
-## Naming conventions - not decided yet, skip for now (won't show up in html)
-
-The data is delivered in FastQ format using Phred quality scores.
-
-The naming of the files follow the convention:
-
-```
-[NGI-NAME]_[XXX].fastq.gz
-```
-
-* _NGI-NAME:_ Internal NGI sample identifier
-{%- endif %} -->
-
-
-{% if project.cluster == 'grus' -%}
-## Data access at UPPMAX
-
-Data have been uploaded to the UPPNEX (UPPMAX Next
-Generation sequence Cluster Storage, [uppmax.uu.se](http://www.uppmax.uu.se)) called **GRUS**. More details can be found on the following links
-
-- [NGI data delivery note](https://ngisweden.scilifelab.se/info/Data%20delivery)
-- [UPPMAX GRUS user guide](https://www.uppmax.uu.se/support/user-guides/grus-user-guide/)
-
-{% elif project.cluster == 'dds' -%}
 ## Data access at DDS
 
 Data have been uploaded to the **Data Delivery System**
@@ -178,8 +153,6 @@ More details can be found on the following links
 - [Youtube tutorial for DDS](https://youtu.be/Mk5nhClsfTA)
 - [DDS official document](https://scilifelabdatacentre.github.io/dds_cli/)
 
-{%- endif %}
-
 ## Acknowledgements
 
 Services provided by NGI must be acknowledged in all scientific dissemination activities,
@@ -187,7 +160,7 @@ such as publications, presentations, posters, etc., using the following statemen
 
 > The authors acknowledge support from the National Genomics Infrastructure in {% if project.ngi_facility -%} {{ project.ngi_facility }} {%- endif %}
 > funded by Science for Life Laboratory, the Knut and Alice Wallenberg Foundation and the Swedish Research Council,
-> and SNIC/Uppsala Multidisciplinary Center for Advanced Computational Science for assistance with massively parallel sequencing
+> and NAISS/Uppsala Multidisciplinary Center for Advanced Computational Science for assistance with massively parallel sequencing
 > and access to the UPPMAX computational infrastructure
 
 This acknowledgement is used for reporting purposes by the NGI and is critical for the future funding of the facility.
@@ -195,3 +168,8 @@ This acknowledgement is used for reporting purposes by the NGI and is critical f
 # Further Help
 If you have any queries, please get in touch at
 [{{ report_info.support_email }}](mailto:{{ report_info.support_email }}).
+
+
+Postal address | Visiting address | Shipping address
+:-------|:---------|:-------
+NGI Stockholm<br>NGI-Alfa3<br>Science for Life Laboratory<br>Box 1031<br>17121 Solna, Sweden | SciLifeLab Stockholm<br>Science for Life Laboratory,<br>Tomtebodavägen 23A,<br>17165 Solna, Sweden | Att: Mattias Ormestad<br>NGI-SciLifeLab<br>Tomtebodavägen 23B,<br>17165 Solna, Sweden
