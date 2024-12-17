@@ -804,19 +804,6 @@ class Project:
                     laneObj.weighted_avg_qval_proj, 2
                 )
 
-            # Collect quality info for samples and collect lanes of interest (ONT)
-            for stat in (
-                fc_details.get("ONT", {})
-                .get("Demultiplex_Stats", {})
-                .get("Barcode_lane_statistics", [])
-            ):
-                sample = stat.get("Sample")
-                read_count = float(stat.get("read_count"))
-                r_idx = "{}_{}".format(fcObj.name, sample)
-                sample_stats[sample][r_idx] = {
-                    "reads": read_count
-                }  # TODO: could include more stats here if we want
-
             self.flowcells[fcObj.name] = fcObj
 
         if not self.flowcells:
@@ -866,30 +853,6 @@ class Project:
                 log.error(
                     "Could not calcluate average Q30 for sample {}".format(sample)
                 )
-
-        # Calculate average reads and flowcell (ONT)
-        max_total_reads = 0
-        for sample in sorted(sample_stats.keys()):
-            try:
-                sample_info = sample_stats[sample]
-                total_reads = 0
-                for k in sample_info:
-                    total_reads += sample_info[k]["reads"]
-                # Sample has been sequenced and should be removed from the aborted/not sequenced list
-                if sample in self.aborted_samples:
-                    log.info(
-                        "Sample {} was sequenced, so removing it from NOT sequenced samples list".format(
-                            sample
-                        )
-                    )
-                    del self.aborted_samples[sample]
-                # Get/overwrite yield from the FCs computed instead of statusDB value
-                if total_reads:
-                    self.samples[sample].total_reads = total_reads
-                    if total_reads > max_total_reads:
-                        max_total_reads = total_reads
-            except (TypeError, KeyError):
-                log.error("Could not find reads for sample {}".format(sample))
 
         # Cut down total reads to bite sized numbers
         self.samples_unit, samples_divisor = self.get_units_and_divisor(max_total_reads)

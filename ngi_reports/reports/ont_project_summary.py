@@ -125,6 +125,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             "* _Reads:_ Number of reads generated\n"
             "* _N50:_ Estimated N50\n"
         )
+        # TODO: Add lists of samples for each FC
         # Make the file basename
         output_bn = os.path.realpath(
             os.path.join(
