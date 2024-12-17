@@ -88,6 +88,8 @@ class Report(ngi_reports.reports.project_summary.Report):
             for p in list(v.preps.values()):
                 p = vars(p)
                 p["ngi_id"] = s
+                if len(proj.samples.items()) == 1 and p.get("barcode") == "NA":
+                    p["barcode"] = "no index"
                 library_list.append(p)
         self.tables_info["tables"]["library_info"] = self.create_table_text(
             sorted(library_list, key=lambda d: d["ngi_id"]),
@@ -109,7 +111,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             l = {}
             l["date"] = v.date
             l["name"] = v.run_name
-            l["reads"] = v.total_reads
+            l["reads"] = v.total_reads  # TODO: round
             l["n50"] = v.n50
             lanes_list.append(l)
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(

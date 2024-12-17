@@ -316,11 +316,19 @@ class Project:
                 if "by user" in self.library_construction.lower():
                     prepObj.label = "NA"
 
-                if prep.get("reagent_label") and prep.get("prep_status"):
-                    prepObj.barcode = prep.get("reagent_label", "NA")
-                    prepObj.qc_status = prep.get("prep_status", "NA")
+                prepObj.barcode = prep.get("reagent_label", "NA")
+                prepObj.qc_status = prep.get("prep_status", "NA")
 
-                    # Get flow cell information for each prep from project database (only if -b flag is set)
+                if prepObj.barcode == "NA":
+                    log.warn(
+                        f"Barcode missing for sample {sample_id} in prep {prep_id}. This could be a NOINDEX case, please check the report."
+                    )
+                if prepObj.qc_status == "NA":
+                    log.warn(
+                        f"Prep status missing for sample {sample_id} in prep {prep_id}"
+                    )
+                # Get flow cell information for each prep from project database (only if -b flag is set)
+                if prepObj.barcode != "NA" and prepObj.qc_status != "NA":
                     if kwargs.get("barcode_from_fc"):
                         prepObj.seq_fc = []
                         if (
@@ -336,12 +344,6 @@ class Project:
                             sample.get("library_prep").get(prep_id).get("sequenced_fc")
                         ):
                             prepObj.seq_fc.append(fc.split("_")[-1])
-                else:
-                    log.warn(
-                        "Could not fetch barcode/prep status for sample {} in prep {}".format(
-                            sample_id, prep_id
-                        )
-                    )
 
                 if "pcr-free" not in self.library_construction.lower():
                     if prep.get("library_validation"):
@@ -572,7 +574,7 @@ class Project:
                     "ApplicationVersion": fc_runparameters.get("SystemSuiteVersion"),
                 }
             elif fcObj.type == "PromethION" or fcObj.type == "MinION":
-                ont_seq_versions = fc_details.get("software_versions", "")
+                ont_seq_versions = fc_runparameters.get("software_versions", "")
                 fcObj.seq_software = {
                     "MinKNOW version": ont_seq_versions.get("minknow", "").get(
                         "full", ""
