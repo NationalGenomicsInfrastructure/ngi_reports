@@ -104,16 +104,16 @@ class Report(ngi_reports.reports.project_summary.Report):
         )
 
         # lanes_info table
-        lanes_header = ["Date", "Flow cell", "Reads", "N50"]
+        lanes_header = ["Date", "Flow cell", "Reads (M)", "N50"]
         lanes_filter = ["date", "name", "reads", "n50"]
         lanes_list = []
         for f, v in list(proj.flowcells.items()):
-            l = {}
-            l["date"] = v.date
-            l["name"] = v.run_name
-            l["reads"] = v.total_reads  # TODO: round
-            l["n50"] = v.n50
-            lanes_list.append(l)
+            lane = {}
+            lane["date"] = v.date
+            lane["name"] = v.run_name
+            lane["reads"] = v.total_reads
+            lane["n50"] = v.n50
+            lanes_list.append(lane)
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
             sorted(lanes_list, key=lambda d: d["date"]),
             filter_keys=lanes_filter,
@@ -122,7 +122,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         self.tables_info["header_explanation"]["lanes_info"] = (
             "* _Date:_ Date of sequencing\n"
             "* _Flow cell:_ Flow cell identifier\n"
-            "* _Reads:_ Number of reads generated\n"
+            "* _Reads (M):_ Number of reads generated (million)\n"
             "* _N50:_ Estimated N50\n"
         )
         # TODO: Add lists of samples for each FC

@@ -510,6 +510,8 @@ class Project:
                     .get("yield_summary")
                     .get("read_count")
                 )
+                fcObj.total_reads = round(fcObj.total_reads / 1000000, 2)
+                # TODO: get list of samples per FC and avg read length here once implemented in TACA
 
             else:
                 fcObj.run_setup = fc_details.get("RunInfo").get("Reads")
