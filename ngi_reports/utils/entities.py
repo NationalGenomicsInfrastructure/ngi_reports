@@ -161,7 +161,7 @@ class Project:
         pcon = statusdb.ProjectSummaryConnection()
         assert pcon, "Could not connect to {} database in StatusDB".format("project")
 
-        if re.match("^P\d+$", project):
+        if re.match(r"^P\d+$", project):
             self.ngi_id = project
             id_view = True
         else:
