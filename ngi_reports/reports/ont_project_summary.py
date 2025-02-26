@@ -84,13 +84,13 @@ class Report(ngi_reports.reports.project_summary.Report):
         library_header = ["NGI ID", "Index", "Avg. FS(bp)", "Lib. QC"]
         library_filter = ["ngi_id", "barcode", "avg_size", "qc_status"]
         library_list = []
-        for s, v in list(proj.samples.items()):
-            for p in list(v.preps.values()):
-                p = vars(p)
-                p["ngi_id"] = s
-                if len(proj.samples.items()) == 1 and p.get("barcode") == "NA":
-                    p["barcode"] = "no index"
-                library_list.append(p)
+        for sample, sample_info in list(proj.samples.items()):
+            for prep in list(sample_info.preps.values()):
+                prep = vars(prep)
+                prep["ngi_id"] = sample
+                if len(proj.samples.items()) == 1 and prep.get("barcode") == "NA":
+                    prep["barcode"] = "no index"
+                library_list.append(prep)
         self.tables_info["tables"]["library_info"] = self.create_table_text(
             sorted(library_list, key=lambda d: d["ngi_id"]),
             filter_keys=library_filter,
@@ -107,12 +107,12 @@ class Report(ngi_reports.reports.project_summary.Report):
         lanes_header = ["Date", "Flow cell", "Reads (M)", "N50"]
         lanes_filter = ["date", "name", "reads", "n50"]
         lanes_list = []
-        for f, v in list(proj.flowcells.items()):
+        for flowcell, flowcell_info in list(proj.flowcells.items()):
             lane = {}
-            lane["date"] = v.date
-            lane["name"] = v.run_name
-            lane["reads"] = v.total_reads
-            lane["n50"] = v.n50
+            lane["date"] = flowcell_info.date
+            lane["name"] = flowcell_info.run_name
+            lane["reads"] = flowcell_info.total_reads
+            lane["n50"] = flowcell_info.n50
             lanes_list.append(lane)
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
             sorted(lanes_list, key=lambda d: d["date"]),
@@ -127,7 +127,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         )
         # TODO: Add lists of samples for each FC
         # Make the file basename
-        output_bn = os.path.realpath(
+        output_basename = os.path.realpath(
             os.path.join(
                 self.working_dir,
                 self.report_dir,
@@ -142,7 +142,7 @@ class Report(ngi_reports.reports.project_summary.Report):
                 tables=self.tables_info["header_explanation"],
                 report_info=self.report_info,
             )
-            return {output_bn: md}
+            return {output_basename: md}
         except:
             self.LOG.error("Could not parse the project_summary template")
             raise

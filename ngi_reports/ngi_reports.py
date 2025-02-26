@@ -48,7 +48,6 @@ def proceed_or_not(question):
 
 def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
     # Setup
-    template_fn = "{}.md".format(report_type)
     LOG.info("Report type: {}".format(report_type))
 
     # use default config or override it if file is specified
@@ -115,9 +114,9 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     output_mds = report.generate_report_template(
         proj, template, config.get("ngi_reports", "support_email")
     )
-    for output_bn, output_md in list(output_mds.items()):
+    for output_basename, output_md in list(output_mds.items()):
         try:
-            with open("{}.md".format(output_bn), "w", encoding="utf-8") as fh:
+            with open("{}.md".format(output_basename), "w", encoding="utf-8") as fh:
                 print(output_md, file=fh)
         except IOError as e:
             LOG.error(
@@ -132,11 +131,11 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
             jinja2_env=env,
             markdown_text=output_md,
             reports_dir=reports_dir,
-            out_path="{}.html".format(output_bn),
+            out_path="{}.html".format(output_basename),
         )
         LOG.info(
             "{} HTML report written to: {}".format(
-                output_bn.rsplit("/", 1)[1], html_out
+                output_basename.rsplit("/", 1)[1], html_out
             )
         )
 
