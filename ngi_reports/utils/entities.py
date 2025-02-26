@@ -237,6 +237,7 @@ class Project:
             self.application,
             self.library_construction_method,
             self.library_prep_option,
+            log,
         )
         self.is_finished_lib = (
             True if "by user" in self.library_construction.lower() else False
@@ -753,15 +754,11 @@ class Project:
                         d for d in fc_lane_summary_demux if d["Lane"] == str(lane)
                     ][0]
                     laneObj.id = lane
-                    laneObj.cluster = "{:.2f}".format(
-                        round(
-                            float(
-                                lane_sum_demux.get("PF Clusters", "0").replace(",", "")
-                            )
-                            / 1000000,
-                            2,
-                        )
+                    pf_clusters = float(
+                        lane_sum_demux.get("PF Clusters", "0").replace(",", "")
                     )
+                    mil_pf_clusters = round(pf_clusters / 1000000, 2)
+                    laneObj.cluster = "{:.2f}".format(mil_pf_clusters)
                     laneObj.avg_qval = "{:.2f}".format(
                         round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
                     )
@@ -793,7 +790,7 @@ class Project:
                         laneObj.weighted_avg_qval_proj += pfrd * qval
                         laneObj.total_reads_with_qval_proj += pfrd
             # Add units, round off values, and add to flowcells object
-            for lane in fcObj.lanes:  # TODO: check if this works for ONT
+            for lane in fcObj.lanes:
                 laneObj = fcObj.lanes[lane]
                 laneObj.reads_unit, lane_divisor = self.get_units_and_divisor(
                     laneObj.total_reads_proj
@@ -883,6 +880,7 @@ class Project:
         application,
         library_construction_method,
         library_prep_option,
+        log,
     ):
         """Get the library construction method and return as formatted string"""
         if application == "Finished library":
