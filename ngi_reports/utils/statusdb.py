@@ -81,12 +81,8 @@ class statusdb_connection(object):
         project_flowcells = {}
         if type(self) is NanoporeRunConnection:
             found_fcs = []
-            for k in self.proj_list.keys():
-                try:
-                    date = datetime.strptime(k.split("_")[0], "%Y%m%d")
-                    found_fcs.append(k)
-                except ValueError:
-                    continue  # TODO: Revert this, it shouldn't be needed i production
+            for flowcell in self.proj_list.keys():
+                found_fcs.append(flowcell)
             date_sorted_fcs = sorted(
                 found_fcs,
                 key=lambda k: datetime.strptime(k.split("_")[0], "%Y%m%d"),
@@ -96,8 +92,6 @@ class statusdb_connection(object):
                 fc_date, fc_time, position, fc_name, fc_hash = fc.split(
                     "_"
                 )  # 20220721_1216_1G_PAM62368_3ae8de85
-                if datetime.strptime(fc_date, "%Y%m%d") < open_date:
-                    break
                 if (
                     project_id in self.proj_list[fc]
                     and fc_name not in project_flowcells.keys()
