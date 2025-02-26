@@ -179,5 +179,3 @@ class NanoporeRunConnection(statusdb_connection):
             for k in self.db.view("names/project_ids_list", reduce=False)
             if k.key
         }
-        # self.stats_view = {k.key:k.value for k in self.db.view("info/all_stats", reduce=False) if k.key}
-        # self.barcode_view = {k.key:k.value for k in self.db.view("info/barcodes", reduce=False) if k.key}
