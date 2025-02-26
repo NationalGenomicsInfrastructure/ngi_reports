@@ -136,6 +136,7 @@ class Project:
         }
         self.is_finished_lib = False
         self.is_hiseqx = False
+        self.sequencer_manufacturer = ""
         self.library_construction = ""
         self.missing_fc = False
         self.ngi_facility = ""
@@ -201,6 +202,19 @@ class Project:
 
         self.contact = proj.get("order_details", {}).get("owner", {}).get("email", "NA")
         self.application = proj.get("application")
+        if proj_details.get("sequencing_platform") in [
+            "MiSeq",
+            "NextSeq 2000",
+            "NovaSeq 6000",
+            "NovaSeq X Plus",
+        ]:
+            self.sequencer_manufacturer = "illumina"
+        elif proj_details.get("sequencing_platform") in ["PromethION", "MinION"]:
+            self.sequencer_manufacturer = "ont"
+        elif proj_details.get("sequencing_platform") in [
+            "Element AVITI"
+        ]:
+            self.sequencer_manufacturer = "element"
         self.num_samples = proj.get("no_of_samples")
         self.ngi_facility = (
             "Genomics {} Stockholm".format(proj_details.get("type"))

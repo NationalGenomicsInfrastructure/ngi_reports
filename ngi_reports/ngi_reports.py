@@ -26,7 +26,7 @@ allowed_report_types = [
         os.path.realpath(
             os.path.join(
                 os.path.dirname(__file__), os.pardir, "data", "report_templates"
-            )
+            )  # TODO: split .md files
         )
     )
 ] + ["ign_aggregate_report"]
@@ -100,7 +100,10 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     # Load the Jinja2 template
     try:
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(reports_dir))
-        template = env.get_template("{}.md".format(report_type))
+        if proj.sequencer_manufacturer == "illumina":
+            template = env.get_template("project_summary.md")
+        elif proj.sequencer_manufacturer == "ont":
+            template = env.get_template("ont_project_summary.md")
     except:
         LOG.error("Could not load the Jinja report template")
         raise
@@ -110,7 +113,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     os.chdir(report.report_dir)
 
     # Get parsed markdown and print to file(s)
-    LOG.debug("Converting markdown to HTML...")
+    LOG.info("Converting markdown to HTML...")
     output_mds = report.generate_report_template(
         proj, template, config.get("ngi_reports", "support_email")
     )
