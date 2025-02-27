@@ -19,14 +19,14 @@ from ngi_reports.utils.entities import Project
 LOG = loggers.minimal_logger("NGI Reports")
 
 ## CONSTANTS
-# create choices for report type based on available report template
+# Create choices for report type based on available report template
 allowed_report_types = [
     fl.replace(".md", "")
     for fl in os.listdir(
         os.path.realpath(
             os.path.join(
                 os.path.dirname(__file__), os.pardir, "data", "report_templates"
-            )  # TODO: split .md files
+            )
         )
     )
 ] + ["ign_aggregate_report"]
@@ -50,16 +50,21 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     # Setup
     LOG.info("Report type: {}".format(report_type))
 
-    # use default config or override it if file is specified
+    # Use default config or override it if file is specified
     config = report_config.load_config(config_file)
-
-    # Import the modules for this report type
-    report_mod = __import__(
-        "ngi_reports.reports.{}".format(report_type), fromlist=["ngi_reports.reports"]
-    )
 
     proj = Project()
     proj.populate(LOG, config._sections["organism_names"], **kwargs)
+
+    # Import the modules for this report type
+    if proj.sequencer_manufacturer == "illumina":
+        report_mod = __import__(
+            "ngi_reports.reports.project_summary", fromlist=["ngi_reports.reports"]
+        )
+    elif proj.sequencer_manufacturer == "ont":
+        report_mod = __import__(
+            "ngi_reports.reports.ont_project_summary", fromlist=["ngi_reports.reports"]
+        )
 
     # Make the report object
     report = report_mod.Report(LOG, working_dir, **kwargs)
@@ -72,7 +77,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     working_base_dir = os.path.split(os.getcwd())[1]
 
     # check if the current dir is correct
-    if not working_base_dir == report.project:
+    if working_base_dir != proj.ngi_id:
         question = f"The current directory {working_dir} does not belong to the chosen project {report.project}. Continue? "
         if proceed_or_not(question):
             LOG.info(
@@ -100,10 +105,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     # Load the Jinja2 template
     try:
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(reports_dir))
-        if proj.sequencer_manufacturer == "illumina":
-            template = env.get_template("project_summary.md")
-        elif proj.sequencer_manufacturer == "ont":
-            template = env.get_template("ont_project_summary.md")
+        template = env.get_template("project_summary.md")
     except:
         LOG.error("Could not load the Jinja report template")
         raise
@@ -269,7 +271,7 @@ def main():
     parser.add_argument(
         "--skip_fastq",
         action="store_true",
-        help="Option to skip naming convention of fastq files from report",
+        help="Option to skip naming convention of fastq files from report. ",
     )
     parser.add_argument(
         "--exclude_fc",
