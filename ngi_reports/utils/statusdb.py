@@ -66,7 +66,11 @@ class statusdb_connection(object):
             if self.log:
                 self.log.warn("no entry '{}' in {}".format(name, self.db))
             return None
-        return self.db.get(view.get(name))
+        if self.db:
+           doc = self.db.get(view.get(name))
+        elif self.dbname:
+            doc = self.cloudant.get_document(db=self.dbname, doc_id=view.get(name)).get_result()
+        return doc
 
     def get_project_flowcell(
         self, project_id, open_date="2015-01-01", date_format="%Y-%m-%d"
