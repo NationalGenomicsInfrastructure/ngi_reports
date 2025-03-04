@@ -5,7 +5,7 @@ import os
 import yaml
 
 from datetime import datetime
-
+from ibmcloudant import CouchDbSessionAuthenticator, cloudant_v1
 
 class statusdb_connection(object):
     """Main class to make connection to the statusdb, by default looks for config
@@ -41,7 +41,11 @@ class statusdb_connection(object):
             self.user, "*********", self.url
         )
         self.connection = couchdb.Server(url=self.url_string)
-        if not self.connection:
+        cloudant = cloudant_v1.CloudantV1(authenticator=CouchDbSessionAuthenticator(self.user, self.pwrd))
+        cloudant.set_service_url(f"https://{self.url}")
+        if cloudant:
+            self.cloudant = cloudant
+        if (not self.connection) or (not self.cloudant):
             raise SystemExit(
                 "Connection failed for url {}, also check the information in config".format(
                     self.display_url_string
@@ -172,10 +176,12 @@ class X_FlowcellRunMetricsConnection(statusdb_connection):
 class NanoporeRunConnection(statusdb_connection):
     def __init__(self, dbname="nanopore_runs"):
         super(NanoporeRunConnection, self).__init__()
-        self.db = self.connection[dbname]
-        self.name_view = {k.key: k.id for k in self.db.view("names/name", reduce=False)}
+        self.name_view = {
+            k["key"]: k["id"]
+            for k in self.cloudant.post_view(db=dbname, ddoc="names", view="name", reduce=False).get_result()["rows"]
+        }
         self.proj_list = {
-            k.key: k.value
-            for k in self.db.view("names/project_ids_list", reduce=False)
-            if k.key
+            k["key"]: k["value"]
+            for k in self.cloudant.post_view(db=dbname, ddoc="names", view="project_ids_list", reduce=False).get_result()["rows"]
+            if k["key"]
         }
