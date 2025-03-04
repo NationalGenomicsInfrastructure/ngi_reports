@@ -69,7 +69,7 @@ class statusdb_connection(object):
         if type(self) is NanoporeRunConnection:
             doc = self.cloudant.get_document(db=self.dbname, doc_id=view.get(name)).get_result()
         else:
-           doc = self.db.get(view.get(name))
+            doc = self.db.get(view.get(name))
         return doc
 
     def get_project_flowcell(
