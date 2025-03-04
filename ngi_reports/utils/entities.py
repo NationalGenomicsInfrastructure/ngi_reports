@@ -215,6 +215,8 @@ class Project:
             "Element AVITI"
         ]:
             self.sequencer_manufacturer = "element"
+        else:
+            self.sequencer_manufacturer = "unknown"
         self.num_samples = proj.get("no_of_samples")
         self.ngi_facility = (
             "Genomics {} Stockholm".format(proj_details.get("type"))

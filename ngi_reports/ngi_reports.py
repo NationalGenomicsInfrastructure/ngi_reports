@@ -65,6 +65,16 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
         report_mod = __import__(
             "ngi_reports.reports.ont_project_summary", fromlist=["ngi_reports.reports"]
         )
+    elif proj.sequencer_manufacturer == "element":
+        LOG.warning(
+            "Project summary report for Element sequencing projects is not yet implemented. Aborting."
+        )
+        sys.exit(0)
+    elif proj.sequencer_manufacturer == "unknown":
+        LOG.warning(
+            "Unknown sequencer manufacturer detected. Please make sure that the sequencing_platform field in statusdb is filled in."
+        )
+        sys.exit(1)
 
     # Make the report object
     report = report_mod.Report(LOG, working_dir, **kwargs)
