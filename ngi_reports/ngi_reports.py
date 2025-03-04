@@ -57,15 +57,15 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     proj.populate(LOG, config._sections["organism_names"], **kwargs)
 
     # Import the modules for this report type
-    if proj.sequencer_manufacturer == "illumina":
+    if proj.sequencer_manufacturer == "illumina" and report_type == "project_summary":
         report_mod = __import__(
             "ngi_reports.reports.project_summary", fromlist=["ngi_reports.reports"]
         )
-    elif proj.sequencer_manufacturer == "ont":
+    elif proj.sequencer_manufacturer == "ont" and report_type == "project_summary":
         report_mod = __import__(
             "ngi_reports.reports.ont_project_summary", fromlist=["ngi_reports.reports"]
         )
-    elif proj.sequencer_manufacturer == "element":
+    elif proj.sequencer_manufacturer == "element" and report_type == "project_summary":
         LOG.warning(
             "Project summary report for Element sequencing projects is not yet implemented. Aborting."
         )
