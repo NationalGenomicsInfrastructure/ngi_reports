@@ -104,7 +104,7 @@ class statusdb_connection(object):
                         "name": fc_name,
                         "run_name": fc,
                         "date": fc_date,
-                        "db": self.db.name,
+                        "db": self.dbname,
                     }
         else:
             date_sorted_fcs = sorted(
@@ -176,12 +176,13 @@ class X_FlowcellRunMetricsConnection(statusdb_connection):
 class NanoporeRunConnection(statusdb_connection):
     def __init__(self, dbname="nanopore_runs"):
         super(NanoporeRunConnection, self).__init__()
+        self.dbname = dbname
         self.name_view = {
             k["key"]: k["id"]
-            for k in self.cloudant.post_view(db=dbname, ddoc="names", view="name", reduce=False).get_result()["rows"]
+            for k in self.cloudant.post_view(db=self.dbname, ddoc="names", view="name", reduce=False).get_result()["rows"]
         }
         self.proj_list = {
             k["key"]: k["value"]
-            for k in self.cloudant.post_view(db=dbname, ddoc="names", view="project_ids_list", reduce=False).get_result()["rows"]
+            for k in self.cloudant.post_view(db=self.dbname, ddoc="names", view="project_ids_list", reduce=False).get_result()["rows"]
             if k["key"]
         }
