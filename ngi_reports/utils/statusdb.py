@@ -66,10 +66,10 @@ class statusdb_connection(object):
             if self.log:
                 self.log.warn("no entry '{}' in {}".format(name, self.db))
             return None
-        if self.db:
-           doc = self.db.get(view.get(name))
-        elif self.dbname:
+        if type(self) is NanoporeRunConnection:
             doc = self.cloudant.get_document(db=self.dbname, doc_id=view.get(name)).get_result()
+        else:
+           doc = self.db.get(view.get(name))
         return doc
 
     def get_project_flowcell(
