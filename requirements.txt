@@ -4,3 +4,4 @@ mdx_outline @ https://github.com/NationalGenomicsInfrastructure/mdx_outline/arch
 jinja2
 couchdb
 pyyaml
+numpy
