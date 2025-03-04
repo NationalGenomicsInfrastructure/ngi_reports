@@ -495,7 +495,7 @@ class Project:
             elif fc_instrument.startswith("VH"):
                 fcObj.type = "NextSeq2000"
                 fc_runparameters = fc_details.get("RunParameters", {})
-            elif "_PA" in fcObj.run_name:
+            elif "_PA" in fcObj.run_name or "_PB" in fcObj.run_name:
                 fcObj.type = "PromethION"
                 fc_runparameters = fc_details.get("protocol_run_info", {})
                 final_acquisition = fc_details.get("acquisitions")[-1]
