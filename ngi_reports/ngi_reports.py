@@ -57,24 +57,28 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     proj.populate(LOG, config._sections["organism_names"], **kwargs)
 
     # Import the modules for this report type
-    if proj.sequencer_manufacturer == "illumina" and report_type == "project_summary":
-        report_mod = __import__(
-            "ngi_reports.reports.project_summary", fromlist=["ngi_reports.reports"]
-        )
-    elif proj.sequencer_manufacturer == "ont" and report_type == "project_summary":
-        report_mod = __import__(
-            "ngi_reports.reports.ont_project_summary", fromlist=["ngi_reports.reports"]
-        )
-    elif proj.sequencer_manufacturer == "element" and report_type == "project_summary":
-        LOG.warning(
-            "Project summary report for Element sequencing projects is not yet implemented. Aborting."
-        )
+    if report_type == "project_summary":
+        if proj.sequencer_manufacturer == "illumina":
+            report_mod = __import__(
+                "ngi_reports.reports.project_summary", fromlist=["ngi_reports.reports"]
+            )
+        elif proj.sequencer_manufacturer == "ont":
+            report_mod = __import__(
+                "ngi_reports.reports.ont_project_summary", fromlist=["ngi_reports.reports"]
+            )
+        elif proj.sequencer_manufacturer == "element":
+            LOG.warning(
+                "Project summary report for Element sequencing projects is not yet implemented. Aborting."
+            )
+            sys.exit(0)
+        elif proj.sequencer_manufacturer == "unknown":
+            LOG.warning(
+                "Unknown sequencer manufacturer detected. Please make sure that the sequencing_platform field in statusdb is filled in."
+            )
+            sys.exit(1)
+    else: 
+        LOG.warning(f"Report type '{report_type}' is not yet implemented. Aborting.")
         sys.exit(0)
-    elif proj.sequencer_manufacturer == "unknown":
-        LOG.warning(
-            "Unknown sequencer manufacturer detected. Please make sure that the sequencing_platform field in statusdb is filled in."
-        )
-        sys.exit(1)
 
     # Make the report object
     report = report_mod.Report(LOG, working_dir, **kwargs)
@@ -115,7 +119,11 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     # Load the Jinja2 template
     try:
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(reports_dir))
-        template = env.get_template("project_summary.md")
+        if report_type == "project_summary":
+            template = env.get_template("project_summary.md")
+        else:
+            LOG.warning(f"Report type '{report_type}' is not yet implemented. Aborting.")
+            sys.exit(0)
     except:
         LOG.error("Could not load the Jinja report template")
         raise
