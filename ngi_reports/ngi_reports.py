@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-""" This is the entry point for ngi_reports.
-"""
+"""This is the entry point for ngi_reports."""
 
 from __future__ import print_function
 
@@ -20,7 +19,7 @@ from ngi_reports.utils.entities import Project
 LOG = loggers.minimal_logger("NGI Reports")
 
 ## CONSTANTS
-# create choices for report type based on available report template
+# Create choices for report type based on available report template
 allowed_report_types = [
     fl.replace(".md", "")
     for fl in os.listdir(
@@ -48,21 +47,38 @@ def proceed_or_not(question):
 
 
 def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
-
     # Setup
-    template_fn = "{}.md".format(report_type)
     LOG.info("Report type: {}".format(report_type))
 
-    # use default config or override it if file is specified
+    # Use default config or override it if file is specified
     config = report_config.load_config(config_file)
-
-    # Import the modules for this report type
-    report_mod = __import__(
-        "ngi_reports.reports.{}".format(report_type), fromlist=["ngi_reports.reports"]
-    )
 
     proj = Project()
     proj.populate(LOG, config._sections["organism_names"], **kwargs)
+
+    # Import the modules for this report type
+    if report_type == "project_summary":
+        if proj.sequencer_manufacturer == "illumina":
+            report_mod = __import__(
+                "ngi_reports.reports.project_summary", fromlist=["ngi_reports.reports"]
+            )
+        elif proj.sequencer_manufacturer == "ont":
+            report_mod = __import__(
+                "ngi_reports.reports.ont_project_summary", fromlist=["ngi_reports.reports"]
+            )
+        elif proj.sequencer_manufacturer == "element":
+            LOG.warning(
+                "Project summary report for Element sequencing projects is not yet implemented. Aborting."
+            )
+            sys.exit(0)
+        elif proj.sequencer_manufacturer == "unknown":
+            LOG.warning(
+                "Unknown sequencer manufacturer detected. Please make sure that the sequencing_platform field in statusdb is filled in."
+            )
+            sys.exit(1)
+    else: 
+        LOG.warning(f"Report type '{report_type}' is not yet implemented. Aborting.")
+        sys.exit(0)
 
     # Make the report object
     report = report_mod.Report(LOG, working_dir, **kwargs)
@@ -75,7 +91,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     working_base_dir = os.path.split(os.getcwd())[1]
 
     # check if the current dir is correct
-    if not working_base_dir == report.project:
+    if working_base_dir != proj.ngi_id:
         question = f"The current directory {working_dir} does not belong to the chosen project {report.project}. Continue? "
         if proceed_or_not(question):
             LOG.info(
@@ -103,7 +119,11 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     # Load the Jinja2 template
     try:
         env = jinja2.Environment(loader=jinja2.FileSystemLoader(reports_dir))
-        template = env.get_template("{}.md".format(report_type))
+        if report_type == "project_summary":
+            template = env.get_template("project_summary.md")
+        else:
+            LOG.warning(f"Report type '{report_type}' is not yet implemented. Aborting.")
+            sys.exit(0)
     except:
         LOG.error("Could not load the Jinja report template")
         raise
@@ -113,13 +133,13 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     os.chdir(report.report_dir)
 
     # Get parsed markdown and print to file(s)
-    LOG.debug("Converting markdown to HTML...")
+    LOG.info("Converting markdown to HTML...")
     output_mds = report.generate_report_template(
         proj, template, config.get("ngi_reports", "support_email")
     )
-    for output_bn, output_md in list(output_mds.items()):
+    for output_basename, output_md in list(output_mds.items()):
         try:
-            with open("{}.md".format(output_bn), "w", encoding="utf-8") as fh:
+            with open("{}.md".format(output_basename), "w", encoding="utf-8") as fh:
                 print(output_md, file=fh)
         except IOError as e:
             LOG.error(
@@ -134,16 +154,20 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
             jinja2_env=env,
             markdown_text=output_md,
             reports_dir=reports_dir,
-            out_path="{}.html".format(output_bn),
+            out_path="{}.html".format(output_basename),
         )
         LOG.info(
             "{} HTML report written to: {}".format(
-                output_bn.rsplit("/", 1)[1], html_out
+                output_basename.rsplit("/", 1)[1], html_out
             )
         )
 
     # Generate CSV files for project_summary reports
-    if report_type == "project_summary" and not kwargs["no_txt"]:
+    if (
+        report_type == "project_summary"
+        or report_type == "ont_project_summary"
+        and not kwargs["no_txt"]
+    ):
         try:
             report.create_txt_files()
             LOG.info("Generated TXT files...")
@@ -265,7 +289,7 @@ def main():
     parser.add_argument(
         "--skip_fastq",
         action="store_true",
-        help="Option to skip naming convention of fastq files from report",
+        help="Option to skip naming convention of fastq files from report. ",
     )
     parser.add_argument(
         "--exclude_fc",
@@ -316,7 +340,7 @@ def main():
         "--barcode_from_fc",
         default=False,
         action="store_true",
-        help="retrieve the index from the FC directly",
+        help="retrieve the index from the FC directly (ONLY Illumina)",
     )
 
     kwargs = vars(parser.parse_args())

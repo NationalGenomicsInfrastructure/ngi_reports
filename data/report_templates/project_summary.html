@@ -276,7 +276,7 @@
       var headInfo = document.getElementsByTagName('h1');
         for (var h = 0; h < headInfo.length; h++){
           var textCont = headInfo[h].textContent;
-          if(textCont.match(/Sample|Library|Lanes Information/)){
+          if(textCont.match(/Sample|Library|Lanes Information|Flowcell Information/)){
             var dId = textCont.toLowerCase().replace(/\s+/, "-");
             headInfo[h].parentNode.id = dId;
             var divTable = headInfo[h].nextElementSibling;
