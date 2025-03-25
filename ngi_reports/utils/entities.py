@@ -43,11 +43,14 @@ class Prep:
 class Flowcell:
     """Flowcell class"""
 
-    def __init__(self):
-        self.date = ""
+    def __init__(self, fc, db_connection):
+        self.fc = fc
+        self.db_connection = db_connection
+        self.name = self.fc.get("name", "")
+        self.run_name = self.fc.get("run_name", "")
+        self.date = self.fc.get("date", "")
+
         self.lanes = OrderedDict()
-        self.name = ""
-        self.run_name = ""
         self.run_setup = []
         self.seq_meth = ""
         self.type = ""
@@ -55,6 +58,12 @@ class Flowcell:
         self.chemistry = {}
         self.casava = None
         self.seq_software = {}
+
+    def populate_illumina_flowcell(self, log):
+        fc_details = self.db_connection.get_entry(self.run_name)
+
+    def populate_ont_flowcell(self, log):
+        fc_details = self.db_connection.get_entry(self.run_name)
 
 
 class Lane:
@@ -211,9 +220,7 @@ class Project:
             self.sequencer_manufacturer = "illumina"
         elif proj_details.get("sequencing_platform") in ["PromethION", "MinION"]:
             self.sequencer_manufacturer = "ont"
-        elif proj_details.get("sequencing_platform") in [
-            "Element AVITI"
-        ]:
+        elif proj_details.get("sequencing_platform") in ["Element AVITI"]:
             self.sequencer_manufacturer = "element"
         else:
             self.sequencer_manufacturer = "unknown"
@@ -436,9 +443,7 @@ class Project:
                 )
             self.samples[sample_id] = samObj
 
-        # Get Flowcell data
-        fcon = statusdb.FlowcellRunMetricsConnection()
-        assert fcon, "Could not connect to {} database in StatusDB".format("flowcell")
+        # Get Flowcell data #FIXME:
         xcon = statusdb.X_FlowcellRunMetricsConnection()
         assert xcon, "Could not connect to {} database in StatusDB".format(
             "x_flowcells"
@@ -447,15 +452,30 @@ class Project:
         assert ontcon, "Could not connect to {} database in StatusDB".format(
             "nanopore_runs"
         )
-        flowcell_info = fcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
-        flowcell_info.update(
-            xcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
-        )
+        flowcell_info = xcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
         flowcell_info.update(
             ontcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
         )
 
-        sample_qval = defaultdict(dict)
+        for fc in list(flowcell_info.values()):
+            if fc["name"] in kwargs.get("exclude_fc"):
+                continue
+            if fc["db"] == "x_flowcells":
+                fcObj = Flowcell(fc, xcon)
+                fcObj.populate_illumina_flowcell(log)
+            elif fc["db"] == "nanopore_runs":
+                fcObj = Flowcell(fc, ontcon)
+                fcObj.populate_ont_flowcell(log)
+            else:
+                log.error(f"Unkown database: {fc['db']}. Exiting.")
+                sys.exit(1)
+        self.flowcells[fcObj.name] = fcObj
+
+        ###OLD###
+
+        sample_qval = defaultdict(
+            dict
+        )  # TODO: don't forget to specify this somewhere above...
         sample_stats = defaultdict(dict)
 
         for fc in list(flowcell_info.values()):
