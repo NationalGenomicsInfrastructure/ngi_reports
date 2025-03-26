@@ -1,6 +1,9 @@
 # ngi_reports Version Log
 
 ## 20240926.1
+Refactor entities.py by populating Flowcell objects in Flowcell class instead
+
+## 20240926.1
 Fix issue with empty owner under order_details
 
 ## 20240809.1
