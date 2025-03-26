@@ -1,6 +1,6 @@
 # ngi_reports Version Log
 
-## 20240926.1
+## 20250326.1
 Refactor entities.py by populating Flowcell objects in Flowcell class instead
 
 ## 20240926.1
