@@ -64,30 +64,30 @@ class Flowcell:
         self.name = self.fc.get("name", "")
         self.run_name = self.fc.get("run_name", "")
         self.date = self.fc.get("date", "")
+        self.fc_details = self.db_connection.get_entry(self.run_name)
 
         self.lanes = OrderedDict()
         self.fc_sample_qvalues = defaultdict(dict)
 
     def populate_illumina_flowcell(self, log, **kwargs):
-        fc_details = self.db_connection.get_entry(self.run_name)
-        fc_instrument = fc_details.get("RunInfo", {}).get("Instrument", "")
+        fc_instrument = self.fc_details.get("RunInfo", {}).get("Instrument", "")
         if "-" in self.name:
             self.type = "MiSeq"
-            fc_runparameters = fc_details.get("RunParameters", {})
+            fc_runparameters = self.fc_details.get("RunParameters", {})
         elif fc_instrument.startswith("A"):
             self.type = "NovaSeq6000"
-            fc_runparameters = fc_details.get("RunParameters", {})
+            fc_runparameters = self.fc_details.get("RunParameters", {})
         elif fc_instrument.startswith("LH"):
             self.type = "NovaSeqXPlus"
-            fc_runparameters = fc_details.get("RunParameters", {})
+            fc_runparameters = self.fc_details.get("RunParameters", {})
         elif fc_instrument.startswith("NS"):
             self.type = "NextSeq500"
-            fc_runparameters = fc_details.get("RunParameters", {})
+            fc_runparameters = self.fc_details.get("RunParameters", {})
         elif fc_instrument.startswith("VH"):
             self.type = "NextSeq2000"
-            fc_runparameters = fc_details.get("RunParameters", {})
+            fc_runparameters = self.fc_details.get("RunParameters", {})
 
-        self.run_setup = fc_details.get("RunInfo").get("Reads")
+        self.run_setup = self.fc_details.get("RunInfo").get("Reads")
 
         if self.type == "NovaSeq6000":
             self.chemistry = {
@@ -117,9 +117,9 @@ class Flowcell:
             }
 
         try:
-            self.casava = list(fc_details["DemultiplexConfig"].values())[0]["Software"][
-                "Version"
-            ]
+            self.casava = list(self.fc_details["DemultiplexConfig"].values())[0][
+                "Software"
+            ]["Version"]
         except (KeyError, IndexError):
             self.casava = None
 
@@ -156,13 +156,14 @@ class Flowcell:
                 "ApplicationVersion": fc_runparameters.get("ApplicationVersion"),
             }
 
-        self.sample_sheet_data = fc_details.get("samplesheet_csv")
-
-        for barcode_stat in (
-            fc_details.get("illumina", {})
+        self.sample_sheet_data = self.fc_details.get("samplesheet_csv")
+        # FIXME:
+        self.barcode_lane_statistics = (
+            self.fc_details.get("illumina", {})
             .get("Demultiplex_Stats", {})
             .get("Barcode_lane_statistics", [])
-        ):
+        )
+        for barcode_stat in self.barcode_lane_statistics:
             if (
                 re.sub("_+", ".", barcode_stat["Project"], 1) != self.project_name
                 and barcode_stat["Project"] != self.project_name
@@ -204,11 +205,11 @@ class Flowcell:
                 )
                 pass
             # Collect lanes of interest to proceed later
-            fc_lane_summary_lims = fc_details.get("lims_data", {}).get(
+            fc_lane_summary_lims = self.fc_details.get("lims_data", {}).get(
                 "run_summary", {}
             )
             fc_lane_summary_demux = (
-                fc_details.get("illumina", {})
+                self.fc_details.get("illumina", {})
                 .get("Demultiplex_Stats", {})
                 .get("Lanes_stats", {})
             )
@@ -265,17 +266,16 @@ class Flowcell:
             laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
 
     def populate_ont_flowcell(self, log, **kwargs):
-        fc_details = self.db_connection.get_entry(self.run_name)
         # fc_instrument = fc_details.get("RunInfo", {}).get("Instrument", "")
 
         if "_PA" in self.run_name or "_PB" in self.run_name:
             self.type = "PromethION"
-            fc_runparameters = fc_details.get("protocol_run_info", {})
-            final_acquisition = fc_details.get("acquisitions")[-1]
+            fc_runparameters = self.fc_details.get("protocol_run_info", {})
+            final_acquisition = self.fc_details.get("acquisitions")[-1]
         elif "_MN" in self.run_name:
             self.type = "MinION"
-            fc_runparameters = fc_details.get("protocol_run_info", {})
-            final_acquisition = fc_details.get("acquisitions")[-1]
+            fc_runparameters = self.fc_details.get("protocol_run_info", {})
+            final_acquisition = self.fc_details.get("acquisitions")[-1]
 
         self.fc_type = fc_runparameters.get("flow_cell").get(
             "user_specified_product_code"
@@ -712,9 +712,9 @@ class Project:
                 for sample in fcObj.fc_sample_qvalues.keys():
                     if sample_qval[sample]:
                         for sample_run in fcObj.fc_sample_qvalues[sample].keys():
-                            sample_qval[sample][sample_run] = fcObj.fc_sample_qvalues[sample][
-                                sample_run
-                            ]
+                            sample_qval[sample][sample_run] = fcObj.fc_sample_qvalues[
+                                sample
+                            ][sample_run]
                     else:
                         sample_qval[sample] = fcObj.fc_sample_qvalues[sample]
             elif fc["db"] == "nanopore_runs":
@@ -770,376 +770,26 @@ class Project:
                         preps_samples_on_fc.append([additional_sample, "NA"])
                         undet_iteration += 1
 
-            self.flowcells[fcObj.name] = fcObj
-
-        ###OLD###
-
-        sample_qval = defaultdict(
-            dict
-        )
-
-        for fc in list(flowcell_info.values()):
-            if fc["name"] in kwargs.get("exclude_fc"):
-                continue
-            fcObj = Flowcell()
-            fcObj.name = fc["name"]
-            fcObj.run_name = fc["run_name"]
-            fcObj.date = fc["date"]
-
-            # Get database document from appropriate database
-            if fc["db"] == "x_flowcells":
-                fc_details = xcon.get_entry(fc["run_name"])
-            elif fc["db"] == "nanopore_runs":
-                fc_details = ontcon.get_entry(fc["run_name"])
-            else:
-                fc_details = fcon.get_entry(fc["run_name"])
-
-            # Set the fc type
-            fc_instrument = fc_details.get("RunInfo", {}).get("Instrument", "")
-            if fc_instrument.startswith("ST-"):
-                fcObj.type = "HiSeqX"
-                self.is_hiseqx = True
-                fc_runparameters = fc_details.get("RunParameters", {}).get("Setup", {})
-            elif "-" in fcObj.name:
-                fcObj.type = "MiSeq"
-                fc_runparameters = fc_details.get("RunParameters", {})
-            elif fc_instrument.startswith("A"):
-                fcObj.type = "NovaSeq6000"
-                fc_runparameters = fc_details.get("RunParameters", {})
-            elif fc_instrument.startswith("LH"):
-                fcObj.type = "NovaSeqXPlus"
-                fc_runparameters = fc_details.get("RunParameters", {})
-            elif fc_instrument.startswith("NS"):
-                fcObj.type = "NextSeq500"
-                fc_runparameters = fc_details.get("RunParameters", {})
-            elif fc_instrument.startswith("VH"):
-                fcObj.type = "NextSeq2000"
-                fc_runparameters = fc_details.get("RunParameters", {})
-            elif "_PA" in fcObj.run_name or "_PB" in fcObj.run_name:
-                fcObj.type = "PromethION"
-                fc_runparameters = fc_details.get("protocol_run_info", {})
-                final_acquisition = fc_details.get("acquisitions")[-1]
-            elif "_MN" in fcObj.run_name:
-                fcObj.type = "MinION"
-                fc_runparameters = fc_details.get("protocol_run_info", {})
-                final_acquisition = fc_details.get("acquisitions")[-1]
-            else:
-                fcObj.type = "HiSeq2500"
-                fc_runparameters = fc_details.get("RunParameters", {}).get("Setup", {})
-
-            # Fetch run setup for the flowcell
-            if fcObj.type == "PromethION" or fcObj.type == "MinION":
-                fcObj.fc_type = fc_runparameters.get("flow_cell").get(
-                    "user_specified_product_code"
-                )  # product_code not specified for minion
-                run_arguments = fc_runparameters.get("args")
-                for arg in run_arguments:
-                    if "min_qscore" in arg:
-                        fcObj.qual_threshold = float(arg.split("=")[-1])
-                fcObj.n50 = float(
-                    final_acquisition.get("read_length_histogram")[-1]
-                    .get("plot")
-                    .get("histogram_data")[0]
-                    .get("n50")
-                )
-                fcObj.total_reads = float(
-                    final_acquisition.get("acquisition_run_info")
-                    .get("yield_summary")
-                    .get("read_count")
-                )
-                fcObj.total_reads = round(fcObj.total_reads / 1000000, 2)
-                # TODO: get list of samples per FC and avg read length here once implemented in TACA
-
-            else:
-                fcObj.run_setup = fc_details.get("RunInfo").get("Reads")
-
-            if fcObj.type == "NovaSeq6000":
-                fcObj.chemistry = {
-                    "WorkflowType": fc_runparameters.get("WorkflowType"),
-                    "FlowCellMode": fc_runparameters.get("RfidsInfo", {}).get(
-                        "FlowCellMode"
-                    ),
-                }
-            elif fcObj.type == "NovaSeqXPlus":
-                fcObj.chemistry = {"RecipeName": fc_runparameters.get("RecipeName")}
-            elif fcObj.type == "NextSeq500":
-                fcObj.chemistry = {
-                    "Chemistry": fc_runparameters.get("Chemistry").replace(
-                        "NextSeq ", ""
-                    )
-                }
-            elif fcObj.type == "NextSeq2000":
-                NS2000_FC_PAT = re.compile("P[1,2,3]")
-                fcObj.chemistry = {
-                    "Chemistry": NS2000_FC_PAT.findall(
-                        fc_runparameters.get("FlowCellMode")
-                    )[0]
-                }
-            else:
-                fcObj.chemistry = {
-                    "Chemistry": fc_runparameters.get(
-                        "ReagentKitVersion", fc_runparameters.get("Sbs")
-                    )
-                }
-            if fcObj.type != "PromethION" and fcObj.type != "MinION":
-                try:
-                    fcObj.casava = list(fc_details["DemultiplexConfig"].values())[0][
-                        "Software"
-                    ]["Version"]
-                except (KeyError, IndexError):
-                    continue
-
-            if fcObj.type == "MiSeq":
-                fcObj.seq_software = {
-                    "RTAVersion": fc_runparameters.get("RTAVersion"),
-                    "ApplicationVersion": fc_runparameters.get("MCSVersion"),
-                }
-            elif fcObj.type == "NextSeq500" or fcObj.type == "NextSeq2000":
-                fcObj.seq_software = {
-                    "RTAVersion": fc_runparameters.get(
-                        "RTAVersion", fc_runparameters.get("RtaVersion")
-                    ),
-                    "ApplicationName": fc_runparameters.get("ApplicationName")
-                    if fc_runparameters.get("ApplicationName")
-                    else fc_runparameters.get("Setup").get("ApplicationName"),
-                    "ApplicationVersion": fc_runparameters.get("ApplicationVersion")
-                    if fc_runparameters.get("ApplicationVersion")
-                    else fc_runparameters.get("Setup").get("ApplicationVersion"),
-                }
-            elif fcObj.type == "NovaSeqXPlus":
-                fcObj.seq_software = {
-                    "ApplicationName": fc_runparameters.get("Application"),
-                    "ApplicationVersion": fc_runparameters.get("SystemSuiteVersion"),
-                }
-            elif fcObj.type == "PromethION" or fcObj.type == "MinION":
-                ont_seq_versions = fc_runparameters.get("software_versions", "")
-                fcObj.seq_software = {
-                    "MinKNOW version": ont_seq_versions.get("minknow", "").get(
-                        "full", ""
-                    ),
-                    "Guppy version": ont_seq_versions.get("guppy_build_version", ""),
-                }
-                fcObj.basecall_model = (
-                    fc_runparameters.get("meta_info", "")
-                    .get("tags", "")
-                    .get("default basecall model")
-                    .get("string_value")
-                )
-            else:
-                fcObj.seq_software = {
-                    "RTAVersion": fc_runparameters.get(
-                        "RTAVersion", fc_runparameters.get("RtaVersion")
-                    ),
-                    "ApplicationName": fc_runparameters.get(
-                        "ApplicationName", fc_runparameters.get("Application")
-                    ),
-                    "ApplicationVersion": fc_runparameters.get("ApplicationVersion"),
-                }
-
-            # Collect info of samples and their library prep / LIMS indexes on the FC (only if -b option is set)
-            if kwargs.get("barcode_from_fc"):
-                log.info(
-                    "'barcodes_from_fc' option was given so index sequences for the report will be taken from the flowcell instead of LIMS"
-                )
-                preps_samples_on_fc = []
-                list_additional_samples = []
-
-                # Get all samples from flow cell that belong to the project
-                fc_samples = []
-                for fc_sample in fc_details.get("samplesheet_csv"):
-                    if fc_sample.get("Sample_Name").split("_")[0] == self.ngi_id:
-                        fc_samples.append(fc_sample.get("Sample_Name"))
-
-                # Iterate through all samples in project to identify their prep_ID (only if they are on the flowcell)
-                for sample_ID in list(self.samples):
-                    for prep_ID in list(self.samples.get(sample_ID).preps):
-                        sample_preps = self.samples.get(sample_ID).preps
-                        if fcObj.name in sample_preps.get(prep_ID).seq_fc:
-                            preps_samples_on_fc.append([sample_ID, prep_ID])
-                        else:
-                            continue
-
-                # Get (if any) samples that are on the fc, but are not recorded in LIMS (i.e. added bc from undet reads)
-                if len(set(list(self.samples))) != len(set(fc_samples)):
-                    list_additional_samples = list(set(fc_samples) - set(self.samples))
-                    list_additional_samples.sort()
-                    log.info(
-                        "The flowcell {} contains {} sample(s) ({}) that "
-                        "has/have not been defined in LIMS. They will be added to the report.".format(
-                            fc_details.get("RunInfo").get("Id"),
-                            len(list_additional_samples),
-                            ", ".join(list_additional_samples),
-                        )
-                    )
-
-                    undet_iteration = 1
-                    # Creating additional sample and prep Objects
-                    for additional_sample in list_additional_samples:
-                        AsamObj = Sample()
-                        AsamObj.ngi_id = additional_sample
-                        AsamObj.customer_name = (
-                            "unknown" + str(undet_iteration)
-                        )  # Additional samples will be named "unknown[number]" in the report
-                        AsamObj.well_location = "NA"
-                        AsamObj.preps["NA"] = Prep()
-                        AsamObj.preps["NA"].label = "NA"
-                        self.samples[additional_sample] = AsamObj
-                        preps_samples_on_fc.append([additional_sample, "NA"])
-                        undet_iteration += 1
-            # Collect quality info for samples and collect lanes of interest (Illumina)
-            for stat in (
-                fc_details.get("illumina", {})
-                .get("Demultiplex_Stats", {})
-                .get("Barcode_lane_statistics", [])
-            ):
-                if (
-                    re.sub("_+", ".", stat["Project"], 1) != self.ngi_name
-                    and stat["Project"] != self.ngi_name
-                ):
-                    continue
-
-                lane = stat.get("Lane")
-                if fc["db"] == "x_flowcells":
-                    sample = stat.get("Sample")
-                    barcode = stat.get("Barcode sequence")
-                    qval_key, base_key = ("% >= Q30bases", "PF Clusters")
-
-                else:
-                    sample = stat.get("Sample ID")
-                    barcode = stat.get("Index")
-                    qval_key, base_key = ("% of >= Q30 Bases (PF)", "# Reads")
-
-                # If '-b' flag is set, we override the barcodes from LIMS with the barcodes from the flowcell for all samples
-                # TODO: make the substitution somewhere
-                if kwargs.get("barcode_from_fc"):
+                for sample_stat in fcObj.barcode_lane_statistics:
                     new_barcode = "-".join(
-                        barcode.split("+")
+                        sample_stat.get("Barcode sequence").split("+")
                     )  # Change the barcode layout to match the one used for the report
                     lib_prep = []  # Adding the now required library prep, set to NA for all non-LIMS samples
-                    if sample in list_additional_samples:
+                    if sample_stat.get("Sample") in list_additional_samples:
                         lib_prep.append("NA")
                     else:  # Adding library prep for LIMS samples, we identified them earlier
                         for sub_prep_sample in preps_samples_on_fc:
-                            if sub_prep_sample[0] == sample:
+                            if sub_prep_sample[0] == sample_stat.get("Sample"):
                                 lib_prep.append(sub_prep_sample[1])
 
-                    for (
-                        prep_o_samples
-                    ) in lib_prep:  # Changing the barcode happens here!
-                        self.samples.get(sample).preps.get(
+                    for prep_o_samples in lib_prep:
+                        # Changing the barcode happens here!
+                        self.samples.get(sample_stat.get("Sample")).preps.get(
                             prep_o_samples
                         ).barcode = new_barcode
 
-                # Skip if there are no lanes or samples
-                if not lane or not sample or not barcode:
-                    log.warn(
-                        "Insufficient info/malformed data in Barcode_lane_statistics in FC {}, skipping...".format(
-                            fcObj.name
-                        )
-                    )
-                    continue
-
-                if kwargs.get("samples", []) and sample not in kwargs.get(
-                    "samples", []
-                ):
-                    continue
-
-                try:
-                    r_idx = "{}_{}_{}".format(lane, fcObj.name, barcode)
-                    r_len_list = [
-                        x["NumCycles"]
-                        for x in fcObj.run_setup
-                        if x["IsIndexedRead"] == "N"
-                    ]
-                    r_len_list = [int(x) for x in r_len_list]
-                    r_num = len(r_len_list)
-                    qval = float(stat.get(qval_key))
-                    pfrd = int(stat.get(base_key).replace(",", ""))
-                    pfrd = pfrd / 2 if fc["db"] == "flowcell" else pfrd
-                    base = pfrd * sum(r_len_list)
-                    sample_qval[sample][r_idx] = {
-                        "qval": qval,
-                        "reads": pfrd,
-                        "bases": base,
-                    }
-
-                except (TypeError, ValueError, AttributeError) as e:
-                    log.warn(
-                        "Something went wrong while fetching Q30 for sample {} with "
-                        "barcode {} in FC {} at lane {}. Error was: \n{}".format(
-                            sample, barcode, fcObj.name, lane, e
-                        )
-                    )
-                    pass
-                # Collect lanes of interest to proceed later
-                fc_lane_summary_lims = fc_details.get("lims_data", {}).get(
-                    "run_summary", {}
-                )
-                fc_lane_summary_demux = (
-                    fc_details.get("illumina", {})
-                    .get("Demultiplex_Stats", {})
-                    .get("Lanes_stats", {})
-                )
-                if lane not in fcObj.lanes:
-                    laneObj = Lane()
-                    lane_sum_lims = fc_lane_summary_lims.get(
-                        lane, fc_lane_summary_lims.get("A", {})
-                    )
-                    lane_sum_demux = [
-                        d for d in fc_lane_summary_demux if d["Lane"] == str(lane)
-                    ][0]
-                    laneObj.id = lane
-                    pf_clusters = float(
-                        lane_sum_demux.get("PF Clusters", "0").replace(",", "")
-                    )
-                    mil_pf_clusters = round(pf_clusters / 1000000, 2)
-                    laneObj.cluster = "{:.2f}".format(mil_pf_clusters)
-                    laneObj.avg_qval = "{:.2f}".format(
-                        round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
-                    )
-                    laneObj.set_lane_info(
-                        "fc_phix", "% Error Rate", lane_sum_lims, str(r_num)
-                    )
-                    if kwargs.get("fc_phix", {}).get(fcObj.name, {}):
-                        laneObj.phix = kwargs.get("fc_phix").get(fcObj.name).get(lane)
-                    # Calculate weighted Q30 value and add it to lane data
-                    laneObj.total_reads_proj += pfrd
-                    if pfrd and qval:
-                        laneObj.weighted_avg_qval_proj += pfrd * qval
-                        laneObj.total_reads_with_qval_proj += pfrd
-                    fcObj.lanes[lane] = laneObj
-
-                    # Check if the above created lane object has all needed info
-                    for k, v in vars(laneObj).items():
-                        if not v:
-                            log.warn(
-                                "Could not fetch {} for FC {} at lane {}".format(
-                                    k, fcObj.name, lane
-                                )
-                            )
-                # Add total reads and Q30 to lane data
-                else:
-                    laneObj = fcObj.lanes[lane]
-                    laneObj.total_reads_proj += pfrd
-                    if pfrd and qval:
-                        laneObj.weighted_avg_qval_proj += pfrd * qval
-                        laneObj.total_reads_with_qval_proj += pfrd
-            # Add units, round off values, and add to flowcells object
-            for lane in fcObj.lanes:
-                laneObj = fcObj.lanes[lane]
-                laneObj.reads_unit, lane_divisor = get_units_and_divisor(
-                    laneObj.total_reads_proj
-                )
-                laneObj.total_reads_proj = round(
-                    laneObj.total_reads_proj / lane_divisor, 2
-                )
-                laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
-                laneObj.weighted_avg_qval_proj = round(
-                    laneObj.weighted_avg_qval_proj, 2
-                )
-
             self.flowcells[fcObj.name] = fcObj
-        # TODO: from here! Go through final section, then fix -b option. Remove old code above
+
         if not self.flowcells:
             log.warn(
                 "There is no flowcell to process for project {}".format(self.ngi_name)
