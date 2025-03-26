@@ -9,6 +9,20 @@ from datetime import datetime
 from ngi_reports.utils import statusdb
 
 
+def get_units_and_divisor(reads):
+    """Add millions or thousands unit to reads data"""
+    divisor = 1
+    unit = "#reads"
+    if reads > 1000:
+        if reads > 1000000:
+            unit = "Mreads"
+            divisor = 1000000
+        else:
+            unit = "Kreads"
+            divisor = 1000
+    return (unit, divisor)
+
+
 class Sample:
     """Sample class"""
 
@@ -43,15 +57,16 @@ class Prep:
 class Flowcell:
     """Flowcell class"""
 
-    def __init__(self, fc, ngi_id, db_connection):
+    def __init__(self, fc, ngi_name, db_connection):
         self.fc = fc
-        self.ngi_id = ngi_id
+        self.project_name = ngi_name
         self.db_connection = db_connection
         self.name = self.fc.get("name", "")
         self.run_name = self.fc.get("run_name", "")
         self.date = self.fc.get("date", "")
 
         self.lanes = OrderedDict()
+        self.fc_sample_qvalues = defaultdict(dict)
 
     def populate_illumina_flowcell(self, log, **kwargs):
         fc_details = self.db_connection.get_entry(self.run_name)
@@ -143,9 +158,115 @@ class Flowcell:
 
         self.sample_sheet_data = fc_details.get("samplesheet_csv")
 
+        for barcode_stat in (
+            fc_details.get("illumina", {})
+            .get("Demultiplex_Stats", {})
+            .get("Barcode_lane_statistics", [])
+        ):
+            if (
+                re.sub("_+", ".", barcode_stat["Project"], 1) != self.project_name
+                and barcode_stat["Project"] != self.project_name
+            ):
+                continue
+
+            lane = barcode_stat.get("Lane")
+            sample = barcode_stat.get("Sample")
+            barcode = barcode_stat.get("Barcode sequence")
+
+            if not lane or not sample or not barcode:
+                log.warning(
+                    f"Insufficient info/malformed data in Barcode_lane_statistics in FC {self.run_name}, skipping..."
+                )
+                continue
+
+            if kwargs.get("samples", []) and sample not in kwargs.get("samples", []):
+                continue
+
+            try:
+                read_index = f"{lane}_{self.name}_{barcode}"
+                num_cycles = [
+                    x["NumCycles"] for x in self.run_setup if x["IsIndexedRead"] == "N"
+                ]
+                num_cycles = [int(x) for x in num_cycles]
+                qval = float(barcode_stat.get("% >= Q30bases"))
+                pf_reads = int(barcode_stat.get("PF Clusters").replace(",", ""))
+                base = pf_reads * sum(num_cycles)
+                self.fc_sample_qvalues[sample][read_index] = {
+                    "qval": qval,
+                    "reads": pf_reads,
+                    "bases": base,
+                }  # TODO: check if this works... should be for each lane, for each stat.
+
+            except (TypeError, ValueError, AttributeError) as e:
+                log.warning(
+                    f"Something went wrong while fetching Q30 for sample {sample} with "
+                    f"barcode {barcode} in FC {self.name} at lane {lane}. Error was: \n{e}"
+                )
+                pass
+            # Collect lanes of interest to proceed later
+            fc_lane_summary_lims = fc_details.get("lims_data", {}).get(
+                "run_summary", {}
+            )
+            fc_lane_summary_demux = (
+                fc_details.get("illumina", {})
+                .get("Demultiplex_Stats", {})
+                .get("Lanes_stats", {})
+            )
+            if lane not in self.lanes:  # TODO: Move this into Lane class
+                laneObj = Lane()
+                lane_sum_lims = fc_lane_summary_lims.get(
+                    lane, fc_lane_summary_lims.get("A", {})
+                )
+                lane_sum_demux = [
+                    d for d in fc_lane_summary_demux if d["Lane"] == str(lane)
+                ][0]
+                laneObj.id = lane
+                pf_clusters = float(
+                    lane_sum_demux.get("PF Clusters", "0").replace(",", "")
+                )
+                mil_pf_clusters = round(pf_clusters / 1000000, 2)
+                laneObj.cluster = "{:.2f}".format(mil_pf_clusters)
+                laneObj.avg_qval = "{:.2f}".format(
+                    round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
+                )
+                laneObj.set_lane_info(
+                    "fc_phix", "% Error Rate", lane_sum_lims, str(len(num_cycles))
+                )
+                if kwargs.get("fc_phix", {}).get(self.name, {}):
+                    laneObj.phix = kwargs.get("fc_phix").get(self.name).get(lane)
+                # Calculate weighted Q30 value and add it to lane data
+                laneObj.total_reads_proj += pf_reads
+                if pf_reads and qval:
+                    laneObj.weighted_avg_qval_proj += pf_reads * qval
+                    laneObj.total_reads_with_qval_proj += pf_reads
+                self.lanes[lane] = laneObj
+
+                # Check if the above created lane object has all needed info
+                for k, v in vars(laneObj).items():
+                    if not v:
+                        log.warn(
+                            f"Could not fetch {k} for FC {self.name} at lane {lane}"
+                        )
+            # Add total reads and Q30 to lane data
+            else:
+                laneObj = self.lanes[lane]
+                laneObj.total_reads_proj += pf_reads
+                if pf_reads and qval:
+                    laneObj.weighted_avg_qval_proj += pf_reads * qval
+                    laneObj.total_reads_with_qval_proj += pf_reads
+        # Add units, round off values, and add to flowcells object
+        for lane in self.lanes:
+            laneObj = self.lanes[lane]
+            laneObj.reads_unit, lane_divisor = get_units_and_divisor(
+                laneObj.total_reads_proj
+            )
+            laneObj.total_reads_proj = round(laneObj.total_reads_proj / lane_divisor, 2)
+            laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
+            laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
+
     def populate_ont_flowcell(self, log, **kwargs):
         fc_details = self.db_connection.get_entry(self.run_name)
-        fc_instrument = fc_details.get("RunInfo", {}).get("Instrument", "")
+        # fc_instrument = fc_details.get("RunInfo", {}).get("Instrument", "")
 
         if "_PA" in self.run_name or "_PB" in self.run_name:
             self.type = "PromethION"
@@ -580,14 +701,24 @@ class Project:
             ontcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
         )
 
+        sample_qval = defaultdict(dict)
+
         for fc in list(flowcell_info.values()):
             if fc["name"] in kwargs.get("exclude_fc"):
                 continue
             if fc["db"] == "x_flowcells":
-                fcObj = Flowcell(fc, self.ngi_id, xcon)
+                fcObj = Flowcell(fc, self.ngi_name, xcon)
                 fcObj.populate_illumina_flowcell(log, **kwargs)
+                for sample in fcObj.fc_sample_qvalues.keys():
+                    if sample_qval[sample]:
+                        for sample_run in fcObj.fc_sample_qvalues[sample].keys():
+                            sample_qval[sample][sample_run] = fcObj.fc_sample_qvalues[sample][
+                                sample_run
+                            ]
+                    else:
+                        sample_qval[sample] = fcObj.fc_sample_qvalues[sample]
             elif fc["db"] == "nanopore_runs":
-                fcObj = Flowcell(fc, self.ngi_id, ontcon)
+                fcObj = Flowcell(fc, self.ngi_name, ontcon)
                 fcObj.populate_ont_flowcell(log, **kwargs)
             else:
                 log.error(f"Unkown database: {fc['db']}. Exiting.")
@@ -645,7 +776,7 @@ class Project:
 
         sample_qval = defaultdict(
             dict
-        )  # TODO: don't forget to specify this somewhere above...
+        )
 
         for fc in list(flowcell_info.values()):
             if fc["name"] in kwargs.get("exclude_fc"):
@@ -855,7 +986,6 @@ class Project:
                         self.samples[additional_sample] = AsamObj
                         preps_samples_on_fc.append([additional_sample, "NA"])
                         undet_iteration += 1
-            # TODO: from here!
             # Collect quality info for samples and collect lanes of interest (Illumina)
             for stat in (
                 fc_details.get("illumina", {})
@@ -880,6 +1010,7 @@ class Project:
                     qval_key, base_key = ("% of >= Q30 Bases (PF)", "# Reads")
 
                 # If '-b' flag is set, we override the barcodes from LIMS with the barcodes from the flowcell for all samples
+                # TODO: make the substitution somewhere
                 if kwargs.get("barcode_from_fc"):
                     new_barcode = "-".join(
                         barcode.split("+")
@@ -996,7 +1127,7 @@ class Project:
             # Add units, round off values, and add to flowcells object
             for lane in fcObj.lanes:
                 laneObj = fcObj.lanes[lane]
-                laneObj.reads_unit, lane_divisor = self.get_units_and_divisor(
+                laneObj.reads_unit, lane_divisor = get_units_and_divisor(
                     laneObj.total_reads_proj
                 )
                 laneObj.total_reads_proj = round(
@@ -1008,7 +1139,7 @@ class Project:
                 )
 
             self.flowcells[fcObj.name] = fcObj
-
+        # TODO: from here! Go through final section, then fix -b option. Remove old code above
         if not self.flowcells:
             log.warn(
                 "There is no flowcell to process for project {}".format(self.ngi_name)
@@ -1058,25 +1189,12 @@ class Project:
                 )
 
         # Cut down total reads to bite sized numbers
-        self.samples_unit, samples_divisor = self.get_units_and_divisor(max_total_reads)
+        self.samples_unit, samples_divisor = get_units_and_divisor(max_total_reads)
 
         for sample in self.samples:
             self.samples[sample].total_reads = "{:.2f}".format(
                 self.samples[sample].total_reads / float(samples_divisor)
             )
-
-    def get_units_and_divisor(self, reads):
-        """Add millions or thousands unit to reads data"""
-        divisor = 1
-        unit = "#reads"
-        if reads > 1000:
-            if reads > 1000000:
-                unit = "Mreads"
-                divisor = 1000000
-            else:
-                unit = "Kreads"
-                divisor = 1000
-        return (unit, divisor)
 
     def get_library_method(
         self,
