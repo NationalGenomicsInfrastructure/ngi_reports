@@ -71,21 +71,17 @@ class Flowcell:
 
     def populate_illumina_flowcell(self, log, **kwargs):
         fc_instrument = self.fc_details.get("RunInfo", {}).get("Instrument", "")
+        fc_runparameters = self.fc_details.get("RunParameters", {})
         if "-" in self.name:
             self.type = "MiSeq"
-            fc_runparameters = self.fc_details.get("RunParameters", {})
         elif fc_instrument.startswith("A"):
             self.type = "NovaSeq6000"
-            fc_runparameters = self.fc_details.get("RunParameters", {})
         elif fc_instrument.startswith("LH"):
             self.type = "NovaSeqXPlus"
-            fc_runparameters = self.fc_details.get("RunParameters", {})
         elif fc_instrument.startswith("NS"):
             self.type = "NextSeq500"
-            fc_runparameters = self.fc_details.get("RunParameters", {})
         elif fc_instrument.startswith("VH"):
             self.type = "NextSeq2000"
-            fc_runparameters = self.fc_details.get("RunParameters", {})
 
         self.run_setup = self.fc_details.get("RunInfo").get("Reads")
 
