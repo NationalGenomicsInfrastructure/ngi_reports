@@ -248,14 +248,14 @@ class Flowcell:
             laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
 
     def populate_ont_flowcell(self):
+        final_acquisition = self.fc_details.get("acquisitions")[-1]
+
         if "_PA" in self.run_name or "_PB" in self.run_name:
             self.type = "PromethION"
             fc_runparameters = self.fc_details.get("protocol_run_info", {})
-            final_acquisition = self.fc_details.get("acquisitions")[-1]
         elif "_MN" in self.run_name:
             self.type = "MinION"
             fc_runparameters = self.fc_details.get("protocol_run_info", {})
-            final_acquisition = self.fc_details.get("acquisitions")[-1]
 
         self.fc_type = fc_runparameters.get("flow_cell").get(
             "user_specified_product_code"
