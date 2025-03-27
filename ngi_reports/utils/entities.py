@@ -72,76 +72,29 @@ class Flowcell:
     def populate_illumina_flowcell(self, log, **kwargs):
         fc_instrument = self.fc_details.get("RunInfo", {}).get("Instrument", "")
         fc_runparameters = self.fc_details.get("RunParameters", {})
+        self.run_setup = self.fc_details.get("RunInfo").get("Reads")
+        self.sample_sheet_data = self.fc_details.get("samplesheet_csv")
+
         if "-" in self.name:
             self.type = "MiSeq"
+            self.chemistry = {
+                "Chemistry": fc_runparameters.get(
+                    "ReagentKitVersion", fc_runparameters.get("Sbs")
+                )
+            }
+            self.seq_software = {
+                "RTAVersion": fc_runparameters.get("RTAVersion"),
+                "ApplicationVersion": fc_runparameters.get("MCSVersion"),
+            }
+
         elif fc_instrument.startswith("A"):
             self.type = "NovaSeq6000"
-        elif fc_instrument.startswith("LH"):
-            self.type = "NovaSeqXPlus"
-        elif fc_instrument.startswith("NS"):
-            self.type = "NextSeq500"
-        elif fc_instrument.startswith("VH"):
-            self.type = "NextSeq2000"
-
-        self.run_setup = self.fc_details.get("RunInfo").get("Reads")
-
-        if self.type == "NovaSeq6000":
             self.chemistry = {
                 "WorkflowType": fc_runparameters.get("WorkflowType"),
                 "FlowCellMode": fc_runparameters.get("RfidsInfo", {}).get(
                     "FlowCellMode"
                 ),
             }
-        elif self.type == "NovaSeqXPlus":
-            self.chemistry = {"RecipeName": fc_runparameters.get("RecipeName")}
-        elif self.type == "NextSeq500":
-            self.chemistry = {
-                "Chemistry": fc_runparameters.get("Chemistry").replace("NextSeq ", "")
-            }
-        elif self.type == "NextSeq2000":
-            NS2000_FC_PAT = re.compile("P[1,2,3]")
-            self.chemistry = {
-                "Chemistry": NS2000_FC_PAT.findall(
-                    fc_runparameters.get("FlowCellMode")
-                )[0]
-            }
-        else:
-            self.chemistry = {
-                "Chemistry": fc_runparameters.get(
-                    "ReagentKitVersion", fc_runparameters.get("Sbs")
-                )
-            }
-
-        try:
-            self.casava = list(self.fc_details["DemultiplexConfig"].values())[0][
-                "Software"
-            ]["Version"]
-        except (KeyError, IndexError):
-            self.casava = None
-
-        if self.type == "MiSeq":
-            self.seq_software = {
-                "RTAVersion": fc_runparameters.get("RTAVersion"),
-                "ApplicationVersion": fc_runparameters.get("MCSVersion"),
-            }
-        elif self.type == "NextSeq500" or self.type == "NextSeq2000":
-            self.seq_software = {
-                "RTAVersion": fc_runparameters.get(
-                    "RTAVersion", fc_runparameters.get("RtaVersion")
-                ),
-                "ApplicationName": fc_runparameters.get("ApplicationName")
-                if fc_runparameters.get("ApplicationName")
-                else fc_runparameters.get("Setup").get("ApplicationName"),
-                "ApplicationVersion": fc_runparameters.get("ApplicationVersion")
-                if fc_runparameters.get("ApplicationVersion")
-                else fc_runparameters.get("Setup").get("ApplicationVersion"),
-            }
-        elif self.type == "NovaSeqXPlus":
-            self.seq_software = {
-                "ApplicationName": fc_runparameters.get("Application"),
-                "ApplicationVersion": fc_runparameters.get("SystemSuiteVersion"),
-            }
-        else:
             self.seq_software = {
                 "RTAVersion": fc_runparameters.get(
                     "RTAVersion", fc_runparameters.get("RtaVersion")
@@ -152,7 +105,37 @@ class Flowcell:
                 "ApplicationVersion": fc_runparameters.get("ApplicationVersion"),
             }
 
-        self.sample_sheet_data = self.fc_details.get("samplesheet_csv")
+        elif fc_instrument.startswith("LH"):
+            self.type = "NovaSeqXPlus"
+            self.chemistry = {"RecipeName": fc_runparameters.get("RecipeName")}
+            self.seq_software = {
+                "ApplicationName": fc_runparameters.get("Application"),
+                "ApplicationVersion": fc_runparameters.get("SystemSuiteVersion"),
+            }
+
+        elif fc_instrument.startswith("VH"):
+            self.type = "NextSeq2000"
+            NS2000_FC_PAT = re.compile("P[1,2,3]")
+            self.chemistry = {
+                "Chemistry": NS2000_FC_PAT.findall(
+                    fc_runparameters.get("FlowCellMode")
+                )[0]
+            }
+            self.seq_software = {
+                "RTAVersion": fc_runparameters.get("RtaVersion"),
+                "ApplicationName": fc_runparameters.get("ApplicationName"),
+                "ApplicationVersion": fc_runparameters.get("ApplicationVersion"),
+            }
+
+        else:
+            log.warning("Unknown sequencing instrument detected: {fc_instrument}")
+
+        try:
+            self.casava = list(self.fc_details["DemultiplexConfig"].values())[0][
+                "Software"
+            ]["Version"]
+        except (KeyError, IndexError):
+            self.casava = None
 
         self.barcode_lane_statistics = (
             self.fc_details.get("illumina", {})
