@@ -756,7 +756,7 @@ class Project:
             "for the report will be taken from the flowcell instead of LIMS"
         )
         preps_samples_on_fc = []
-        list_additional_samples = []
+        additional_samples = []
 
         # Get all samples from flow cell that belong to the project
         fc_samples = []
@@ -773,36 +773,37 @@ class Project:
                 else:
                     continue
 
-        # Get (if any) samples that are on the fc, but are not recorded in LIMS (i.e. added bc from undet reads)
+        # Get samples that are on the fc but are not recorded in LIMS (i.e. added bc from undet reads)
         if len(set(list(self.samples))) != len(set(fc_samples)):
-            list_additional_samples = list(set(fc_samples) - set(self.samples))
-            list_additional_samples.sort()
+            additional_samples = list(set(fc_samples) - set(self.samples))
+            additional_samples.sort()
             log.info(
-                f"The flowcell {fcObj.run_name} contains {len(list_additional_samples)} sample(s) ({', '.join(list_additional_samples)}) that "
-                "has/have not been defined in LIMS. They will be added to the report."
+                f"The flowcell {fcObj.run_name} contains {len(additional_samples)} sample(s) "
+                f"({', '.join(additional_samples)}) that has/have not been defined in LIMS. "
+                "They will be added to the report."
             )
 
             undet_iteration = 1
             # Create additional sample and prep Objects
-            for additional_sample in list_additional_samples:
-                AsamObj = Sample()
-                AsamObj.ngi_id = additional_sample
-                AsamObj.customer_name = "unknown" + str(
+            for additional_sample in additional_samples:
+                sample_obj = Sample()
+                sample_obj.ngi_id = additional_sample
+                sample_obj.customer_name = "unknown" + str(
                     undet_iteration
                 )  # Additional samples will be named "unknown[number]" in the report
-                AsamObj.well_location = "NA"
-                AsamObj.preps["NA"] = Prep()
-                AsamObj.preps["NA"].label = "NA"
-                self.samples[additional_sample] = AsamObj
+                sample_obj.well_location = "NA"
+                sample_obj.preps["NA"] = Prep()
+                sample_obj.preps["NA"].label = "NA"
+                self.samples[additional_sample] = sample_obj
                 preps_samples_on_fc.append([additional_sample, "NA"])
                 undet_iteration += 1
 
         for sample_stat in fcObj.barcode_lane_statistics:
             new_barcode = "-".join(
                 sample_stat.get("Barcode sequence").split("+")
-            )  # Change the barcode layout to match the one used for the report
+            )
             lib_prep = []  # Adding the now required library prep, set to NA for all non-LIMS samples
-            if sample_stat.get("Sample") in list_additional_samples:
+            if sample_stat.get("Sample") in additional_samples:
                 lib_prep.append("NA")
             else:  # Adding library prep for LIMS samples, we identified them earlier
                 for sub_prep_sample in preps_samples_on_fc:
