@@ -368,7 +368,6 @@ class Project:
             "all_samples_sequenced": None,
         }
         self.is_finished_lib = False
-        self.is_hiseqx = False
         self.sequencer_manufacturer = ""
         self.library_construction = ""
         self.missing_fc = False
@@ -409,7 +408,9 @@ class Project:
             )
             sys.exit("Project not found in statusdb, stopping execution...")
         self.ngi_name = proj.get("project_name")
-
+        if not id_view:
+            self.ngi_id = proj.get("project_id")
+        
         if proj.get("source") != "lims":
             log.error(f"The source for data for project {project} is not LIMS.")
             raise BaseException
@@ -419,9 +420,6 @@ class Project:
         if "aborted" in proj_details:
             log.warning(f"Project {project} was aborted, so not proceeding.")
             sys.exit(f"Project {project} was aborted, stopping execution...")
-
-        if not id_view:
-            self.ngi_id = proj.get("project_id")
 
         for date in self.dates:
             self.dates[date] = proj_details.get(date, None)
@@ -490,9 +488,6 @@ class Project:
 
         for key in self.accredited:
             self.accredited[key] = proj_details.get(f"accredited_({key})")
-
-        if "hiseqx" in proj_details.get("sequencing_platform", ""):
-            self.is_hiseqx = True
 
         self.sequencing_setup = proj_details.get("sequencing_setup")
 
