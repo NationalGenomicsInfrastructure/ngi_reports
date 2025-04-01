@@ -7,6 +7,7 @@ import yaml
 from datetime import datetime
 from ibmcloudant import CouchDbSessionAuthenticator, cloudant_v1
 
+
 class statusdb_connection(object):
     """Main class to make connection to the statusdb, by default looks for config
     file in home, if not try with provided config
@@ -41,7 +42,9 @@ class statusdb_connection(object):
             self.user, "*********", self.url
         )
         self.connection = couchdb.Server(url=self.url_string)
-        cloudant = cloudant_v1.CloudantV1(authenticator=CouchDbSessionAuthenticator(self.user, self.pwrd))
+        cloudant = cloudant_v1.CloudantV1(
+            authenticator=CouchDbSessionAuthenticator(self.user, self.pwrd)
+        )
         cloudant.set_service_url(f"https://{self.url}")
         if cloudant:
             self.cloudant = cloudant
@@ -67,7 +70,9 @@ class statusdb_connection(object):
                 self.log.warn("no entry '{}' in {}".format(name, self.db))
             return None
         if type(self) is NanoporeRunConnection:
-            doc = self.cloudant.get_document(db=self.dbname, doc_id=view.get(name)).get_result()
+            doc = self.cloudant.get_document(
+                db=self.dbname, doc_id=view.get(name)
+            ).get_result()
         else:
             doc = self.db.get(view.get(name))
         return doc
@@ -153,18 +158,6 @@ class SampleRunMetricsConnection(statusdb_connection):
         self.db = self.connection[dbname]
 
 
-class FlowcellRunMetricsConnection(statusdb_connection):
-    def __init__(self, dbname="flowcells"):
-        super(FlowcellRunMetricsConnection, self).__init__()
-        self.db = self.connection[dbname]
-        self.name_view = {k.key: k.id for k in self.db.view("names/name", reduce=False)}
-        self.proj_list = {
-            k.key: k.value
-            for k in self.db.view("names/project_ids_list", reduce=False)
-            if k.key
-        }
-
-
 class X_FlowcellRunMetricsConnection(statusdb_connection):
     def __init__(self, dbname="x_flowcells"):
         super(X_FlowcellRunMetricsConnection, self).__init__()
@@ -183,10 +176,14 @@ class NanoporeRunConnection(statusdb_connection):
         self.dbname = dbname
         self.name_view = {
             k["key"]: k["id"]
-            for k in self.cloudant.post_view(db=self.dbname, ddoc="names", view="name", reduce=False).get_result()["rows"]
+            for k in self.cloudant.post_view(
+                db=self.dbname, ddoc="names", view="name", reduce=False
+            ).get_result()["rows"]
         }
         self.proj_list = {
             k["key"]: k["value"]
-            for k in self.cloudant.post_view(db=self.dbname, ddoc="names", view="project_ids_list", reduce=False).get_result()["rows"]
+            for k in self.cloudant.post_view(
+                db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
+            ).get_result()["rows"]
             if k["key"]
         }
