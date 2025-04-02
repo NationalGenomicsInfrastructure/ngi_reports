@@ -26,13 +26,12 @@ def get_units_and_divisor(reads):
 class Sample:
     """Sample class"""
 
-    def __init__(self, sample_info, status):
-        self.status = ""
-        self.customer_name = ""
-        self.ngi_id = ""
-        self.preps = {}
-        self.qscore = ""
-        self.total_reads = 0.0
+    def __init__(self, sample_id, sample_info, status):
+        self.ngi_id = sample_id
+        self.status = status
+        self.sample_info = sample_info
+        self.customer_name = self.sample_info.get("customer_name", "NA")
+
         self.initial_qc = {
             "initial_qc_status": "",
             "concentration": "",
@@ -41,7 +40,16 @@ class Sample:
             "amount_(ng)": "",
             "rin": "",
         }
+        
+        self.preps = {}
+        self.qscore = ""
+        self.total_reads = 0.0
+
         self.well_location = ""
+
+    def populate_sample(self, log):
+        # FIXME:
+        self.well_location = self.sample_info.get("well_location")
 
 
 class Prep:
@@ -130,6 +138,7 @@ class Flowcell:
 
         else:
             log.warning("Unknown sequencing instrument detected: {fc_instrument}")
+            sys.exit(1)
 
         try:
             self.casava = list(self.fc_details["DemultiplexConfig"].values())[0][
@@ -511,16 +520,13 @@ class Project:
             if sample_info.get("details", {}).get("status_(manual)") == "Aborted":
                 log.info(f"Sample {sample_id} is aborted, so skipping it")
                 self.aborted_samples[sample_id] = Sample(
-                    sample_info, "Aborted"
+                    sample_id, sample_info, status="Aborted"
                 )  # TODO: fix other instances of self.aborted_samples
                 continue
 
-            customer_name = sample_info.get("customer_name", "NA")
+            sampleObj = Sample(sample_id, sample_info, status="Sequenced")
+            sampleObj.populate_sample(log)  # FIXME:
 
-            sampleObj = Sample()
-            sampleObj.ngi_id = sample_id
-            sampleObj.customer_name = customer_name
-            sampleObj.well_location = sample_info.get("well_location")
             # Basic fields from Project database
             # Initial qc
             if sample_info.get("initial_qc"):
