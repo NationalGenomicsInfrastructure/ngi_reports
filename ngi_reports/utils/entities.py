@@ -40,27 +40,88 @@ class Sample:
             "amount_(ng)": "",
             "rin": "",
         }
-        
+
         self.preps = {}
         self.qscore = ""
         self.total_reads = 0.0
 
         self.well_location = ""
 
-    def populate_sample(self, log):
-        # FIXME:
+    def populate_sample(self, log, library_construction):
         self.well_location = self.sample_info.get("well_location")
+
+        # Initial QC
+        if self.sample_info.get("initial_qc"):
+            for item in self.initial_qc:
+                self.initial_qc[item] = self.sample_info["initial_qc"].get(item)
+                if (
+                    item == "initial_qc_status"
+                    and self.sample_info["initial_qc"]["initial_qc_status"] == "UNKNOWN"
+                ):
+                    self.initial_qc[item] = "NA"
+
+        # Library prep
+        # Go through each prep for each sample in the Projects database
+        for prep_id, prep_info in self.sample_info.get("library_prep", {}).items():
+            prepObj = Prep(prep_id, prep_info)
+            prepObj.populate_prep(log, library_construction)
+            if prepObj.barcode == "NA":
+                log.warning(
+                    f"Barcode missing for sample {self.ngi_id} in prep {prep_id}. "
+                    "This could be a NOINDEX case, please check the report."
+                )
+            if prepObj.qc_status == "NA":
+                log.warning(
+                    f"Prep status missing for sample {self.ngi_id} in prep {prep_id}"
+                )
+            self.preps[prep_id] = prepObj
+
+        if not self.preps:
+            log.warning(
+                f"No library prep information was available for sample {self.ngi_id}"
+            )
 
 
 class Prep:
     """Prep class"""
 
-    def __init__(self):
+    def __init__(self, prep_id, prep_info):
+        self.prep_id = prep_id
+        self.prep_info = prep_info
+
+        self.label = "Lib. " + self.prep_id
+
         self.avg_size = "NA"
         self.barcode = "NA"
-        self.label = ""
         self.qc_status = "NA"
         self.seq_fc = "NA"
+
+    def populate_prep(self, log, library_construction):
+        if "by user" in library_construction.lower():
+            self.label = "NA"
+        self.barcode = self.get("reagent_label", "NA")
+        self.qc_status = self.get("prep_status", "NA")
+
+        if "pcr-free" not in library_construction.lower():
+            if self.prep_info.get("library_validation"):
+                lib_valids = self.prep_info["library_validation"]
+                keys = sorted(
+                    [k for k in list(lib_valids.keys()) if re.match("^[\d\-]*$", k)],
+                    key=lambda k: datetime.strptime(
+                        lib_valids[k]["start_date"], "%Y-%m-%d"
+                    ),
+                    reverse=True,
+                )
+                try:
+                    self.avg_size = re.sub(
+                        r"(\.[0-9]{,2}).*$",
+                        r"\1",
+                        str(lib_valids[keys[0]]["average_size_bp"]),
+                    )
+                except KeyError:
+                    log.warning('Insufficient info for "average_size_bp"')
+            else:
+                log.warning("No library validation step found")
 
 
 class Flowcell:
@@ -507,7 +568,7 @@ class Project:
 
         self.sequencing_setup = proj_details.get("sequencing_setup")
 
-        for sample_id, sample_info in sorted(proj.get("samples", {}).items()):  # FIXME:
+        for sample_id, sample_info in sorted(proj.get("samples", {}).items()):
             if kwargs.get("samples", []) and sample_id not in kwargs.get("samples", []):
                 log.info(
                     f"Will not include sample {sample_id} as it is not in given list"
@@ -523,142 +584,22 @@ class Project:
                     sample_id, sample_info, status="Aborted"
                 )  # TODO: fix other instances of self.aborted_samples
                 continue
-
-            sampleObj = Sample(sample_id, sample_info, status="Sequenced")
-            sampleObj.populate_sample(log)  # FIXME:
-
-            # Basic fields from Project database
-            # Initial qc
-            if sample_info.get("initial_qc"):
-                for item in sampleObj.initial_qc:
-                    sampleObj.initial_qc[item] = sample_info["initial_qc"].get(item)
-                    if (
-                        item == "initial_qc_status"
-                        and sample_info["initial_qc"]["initial_qc_status"] == "UNKNOWN"
-                    ):
-                        sampleObj.initial_qc[item] = "NA"
-
-            # Library prep
-            # Get total reads if available or mark sample as not sequenced
-            try:
-                # Check if sample was sequenced. More accurate value will be calculated from flowcell yield
-                total_reads = float(sample_info["details"]["total_reads_(m)"])
-            except KeyError:
+            # Check if sample was sequenced. More accurate value will be calculated from flowcell yield.
+            if not sample_info.get("details", {}).get("total_reads_(m)"):
                 log.warning(
-                    f"Sample {sample_id} doesnt have total reads, so adding it to NOT sequenced samples list."
+                    f"Sample {sample_id} doesn't have total reads, "
+                    "adding it to NOT sequenced samples list."
                 )
-                self.aborted_samples[sample_id] = AbortedSampleInfo(
-                    customer_name, "Not sequenced"
+                self.aborted_samples[sample_id] = Sample(
+                    sample_id, sample_info, status="Not sequenced"
                 )
                 # Don't gather unnecessary information if not going to be looked up
+                # TODO: take these samples into account when applying the yield_from_fc option
                 if not kwargs.get("yield_from_fc"):
                     continue
-
-            # Go through each prep for each sample in the Projects database
-            for prep_id, prep in list(sample_info.get("library_prep", {}).items()):
-                prepObj = Prep()
-
-                prepObj.label = "Lib. " + prep_id
-                if "by user" in self.library_construction.lower():
-                    prepObj.label = "NA"
-
-                prepObj.barcode = prep.get("reagent_label", "NA")
-                prepObj.qc_status = prep.get("prep_status", "NA")
-
-                if prepObj.barcode == "NA":
-                    log.warning(
-                        f"Barcode missing for sample {sample_id} in prep {prep_id}. This could be a NOINDEX case, please check the report."
-                    )
-                if prepObj.qc_status == "NA":
-                    log.warning(
-                        f"Prep status missing for sample {sample_id} in prep {prep_id}"
-                    )
-                # Get flow cell information for each prep from project database (only if -b flag is set)
-                if prepObj.barcode != "NA" and prepObj.qc_status != "NA":
-                    if kwargs.get("barcode_from_fc"):
-                        prepObj.seq_fc = []
-                        if (
-                            not sample_info.get("library_prep")
-                            .get(prep_id)
-                            .get("sequenced_fc")
-                        ):
-                            log.error(
-                                'Sequenced flowcell not defined for the project. Run ngi_pipelines without the "-b" flag and amend the report manually.'
-                            )
-                            sys.exit("Stopping execution...")
-                        for fc in (
-                            sample_info.get("library_prep")
-                            .get(prep_id)
-                            .get("sequenced_fc")
-                        ):
-                            prepObj.seq_fc.append(fc.split("_")[-1])
-
-                if "pcr-free" not in self.library_construction.lower():
-                    if prep.get("library_validation"):
-                        lib_valids = prep["library_validation"]
-                        keys = sorted(
-                            [
-                                k
-                                for k in list(lib_valids.keys())
-                                if re.match("^[\d\-]*$", k)
-                            ],
-                            key=lambda k: datetime.strptime(
-                                lib_valids[k]["start_date"], "%Y-%m-%d"
-                            ),
-                            reverse=True,
-                        )
-                        try:
-                            prepObj.avg_size = re.sub(
-                                r"(\.[0-9]{,2}).*$",
-                                r"\1",
-                                str(lib_valids[keys[0]]["average_size_bp"]),
-                            )
-                        except:
-                            log.warning(
-                                f'Insufficient info "average_size_bp" for sample {sample_id}'
-                            )
-                    else:
-                        log.warning(f"No library validation step found {sample_id}")
-
-                sampleObj.preps[prep_id] = prepObj
-
-            # Exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
-            if kwargs.get("barcode_from_fc"):
-                list_of_barcodes = sum(
-                    [
-                        [
-                            all_barcodes.barcode
-                            for all_barcodes in list(sampleObj.preps.values())
-                        ]
-                    ],
-                    [],
-                )
-                if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
-                    list_of_flowcells = sum(
-                        [
-                            all_flowcells.seq_fc
-                            for all_flowcells in list(sampleObj.preps.values())
-                        ],
-                        [],
-                    )
-                    if (
-                        len(list_of_flowcells)
-                        != len(list(dict.fromkeys(list_of_flowcells)))
-                    ):  # The sample was run twice on the same flowcell, only possible with different barcodes for the same sample
-                        log.error(
-                            "Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually"
-                        )
-                        sys.exit("Stopping execution...")
-                else:
-                    log.error(
-                        "Barcodes not defined in sample sheet. Please run ngi_pipelines without the -b flag and amend the report manually"
-                    )
-                    sys.exit("Stopping execution...")
-
-            if not sampleObj.preps:
-                log.warning(
-                    f"No library prep information was available for sample {sample_id}"
-                )
+            # self.library_construction.lower()
+            sampleObj = Sample(sample_id, sample_info, status="Sequenced")
+            sampleObj.populate_sample(log, self.library_construction)
             self.samples[sample_id] = sampleObj
 
         # Get Flowcell data
@@ -756,11 +697,62 @@ class Project:
                 self.samples[sample].total_reads / float(samples_divisor)
             )
 
-    def replace_barcodes(self, log, fcObj):
+    def replace_barcodes(self, log, sampleObj, fcObj):
         log.info(
             "'barcodes_from_fc' option was given so index sequences "
             "for the report will be taken from the flowcell instead of LIMS"
         )
+
+        # TODO: FIX these
+        # Get flow cell information for each prep from project database (only if -b flag is set)
+        if prepObj.barcode != "NA" and prepObj.qc_status != "NA":  # FIXME: from here!
+            if kwargs.get("barcode_from_fc"):
+                prepObj.seq_fc = []
+                if not sample_info.get("library_prep").get(prep_id).get("sequenced_fc"):
+                    log.error(
+                        'Sequenced flowcell not defined for the project. Run ngi_pipelines without the "-b" flag and amend the report manually.'
+                    )
+                    sys.exit("Stopping execution...")
+                for fc in (
+                    sample_info.get("library_prep").get(prep_id).get("sequenced_fc")
+                ):
+                    prepObj.seq_fc.append(fc.split("_")[-1])
+        # bla
+
+        # Exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
+        if kwargs.get("barcode_from_fc"):
+            list_of_barcodes = sum(
+                [
+                    [
+                        all_barcodes.barcode
+                        for all_barcodes in list(sampleObj.preps.values())
+                    ]
+                ],
+                [],
+            )
+            if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
+                list_of_flowcells = sum(
+                    [
+                        all_flowcells.seq_fc
+                        for all_flowcells in list(sampleObj.preps.values())
+                    ],
+                    [],
+                )
+                if (
+                    len(list_of_flowcells)
+                    != len(list(dict.fromkeys(list_of_flowcells)))
+                ):  # The sample was run twice on the same flowcell, only possible with different barcodes for the same sample
+                    log.error(
+                        "Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually"
+                    )
+                    sys.exit("Stopping execution...")
+            else:
+                log.error(
+                    "Barcodes not defined in sample sheet. Please run ngi_pipelines without the -b flag and amend the report manually"
+                )
+                sys.exit("Stopping execution...")
+        # TODO: until here
+
         preps_samples_on_fc = []
         additional_samples = []
 
