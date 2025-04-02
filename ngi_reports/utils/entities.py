@@ -26,7 +26,8 @@ def get_units_and_divisor(reads):
 class Sample:
     """Sample class"""
 
-    def __init__(self):
+    def __init__(self, sample_info, status):
+        self.status = ""
         self.customer_name = ""
         self.ngi_id = ""
         self.preps = {}
@@ -410,7 +411,7 @@ class Project:
         self.ngi_name = proj.get("project_name")
         if not id_view:
             self.ngi_id = proj.get("project_id")
-        
+
         if proj.get("source") != "lims":
             log.error(f"The source for data for project {project} is not LIMS.")
             raise BaseException
@@ -428,6 +429,12 @@ class Project:
             self.dates["all_samples_sequenced"] = proj.get("project_summary", {}).get(
                 "all_samples_sequenced"
             )
+        if (
+            self.dates["first_initial_qc_start_date"] is not None
+        ):  # TODO: might not be necessary to check if, just assign instead
+            self.dates["first_initial_qc_start_date"] = sorted(
+                proj.get("samples", {}).items()
+            )[0].get("first_initial_qc_start_date")
 
         self.contact = proj.get("order_details", {}).get("owner", {}).get("email", "NA")
         self.application = proj.get("application")
@@ -491,49 +498,45 @@ class Project:
 
         self.sequencing_setup = proj_details.get("sequencing_setup")
 
-        for sample_id, sample in sorted(proj.get("samples", {}).items()):
+        for sample_id, sample_info in sorted(proj.get("samples", {}).items()):  # FIXME:
             if kwargs.get("samples", []) and sample_id not in kwargs.get("samples", []):
                 log.info(
                     f"Will not include sample {sample_id} as it is not in given list"
                 )
                 continue
 
-            customer_name = sample.get("customer_name", "NA")
-            # Get once for a project
-            if self.dates["first_initial_qc_start_date"] is not None:
-                self.dates["first_initial_qc_start_date"] = sample.get(
-                    "first_initial_qc_start_date"
-                )
-
             log.info(f"Processing sample {sample_id}")
+
             # Check if the sample is aborted before processing
-            if sample.get("details", {}).get("status_(manual)") == "Aborted":
+            if sample_info.get("details", {}).get("status_(manual)") == "Aborted":
                 log.info(f"Sample {sample_id} is aborted, so skipping it")
-                self.aborted_samples[sample_id] = AbortedSampleInfo(
-                    customer_name, "Aborted"
-                )
+                self.aborted_samples[sample_id] = Sample(
+                    sample_info, "Aborted"
+                )  # TODO: fix other instances of self.aborted_samples
                 continue
 
-            samObj = Sample()
-            samObj.ngi_id = sample_id
-            samObj.customer_name = customer_name
-            samObj.well_location = sample.get("well_location")
+            customer_name = sample_info.get("customer_name", "NA")
+
+            sampleObj = Sample()
+            sampleObj.ngi_id = sample_id
+            sampleObj.customer_name = customer_name
+            sampleObj.well_location = sample_info.get("well_location")
             # Basic fields from Project database
             # Initial qc
-            if sample.get("initial_qc"):
-                for item in samObj.initial_qc:
-                    samObj.initial_qc[item] = sample["initial_qc"].get(item)
+            if sample_info.get("initial_qc"):
+                for item in sampleObj.initial_qc:
+                    sampleObj.initial_qc[item] = sample_info["initial_qc"].get(item)
                     if (
                         item == "initial_qc_status"
-                        and sample["initial_qc"]["initial_qc_status"] == "UNKNOWN"
+                        and sample_info["initial_qc"]["initial_qc_status"] == "UNKNOWN"
                     ):
-                        samObj.initial_qc[item] = "NA"
+                        sampleObj.initial_qc[item] = "NA"
 
             # Library prep
             # Get total reads if available or mark sample as not sequenced
             try:
                 # Check if sample was sequenced. More accurate value will be calculated from flowcell yield
-                total_reads = float(sample["details"]["total_reads_(m)"])
+                total_reads = float(sample_info["details"]["total_reads_(m)"])
             except KeyError:
                 log.warning(
                     f"Sample {sample_id} doesnt have total reads, so adding it to NOT sequenced samples list."
@@ -546,7 +549,7 @@ class Project:
                     continue
 
             # Go through each prep for each sample in the Projects database
-            for prep_id, prep in list(sample.get("library_prep", {}).items()):
+            for prep_id, prep in list(sample_info.get("library_prep", {}).items()):
                 prepObj = Prep()
 
                 prepObj.label = "Lib. " + prep_id
@@ -569,7 +572,7 @@ class Project:
                     if kwargs.get("barcode_from_fc"):
                         prepObj.seq_fc = []
                         if (
-                            not sample.get("library_prep")
+                            not sample_info.get("library_prep")
                             .get(prep_id)
                             .get("sequenced_fc")
                         ):
@@ -578,7 +581,9 @@ class Project:
                             )
                             sys.exit("Stopping execution...")
                         for fc in (
-                            sample.get("library_prep").get(prep_id).get("sequenced_fc")
+                            sample_info.get("library_prep")
+                            .get(prep_id)
+                            .get("sequenced_fc")
                         ):
                             prepObj.seq_fc.append(fc.split("_")[-1])
 
@@ -609,7 +614,7 @@ class Project:
                     else:
                         log.warning(f"No library validation step found {sample_id}")
 
-                samObj.preps[prep_id] = prepObj
+                sampleObj.preps[prep_id] = prepObj
 
             # Exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
             if kwargs.get("barcode_from_fc"):
@@ -617,7 +622,7 @@ class Project:
                     [
                         [
                             all_barcodes.barcode
-                            for all_barcodes in list(samObj.preps.values())
+                            for all_barcodes in list(sampleObj.preps.values())
                         ]
                     ],
                     [],
@@ -626,7 +631,7 @@ class Project:
                     list_of_flowcells = sum(
                         [
                             all_flowcells.seq_fc
-                            for all_flowcells in list(samObj.preps.values())
+                            for all_flowcells in list(sampleObj.preps.values())
                         ],
                         [],
                     )
@@ -644,11 +649,11 @@ class Project:
                     )
                     sys.exit("Stopping execution...")
 
-            if not samObj.preps:
+            if not sampleObj.preps:
                 log.warning(
                     f"No library prep information was available for sample {sample_id}"
                 )
-            self.samples[sample_id] = samObj
+            self.samples[sample_id] = sampleObj
 
         # Get Flowcell data
         xcon = statusdb.X_FlowcellRunMetricsConnection()
@@ -794,9 +799,7 @@ class Project:
                 undet_iteration += 1
 
         for sample_stat in fcObj.barcode_lane_statistics:
-            new_barcode = "-".join(
-                sample_stat.get("Barcode sequence").split("+")
-            )
+            new_barcode = "-".join(sample_stat.get("Barcode sequence").split("+"))
             lib_prep = []  # Adding the now required library prep, set to NA for all non-LIMS samples
             if sample_stat.get("Sample") in additional_samples:
                 lib_prep.append("NA")
