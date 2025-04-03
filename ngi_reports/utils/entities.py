@@ -47,7 +47,7 @@ class Sample:
 
         self.well_location = ""
 
-    def populate_sample(self, log, library_construction):
+    def populate_sample(self, log, library_construction, **kwargs):
         self.well_location = self.sample_info.get("well_location")
 
         # Initial QC
@@ -65,6 +65,27 @@ class Sample:
         for prep_id, prep_info in self.sample_info.get("library_prep", {}).items():
             prepObj = Prep(prep_id, prep_info)
             prepObj.populate_prep(log, library_construction)
+
+            # Get flow cell information for each prep from project database (only if -b flag is set)
+            if kwargs.get("barcode_from_fc"):
+                if prepObj.barcode != "NA" and prepObj.qc_status != "NA":
+                    prepObj.seq_fc = []
+                    if (
+                        not self.sample_info.get("library_prep")
+                        .get(prep_id)
+                        .get("sequenced_fc")
+                    ):
+                        log.error(
+                            'Sequenced flowcell not defined for the project. Run ngi_pipelines without the "-b" flag and amend the report manually.'
+                        )
+                        sys.exit("Stopping execution...")
+                    for fc in (
+                        self.sample_info.get("library_prep")
+                        .get(prep_id)
+                        .get("sequenced_fc")
+                    ):
+                        prepObj.seq_fc.append(fc.split("_")[-1])
+
             if prepObj.barcode == "NA":
                 log.warning(
                     f"Barcode missing for sample {self.ngi_id} in prep {prep_id}. "
@@ -74,12 +95,41 @@ class Sample:
                 log.warning(
                     f"Prep status missing for sample {self.ngi_id} in prep {prep_id}"
                 )
+
             self.preps[prep_id] = prepObj
 
         if not self.preps:
             log.warning(
                 f"No library prep information was available for sample {self.ngi_id}"
             )
+
+        # Exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
+        if kwargs.get("barcode_from_fc"):
+            list_of_barcodes = sum(
+                [[all_barcodes.barcode for all_barcodes in list(self.preps.values())]],
+                [],
+            )
+            if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
+                list_of_flowcells = sum(
+                    [
+                        all_flowcells.seq_fc
+                        for all_flowcells in list(self.preps.values())
+                    ],
+                    [],
+                )
+                if (
+                    len(list_of_flowcells)
+                    != len(list(dict.fromkeys(list_of_flowcells)))
+                ):  # The sample was run twice on the same flowcell, only possible with different barcodes for the same sample
+                    log.error(
+                        "Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually"
+                    )
+                    sys.exit("Stopping execution...")
+            else:
+                log.error(
+                    "Barcodes not defined in sample sheet. Please run ngi_pipelines without the -b flag and amend the report manually"
+                )
+                sys.exit("Stopping execution...")
 
 
 class Prep:
@@ -599,7 +649,8 @@ class Project:
                     continue
             # self.library_construction.lower()
             sampleObj = Sample(sample_id, sample_info, status="Sequenced")
-            sampleObj.populate_sample(log, self.library_construction)
+            sampleObj.populate_sample(log, self.library_construction, **kwargs)
+
             self.samples[sample_id] = sampleObj
 
         # Get Flowcell data
@@ -614,7 +665,7 @@ class Project:
 
         sample_qval = defaultdict(dict)
 
-        for fc in list(flowcell_info.values()):
+        for fc in flowcell_info.values():
             if fc["name"] in kwargs.get("exclude_fc"):
                 continue
 
@@ -702,56 +753,6 @@ class Project:
             "'barcodes_from_fc' option was given so index sequences "
             "for the report will be taken from the flowcell instead of LIMS"
         )
-
-        # TODO: FIX these
-        # Get flow cell information for each prep from project database (only if -b flag is set)
-        if prepObj.barcode != "NA" and prepObj.qc_status != "NA":  # FIXME: from here!
-            if kwargs.get("barcode_from_fc"):
-                prepObj.seq_fc = []
-                if not sample_info.get("library_prep").get(prep_id).get("sequenced_fc"):
-                    log.error(
-                        'Sequenced flowcell not defined for the project. Run ngi_pipelines without the "-b" flag and amend the report manually.'
-                    )
-                    sys.exit("Stopping execution...")
-                for fc in (
-                    sample_info.get("library_prep").get(prep_id).get("sequenced_fc")
-                ):
-                    prepObj.seq_fc.append(fc.split("_")[-1])
-        # bla
-
-        # Exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
-        if kwargs.get("barcode_from_fc"):
-            list_of_barcodes = sum(
-                [
-                    [
-                        all_barcodes.barcode
-                        for all_barcodes in list(sampleObj.preps.values())
-                    ]
-                ],
-                [],
-            )
-            if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
-                list_of_flowcells = sum(
-                    [
-                        all_flowcells.seq_fc
-                        for all_flowcells in list(sampleObj.preps.values())
-                    ],
-                    [],
-                )
-                if (
-                    len(list_of_flowcells)
-                    != len(list(dict.fromkeys(list_of_flowcells)))
-                ):  # The sample was run twice on the same flowcell, only possible with different barcodes for the same sample
-                    log.error(
-                        "Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually"
-                    )
-                    sys.exit("Stopping execution...")
-            else:
-                log.error(
-                    "Barcodes not defined in sample sheet. Please run ngi_pipelines without the -b flag and amend the report manually"
-                )
-                sys.exit("Stopping execution...")
-        # TODO: until here
 
         preps_samples_on_fc = []
         additional_samples = []
