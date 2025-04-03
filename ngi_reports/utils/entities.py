@@ -783,8 +783,7 @@ class Project:
                 }  # Additional samples will be named "unknown[number]" in the report
                 sample_obj = Sample(
                     additional_sample, additional_sample_info, status="Sequenced"
-                )  # FIXME:
-
+                )
                 sample_obj.preps["NA"] = Prep(prep_id="NA", prep_info={"NA": "NA"})
                 sample_obj.preps["NA"].label = "NA"
                 sample_obj.initial_qc = {
