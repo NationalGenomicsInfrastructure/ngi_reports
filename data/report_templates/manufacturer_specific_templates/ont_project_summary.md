@@ -81,6 +81,6 @@ None have been reported for this project.
 NGI ID | User ID | Status
 -------|---------|-------
 {% for sample, info in project.aborted_samples.items() -%}
-{{ sample }} | {{ info.user_id }} | {{ info.status }}
+{{ sample }} | {{ info.customer_name }} | {{ info.status }}
 {% endfor -%}
 {% endif %}
