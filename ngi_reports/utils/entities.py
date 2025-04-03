@@ -450,14 +450,6 @@ class Lane:
             self.phix = val
 
 
-class AbortedSampleInfo:
-    """Aborted Sample info class"""
-
-    def __init__(self, user_id, status):
-        self.status = status
-        self.user_id = user_id
-
-
 class Project:
     """Project class"""
 
