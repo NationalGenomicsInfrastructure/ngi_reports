@@ -149,8 +149,8 @@ class Prep:
     def populate_prep(self, log, library_construction):
         if "by user" in library_construction.lower():
             self.label = "NA"
-        self.barcode = self.get("reagent_label", "NA")
-        self.qc_status = self.get("prep_status", "NA")
+        self.barcode = self.prep_info.get("reagent_label", "NA")
+        self.qc_status = self.prep_info.get("prep_status", "NA")
 
         if "pcr-free" not in library_construction.lower():
             if self.prep_info.get("library_validation"):
@@ -632,7 +632,7 @@ class Project:
                 log.info(f"Sample {sample_id} is aborted, so skipping it")
                 self.aborted_samples[sample_id] = Sample(
                     sample_id, sample_info, status="Aborted"
-                )  # TODO: fix other instances of self.aborted_samples
+                )
                 continue
             # Check if sample was sequenced. More accurate value will be calculated from flowcell yield.
             if not sample_info.get("details", {}).get("total_reads_(m)"):
@@ -644,7 +644,6 @@ class Project:
                     sample_id, sample_info, status="Not sequenced"
                 )
                 # Don't gather unnecessary information if not going to be looked up
-                # TODO: take these samples into account when applying the yield_from_fc option
                 if not kwargs.get("yield_from_fc"):
                     continue
             # self.library_construction.lower()
@@ -748,7 +747,7 @@ class Project:
                 self.samples[sample].total_reads / float(samples_divisor)
             )
 
-    def replace_barcodes(self, log, sampleObj, fcObj):
+    def replace_barcodes(self, log, fcObj):
         log.info(
             "'barcodes_from_fc' option was given so index sequences "
             "for the report will be taken from the flowcell instead of LIMS"
