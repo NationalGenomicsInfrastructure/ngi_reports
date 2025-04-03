@@ -45,11 +45,7 @@ class Sample:
         self.qscore = ""
         self.total_reads = 0.0
 
-        self.well_location = ""
-
     def populate_sample(self, log, library_construction, **kwargs):
-        self.well_location = self.sample_info.get("well_location")
-
         # Initial QC
         if self.sample_info.get("initial_qc"):
             for item in self.initial_qc:
@@ -549,9 +545,7 @@ class Project:
             self.dates["all_samples_sequenced"] = proj.get("project_summary", {}).get(
                 "all_samples_sequenced"
             )
-        if (
-            self.dates["first_initial_qc_start_date"] is not None
-        ):  # TODO: might not be necessary to check if, just assign instead
+        if self.dates["first_initial_qc_start_date"] is not None:
             self.dates["first_initial_qc_start_date"] = sorted(
                 proj.get("samples", {}).items()
             )[0].get("first_initial_qc_start_date")
@@ -784,14 +778,18 @@ class Project:
             undet_iteration = 1
             # Create additional sample and prep Objects
             for additional_sample in additional_samples:
-                sample_obj = Sample()
-                sample_obj.ngi_id = additional_sample
-                sample_obj.customer_name = "unknown" + str(
-                    undet_iteration
-                )  # Additional samples will be named "unknown[number]" in the report
-                sample_obj.well_location = "NA"
-                sample_obj.preps["NA"] = Prep()
+                additional_sample_info = {
+                    "customer_name": "unknown" + str(undet_iteration)
+                }  # Additional samples will be named "unknown[number]" in the report
+                sample_obj = Sample(
+                    additional_sample, additional_sample_info, status="Sequenced"
+                )  # FIXME:
+
+                sample_obj.preps["NA"] = Prep(prep_id="NA", prep_info={"NA": "NA"})
                 sample_obj.preps["NA"].label = "NA"
+                sample_obj.initial_qc = {
+                    "initial_qc_status": "NA",
+                }
                 self.samples[additional_sample] = sample_obj
                 preps_samples_on_fc.append([additional_sample, "NA"])
                 undet_iteration += 1
