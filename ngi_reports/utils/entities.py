@@ -470,7 +470,6 @@ class Project:
         self.dates = {
             "order_received": None,
             "open_date": None,
-            "first_initial_qc_start_date": None,
             "contract_received": None,
             "samples_received": None,
             "queue_date": None,
@@ -537,10 +536,6 @@ class Project:
             self.dates["all_samples_sequenced"] = proj.get("project_summary", {}).get(
                 "all_samples_sequenced"
             )
-        if self.dates["first_initial_qc_start_date"] is not None:
-            self.dates["first_initial_qc_start_date"] = sorted(
-                proj.get("samples", {}).items()
-            )[0].get("first_initial_qc_start_date")
 
         self.contact = proj.get("order_details", {}).get("owner", {}).get("email", "NA")
         self.application = proj.get("application")
