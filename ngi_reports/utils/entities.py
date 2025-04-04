@@ -627,7 +627,7 @@ class Project:
                 # Don't gather unnecessary information if not going to be looked up
                 if not kwargs.get("yield_from_fc"):
                     continue
-            # self.library_construction.lower()
+
             sampleObj = Sample(sample_id, sample_info, status="Sequenced")
             sampleObj.populate_sample(log, self.library_construction, **kwargs)
 
