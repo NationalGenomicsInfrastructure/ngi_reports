@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20250403.1
+Refactor entities.py by populating Sample and Prep objects in their classes instead
+
 ## 20250326.1
 Refactor entities.py by populating Flowcell objects in Flowcell class instead
 
