@@ -421,9 +421,16 @@ class Lane:
         self.avg_qval = "{:.2f}".format(
             round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
         )
-        self.set_lane_info(  # TODO: rewrite/rename
-            "fc_phix", "% Error Rate", lane_sum_lims, str(len(num_cycles))
-        )
+        try:
+            mean_phix = np.mean(
+                [
+                    float(lane_sum_lims.get(f"% Error Rate R{r}"))
+                    for r in range(1, len(num_cycles) + 1)
+                ]
+            )
+            self.phix = "{:.2f}".format(round(mean_phix, 2))
+        except TypeError:
+            self.phix = None
         if kwargs.get("fc_phix", {}).get(FC_name, {}):
             self.phix = kwargs.get("fc_phix").get(FC_name).get(self.id)
 
@@ -433,35 +440,6 @@ class Lane:
         if pf_reads and qval:
             self.weighted_avg_qval_proj += pf_reads * qval
             self.total_reads_with_qval_proj += pf_reads
-
-    def set_lane_info(self, to_set, key, lane_info, reads, as_million=False):
-        """Set the average value of given key from given lane info
-        :param str to_set: class parameter to be set
-        :param str key: key to be fetched
-        :param dict lane_info: a dictionary with required lane info
-        :param str reads: number of reads for keys to be fetched
-        """
-        try:
-            v = np.mean(
-                [
-                    float(lane_info.get(f"{key} R{str(r)}"))
-                    for r in range(1, int(reads) + 1)
-                ]
-            )
-            val = (
-                "{:.2f}".format(round(v / 1000000, 2))
-                if as_million
-                else "{:.2f}".format(round(v, 2))
-            )
-        except TypeError:
-            val = None
-
-        if to_set == "cluster":
-            self.cluster = val
-        elif to_set == "avg_qval":
-            self.avg_qval = val
-        elif to_set == "fc_phix":
-            self.phix = val
 
 
 class Project:
