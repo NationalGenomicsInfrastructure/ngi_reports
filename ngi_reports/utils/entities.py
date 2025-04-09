@@ -272,7 +272,8 @@ class Flowcell:
 
             if not lane or not sample or not barcode:
                 log.warning(
-                    f"Insufficient info/malformed data in Barcode_lane_statistics in FC {self.run_name}, skipping..."
+                    "Insufficient info/malformed data in Barcode_lane_statistics "
+                    f"in FC {self.run_name}, skipping..."
                 )
                 continue
 
@@ -300,7 +301,8 @@ class Flowcell:
                     f"barcode {barcode} in FC {self.name} at lane {lane}. Error was: \n{e}"
                 )
                 pass
-            # Collect lanes of interest to proceed later
+
+            # Collect lanes of interest
             fc_lane_summary_lims = self.fc_details.get("lims_data", {}).get(
                 "run_summary", {}
             )
@@ -309,35 +311,16 @@ class Flowcell:
                 .get("Demultiplex_Stats", {})
                 .get("Lanes_stats", {})
             )
-            if lane not in self.lanes:  # TODO: Move this into Lane class
-                laneObj = Lane()
-                lane_sum_lims = fc_lane_summary_lims.get(
-                    lane, fc_lane_summary_lims.get("A", {})
+            if lane not in self.lanes:
+                laneObj = Lane(lane)
+                laneObj.populate_lane(
+                    fc_lane_summary_lims,
+                    fc_lane_summary_demux,
+                    num_cycles,
+                    self.name,
+                    **kwargs,
                 )
-                lane_sum_demux = [
-                    d for d in fc_lane_summary_demux if d["Lane"] == str(lane)
-                ][0]
-                laneObj.id = lane
-                pf_clusters = float(
-                    lane_sum_demux.get("PF Clusters", "0").replace(",", "")
-                )
-                mil_pf_clusters = round(pf_clusters / 1000000, 2)
-                laneObj.cluster = "{:.2f}".format(mil_pf_clusters)
-                laneObj.avg_qval = "{:.2f}".format(
-                    round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
-                )
-                laneObj.set_lane_info(
-                    "fc_phix", "% Error Rate", lane_sum_lims, str(len(num_cycles))
-                )
-                if kwargs.get("fc_phix", {}).get(self.name, {}):
-                    laneObj.phix = kwargs.get("fc_phix").get(self.name).get(lane)
-
-                # Calculate weighted Q30 value and add it to lane data
-                laneObj.total_reads_proj += pf_reads
-                if pf_reads and qval:
-                    laneObj.weighted_avg_qval_proj += pf_reads * qval
-                    laneObj.total_reads_with_qval_proj += pf_reads
-                self.lanes[lane] = laneObj
+                laneObj.increase_total_reads_and_q30(pf_reads, qval)
 
                 # Check if the above created lane object has all needed info
                 for k, v in vars(laneObj).items():
@@ -346,15 +329,13 @@ class Flowcell:
                             f"Could not fetch {k} for FC {self.name} at lane {lane}"
                         )
 
+                self.lanes[lane] = laneObj
             # Add total reads and Q30 to lane data
             else:
                 laneObj = self.lanes[lane]
-                laneObj.total_reads_proj += pf_reads
-                if pf_reads and qval:
-                    laneObj.weighted_avg_qval_proj += pf_reads * qval
-                    laneObj.total_reads_with_qval_proj += pf_reads
+                laneObj.increase_total_reads_and_q30(pf_reads, qval)
 
-        # Add units, round off values, and add to flowcells object
+        # Add units and round off value
         for lane in self.lanes:
             laneObj = self.lanes[lane]
             laneObj.reads_unit, lane_divisor = get_units_and_divisor(
@@ -410,7 +391,8 @@ class Flowcell:
 class Lane:
     """Lane class"""
 
-    def __init__(self):
+    def __init__(self, lane_nr):
+        self.id = lane_nr
         self.avg_qval = ""
         self.cluster = ""
         self.id = ""
@@ -420,8 +402,41 @@ class Lane:
         self.total_reads_with_qval_proj = 0
         self.reads_unit = "#reads"
 
+    def populate_lane(
+        self,
+        fc_lane_summary_lims,
+        fc_lane_summary_demux,
+        num_cycles,
+        FC_name,
+        **kwargs,
+    ):  # FIXME:
+        lane_sum_lims = fc_lane_summary_lims.get(
+            self.id, fc_lane_summary_lims.get("A", {})
+        )
+        lane_sum_demux = [
+            d for d in fc_lane_summary_demux if d["Lane"] == str(self.id)
+        ][0]
+        pf_clusters = float(lane_sum_demux.get("PF Clusters", "0").replace(",", ""))
+        mil_pf_clusters = round(pf_clusters / 1000000, 2)
+        self.cluster = "{:.2f}".format(mil_pf_clusters)
+        self.avg_qval = "{:.2f}".format(
+            round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
+        )
+        self.set_lane_info(  # TODO: rewrite/rename
+            "fc_phix", "% Error Rate", lane_sum_lims, str(len(num_cycles))
+        )
+        if kwargs.get("fc_phix", {}).get(self.name, {}):
+            self.phix = kwargs.get("fc_phix").get(FC_name).get(self.id)
+
+    def increase_total_reads_and_q30(self, pf_reads, qval):
+        # Calculate weighted Q30 value and add it to lane data
+        self.total_reads_proj += pf_reads
+        if pf_reads and qval:
+            self.weighted_avg_qval_proj += pf_reads * qval
+            self.total_reads_with_qval_proj += pf_reads
+
     def set_lane_info(self, to_set, key, lane_info, reads, as_million=False):
-        """Set the average value of gives key from given lane info
+        """Set the average value of given key from given lane info
         :param str to_set: class parameter to be set
         :param str key: key to be fetched
         :param dict lane_info: a dictionary with required lane info
