@@ -391,11 +391,10 @@ class Flowcell:
 class Lane:
     """Lane class"""
 
-    def __init__(self, lane_nr):
-        self.id = lane_nr
+    def __init__(self, lane):
+        self.id = lane
         self.avg_qval = ""
         self.cluster = ""
-        self.id = ""
         self.phix = ""
         self.weighted_avg_qval_proj = 0
         self.total_reads_proj = 0
@@ -409,7 +408,7 @@ class Lane:
         num_cycles,
         FC_name,
         **kwargs,
-    ):  # FIXME:
+    ):
         lane_sum_lims = fc_lane_summary_lims.get(
             self.id, fc_lane_summary_lims.get("A", {})
         )
@@ -425,7 +424,7 @@ class Lane:
         self.set_lane_info(  # TODO: rewrite/rename
             "fc_phix", "% Error Rate", lane_sum_lims, str(len(num_cycles))
         )
-        if kwargs.get("fc_phix", {}).get(self.name, {}):
+        if kwargs.get("fc_phix", {}).get(FC_name, {}):
             self.phix = kwargs.get("fc_phix").get(FC_name).get(self.id)
 
     def increase_total_reads_and_q30(self, pf_reads, qval):
