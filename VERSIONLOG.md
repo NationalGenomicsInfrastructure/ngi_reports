@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20250409.1
+Refactor entities.py by populating Lane object in the Lane instead
+
 ## 20250403.1
 Refactor entities.py by populating Sample and Prep objects in their classes instead
 
