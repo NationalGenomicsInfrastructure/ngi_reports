@@ -102,20 +102,16 @@ class Sample:
         # Exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
         if kwargs.get("barcode_from_fc"):
             list_of_barcodes = sum(
-                [[all_barcodes.barcode for all_barcodes in list(self.preps.values())]],
+                [[all_barcodes.barcode for all_barcodes in self.preps.values()]],
                 [],
             )
-            if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
+            if len(dict.fromkeys(list_of_barcodes)) >= 1:
                 list_of_flowcells = sum(
-                    [
-                        all_flowcells.seq_fc
-                        for all_flowcells in list(self.preps.values())
-                    ],
+                    [all_flowcells.seq_fc for all_flowcells in self.preps.values()],
                     [],
                 )
                 if (
-                    len(list_of_flowcells)
-                    != len(list(dict.fromkeys(list_of_flowcells)))
+                    len(list_of_flowcells) != len(dict.fromkeys(list_of_flowcells))
                 ):  # The sample was run twice on the same flowcell, only possible with different barcodes for the same sample
                     log.error(
                         "Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually"
@@ -152,7 +148,7 @@ class Prep:
             if self.prep_info.get("library_validation"):
                 lib_valids = self.prep_info["library_validation"]
                 keys = sorted(
-                    [k for k in list(lib_valids.keys()) if re.match("^[\d\-]*$", k)],
+                    [k for k in lib_valids.keys() if re.match("^[\d\-]*$", k)],
                     key=lambda k: datetime.strptime(
                         lib_valids[k]["start_date"], "%Y-%m-%d"
                     ),
@@ -248,10 +244,13 @@ class Flowcell:
             sys.exit(1)
 
         try:
-            self.casava = list(self.fc_details["DemultiplexConfig"].values())[0][
-                "Software"
-            ]["Version"]
-        except (KeyError, IndexError):
+            self.casava = (
+                self.fc_details.get("DemultiplexConfig", {})
+                .get("Setup", {})
+                .get("Software", {})
+                .get("Version", {})
+            )
+        except KeyError:
             self.casava = None
 
         self.barcode_lane_statistics = (
@@ -678,8 +677,8 @@ class Project:
             log.info(
                 "'yield_from_fc' option was given so will compute the yield from collected flowcells"
             )
-            for sample in list(self.samples.keys()):
-                if sample not in list(sample_qval.keys()):
+            for sample in self.samples.keys():
+                if sample not in sample_qval.keys():
                     del self.samples[sample]
 
         # Calculate average Q30 over all lanes and flowcell
@@ -736,8 +735,8 @@ class Project:
                 fc_samples.append(fc_sample.get("Sample_Name"))
 
         # Go through all samples in project to identify their prep_ID (only if they are on the flowcell)
-        for sample_ID in list(self.samples):
-            for prep_ID in list(self.samples.get(sample_ID).preps):
+        for sample_ID in self.samples:
+            for prep_ID in self.samples.get(sample_ID).preps:
                 sample_preps = self.samples.get(sample_ID).preps
                 if fcObj.name in sample_preps.get(prep_ID).seq_fc:
                     preps_samples_on_fc.append([sample_ID, prep_ID])
@@ -745,7 +744,7 @@ class Project:
                     continue
 
         # Get samples that are on the fc but are not recorded in LIMS (i.e. added bc from undet reads)
-        if len(set(list(self.samples))) != len(set(fc_samples)):
+        if len(set(self.samples)) != len(set(fc_samples)):
             additional_samples = list(set(fc_samples) - set(self.samples))
             additional_samples.sort()
             log.info(
