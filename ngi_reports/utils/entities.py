@@ -102,20 +102,16 @@ class Sample:
         # Exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
         if kwargs.get("barcode_from_fc"):
             list_of_barcodes = sum(
-                [[all_barcodes.barcode for all_barcodes in list(self.preps.values())]],
+                [[all_barcodes.barcode for all_barcodes in self.preps.values()]],
                 [],
             )
-            if len(list(dict.fromkeys(list_of_barcodes))) >= 1:
+            if len(dict.fromkeys(list_of_barcodes)) >= 1:
                 list_of_flowcells = sum(
-                    [
-                        all_flowcells.seq_fc
-                        for all_flowcells in list(self.preps.values())
-                    ],
+                    [all_flowcells.seq_fc for all_flowcells in self.preps.values()],
                     [],
                 )
                 if (
-                    len(list_of_flowcells)
-                    != len(list(dict.fromkeys(list_of_flowcells)))
+                    len(list_of_flowcells) != len(dict.fromkeys(list_of_flowcells))
                 ):  # The sample was run twice on the same flowcell, only possible with different barcodes for the same sample
                     log.error(
                         "Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually"
@@ -152,7 +148,7 @@ class Prep:
             if self.prep_info.get("library_validation"):
                 lib_valids = self.prep_info["library_validation"]
                 keys = sorted(
-                    [k for k in list(lib_valids.keys()) if re.match("^[\d\-]*$", k)],
+                    [k for k in lib_valids.keys() if re.match("^[\d\-]*$", k)],
                     key=lambda k: datetime.strptime(
                         lib_valids[k]["start_date"], "%Y-%m-%d"
                     ),
@@ -248,10 +244,13 @@ class Flowcell:
             sys.exit(1)
 
         try:
-            self.casava = list(self.fc_details["DemultiplexConfig"].values())[0][
-                "Software"
-            ]["Version"]
-        except (KeyError, IndexError):
+            self.casava = (
+                self.fc_details.get("DemultiplexConfig", {})
+                .get("Setup", {})
+                .get("Software", {})
+                .get("Version", {})
+            )
+        except KeyError:
             self.casava = None
 
         self.barcode_lane_statistics = (
@@ -272,7 +271,8 @@ class Flowcell:
 
             if not lane or not sample or not barcode:
                 log.warning(
-                    f"Insufficient info/malformed data in Barcode_lane_statistics in FC {self.run_name}, skipping..."
+                    "Insufficient info/malformed data in Barcode_lane_statistics "
+                    f"in FC {self.run_name}, skipping..."
                 )
                 continue
 
@@ -300,7 +300,8 @@ class Flowcell:
                     f"barcode {barcode} in FC {self.name} at lane {lane}. Error was: \n{e}"
                 )
                 pass
-            # Collect lanes of interest to proceed later
+
+            # Collect lanes of interest
             fc_lane_summary_lims = self.fc_details.get("lims_data", {}).get(
                 "run_summary", {}
             )
@@ -309,35 +310,16 @@ class Flowcell:
                 .get("Demultiplex_Stats", {})
                 .get("Lanes_stats", {})
             )
-            if lane not in self.lanes:  # TODO: Move this into Lane class
-                laneObj = Lane()
-                lane_sum_lims = fc_lane_summary_lims.get(
-                    lane, fc_lane_summary_lims.get("A", {})
+            if lane not in self.lanes:
+                laneObj = Lane(lane)
+                laneObj.populate_lane(
+                    fc_lane_summary_lims,
+                    fc_lane_summary_demux,
+                    num_cycles,
+                    self.name,
+                    **kwargs,
                 )
-                lane_sum_demux = [
-                    d for d in fc_lane_summary_demux if d["Lane"] == str(lane)
-                ][0]
-                laneObj.id = lane
-                pf_clusters = float(
-                    lane_sum_demux.get("PF Clusters", "0").replace(",", "")
-                )
-                mil_pf_clusters = round(pf_clusters / 1000000, 2)
-                laneObj.cluster = "{:.2f}".format(mil_pf_clusters)
-                laneObj.avg_qval = "{:.2f}".format(
-                    round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
-                )
-                laneObj.set_lane_info(
-                    "fc_phix", "% Error Rate", lane_sum_lims, str(len(num_cycles))
-                )
-                if kwargs.get("fc_phix", {}).get(self.name, {}):
-                    laneObj.phix = kwargs.get("fc_phix").get(self.name).get(lane)
-
-                # Calculate weighted Q30 value and add it to lane data
-                laneObj.total_reads_proj += pf_reads
-                if pf_reads and qval:
-                    laneObj.weighted_avg_qval_proj += pf_reads * qval
-                    laneObj.total_reads_with_qval_proj += pf_reads
-                self.lanes[lane] = laneObj
+                laneObj.increase_total_reads_and_q30(pf_reads, qval)
 
                 # Check if the above created lane object has all needed info
                 for k, v in vars(laneObj).items():
@@ -346,15 +328,13 @@ class Flowcell:
                             f"Could not fetch {k} for FC {self.name} at lane {lane}"
                         )
 
+                self.lanes[lane] = laneObj
             # Add total reads and Q30 to lane data
             else:
                 laneObj = self.lanes[lane]
-                laneObj.total_reads_proj += pf_reads
-                if pf_reads and qval:
-                    laneObj.weighted_avg_qval_proj += pf_reads * qval
-                    laneObj.total_reads_with_qval_proj += pf_reads
+                laneObj.increase_total_reads_and_q30(pf_reads, qval)
 
-        # Add units, round off values, and add to flowcells object
+        # Add units and round off value
         for lane in self.lanes:
             laneObj = self.lanes[lane]
             laneObj.reads_unit, lane_divisor = get_units_and_divisor(
@@ -410,44 +390,55 @@ class Flowcell:
 class Lane:
     """Lane class"""
 
-    def __init__(self):
+    def __init__(self, lane):
+        self.id = lane
         self.avg_qval = ""
         self.cluster = ""
-        self.id = ""
         self.phix = ""
         self.weighted_avg_qval_proj = 0
         self.total_reads_proj = 0
         self.total_reads_with_qval_proj = 0
         self.reads_unit = "#reads"
 
-    def set_lane_info(self, to_set, key, lane_info, reads, as_million=False):
-        """Set the average value of gives key from given lane info
-        :param str to_set: class parameter to be set
-        :param str key: key to be fetched
-        :param dict lane_info: a dictionary with required lane info
-        :param str reads: number of reads for keys to be fetched
-        """
+    def populate_lane(
+        self,
+        fc_lane_summary_lims,
+        fc_lane_summary_demux,
+        num_cycles,
+        FC_name,
+        **kwargs,
+    ):
+        lane_sum_lims = fc_lane_summary_lims.get(
+            self.id, fc_lane_summary_lims.get("A", {})
+        )
+        lane_sum_demux = [
+            d for d in fc_lane_summary_demux if d["Lane"] == str(self.id)
+        ][0]
+        pf_clusters = float(lane_sum_demux.get("PF Clusters", "0").replace(",", ""))
+        mil_pf_clusters = round(pf_clusters / 1000000, 2)
+        self.cluster = "{:.2f}".format(mil_pf_clusters)
+        self.avg_qval = "{:.2f}".format(
+            round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
+        )
         try:
-            v = np.mean(
+            mean_phix = np.mean(
                 [
-                    float(lane_info.get(f"{key} R{str(r)}"))
-                    for r in range(1, int(reads) + 1)
+                    float(lane_sum_lims.get(f"% Error Rate R{r}"))
+                    for r in range(1, len(num_cycles) + 1)
                 ]
             )
-            val = (
-                "{:.2f}".format(round(v / 1000000, 2))
-                if as_million
-                else "{:.2f}".format(round(v, 2))
-            )
+            self.phix = "{:.2f}".format(round(mean_phix, 2))
         except TypeError:
-            val = None
+            self.phix = None
+        if kwargs.get("fc_phix", {}).get(FC_name, {}):
+            self.phix = kwargs.get("fc_phix").get(FC_name).get(self.id)
 
-        if to_set == "cluster":
-            self.cluster = val
-        elif to_set == "avg_qval":
-            self.avg_qval = val
-        elif to_set == "fc_phix":
-            self.phix = val
+    def increase_total_reads_and_q30(self, pf_reads, qval):
+        # Calculate weighted Q30 value and add it to lane data
+        self.total_reads_proj += pf_reads
+        if pf_reads and qval:
+            self.weighted_avg_qval_proj += pf_reads * qval
+            self.total_reads_with_qval_proj += pf_reads
 
 
 class Project:
@@ -686,8 +677,8 @@ class Project:
             log.info(
                 "'yield_from_fc' option was given so will compute the yield from collected flowcells"
             )
-            for sample in list(self.samples.keys()):
-                if sample not in list(sample_qval.keys()):
+            for sample in self.samples.keys():
+                if sample not in sample_qval.keys():
                     del self.samples[sample]
 
         # Calculate average Q30 over all lanes and flowcell
@@ -744,8 +735,8 @@ class Project:
                 fc_samples.append(fc_sample.get("Sample_Name"))
 
         # Go through all samples in project to identify their prep_ID (only if they are on the flowcell)
-        for sample_ID in list(self.samples):
-            for prep_ID in list(self.samples.get(sample_ID).preps):
+        for sample_ID in self.samples:
+            for prep_ID in self.samples.get(sample_ID).preps:
                 sample_preps = self.samples.get(sample_ID).preps
                 if fcObj.name in sample_preps.get(prep_ID).seq_fc:
                     preps_samples_on_fc.append([sample_ID, prep_ID])
@@ -753,7 +744,7 @@ class Project:
                     continue
 
         # Get samples that are on the fc but are not recorded in LIMS (i.e. added bc from undet reads)
-        if len(set(list(self.samples))) != len(set(fc_samples)):
+        if len(set(self.samples)) != len(set(fc_samples)):
             additional_samples = list(set(fc_samples) - set(self.samples))
             additional_samples.sort()
             log.info(
