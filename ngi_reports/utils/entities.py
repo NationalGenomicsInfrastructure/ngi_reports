@@ -793,6 +793,12 @@ class Project:
                     self.samples.get(sample_stat.get("Sample")).preps.get(
                         prep_o_samples
                     ).barcode = new_barcode
+        log.info(
+            "The barcode_from_fc option was used and the barcodes have been replaced. "
+            "Please make sure to double check that the barcodes in the report are "
+            "correct and, if needed, add the relevant information to the 'Additions to,"
+            " deviations or exclusions from the accredited method(s)' section of the report."
+        )
 
     def get_library_method(
         self,
