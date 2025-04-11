@@ -62,26 +62,6 @@ class Sample:
             prepObj = Prep(prep_id, prep_info)
             prepObj.populate_prep(log, library_construction)
 
-            # Get flow cell information for each prep from project database (only if -b flag is set)
-            if kwargs.get("barcode_from_fc"):
-                if prepObj.barcode != "NA" and prepObj.qc_status != "NA":
-                    prepObj.seq_fc = []
-                    if (
-                        not self.sample_info.get("library_prep")
-                        .get(prep_id)
-                        .get("sequenced_fc")
-                    ):
-                        log.error(
-                            'Sequenced flowcell not defined for the project. Run ngi_pipelines without the "-b" flag and amend the report manually.'
-                        )
-                        sys.exit("Stopping execution...")
-                    for fc in (
-                        self.sample_info.get("library_prep")
-                        .get(prep_id)
-                        .get("sequenced_fc")
-                    ):
-                        prepObj.seq_fc.append(fc.split("_")[-1])
-
             if prepObj.barcode == "NA":
                 log.warning(
                     f"Barcode missing for sample {self.ngi_id} in prep {prep_id}. "
@@ -737,7 +717,28 @@ class Project:
         # Go through all samples in project to identify their prep_ID (only if they are on the flowcell)
         for sample_ID in self.samples:
             for prep_ID in self.samples.get(sample_ID).preps:
-                sample_preps = self.samples.get(sample_ID).preps
+                sampleObj = self.samples.get(sample_ID)
+                sample_preps = sampleObj.preps
+                prepObj = sample_preps.get(prep_ID)
+                # Get flow cell information for each prep from project database (only if -b flag is set)
+                if prepObj.barcode != "NA" and prepObj.qc_status != "NA":
+                    prepObj.seq_fc = []
+                    if (
+                        not sampleObj.sample_info.get("library_prep")
+                        .get(prep_ID)
+                        .get("sequenced_fc")
+                    ):
+                        log.error(
+                            'Sequenced flowcell not defined for the project. '
+                            'Run ngi_pipelines without the "-b" flag and amend the report manually.'
+                        )
+                        sys.exit("Stopping execution...")
+                    for fc in (
+                        sampleObj.sample_info.get("library_prep")
+                        .get(prep_ID)
+                        .get("sequenced_fc")
+                    ):
+                        prepObj.seq_fc.append(fc.split("_")[-1])
                 if fcObj.name in sample_preps.get(prep_ID).seq_fc:
                     preps_samples_on_fc.append([sample_ID, prep_ID])
                 else:
