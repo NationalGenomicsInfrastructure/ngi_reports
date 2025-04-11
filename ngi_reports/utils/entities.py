@@ -608,7 +608,7 @@ class Project:
                     else:
                         sample_qval[sample] = fcObj.fc_sample_qvalues[sample]
 
-                if kwargs.get("barcode_from_fc"): #TODO: move this out of fc loop
+                if kwargs.get("barcode_from_fc"):  # TODO: move this out of fc loop
                     self.replace_barcodes(log, fcObj)
 
             elif fc["db"] == "nanopore_runs":
@@ -717,12 +717,15 @@ class Project:
                     preps_samples_on_fc.append([sample_ID, prep_ID])
                 else:
                     continue
-            list_of_barcodes = sum([[all_barcodes.barcode for all_barcodes in sampleObj.preps.values()]],[],)
-            if len(dict.fromkeys(list_of_barcodes)) >= 1:
-                list_of_flowcells = sum([all_flowcells.seq_fc for all_flowcells in sampleObj.preps.values()],[],)
-                if len(list_of_flowcells) != len(dict.fromkeys(list_of_flowcells)):  # The sample was run twice on the same flowcell,
+
+            list_of_barcodes = [prep.barcode for prep in sampleObj.preps.values()]
+            if len(list_of_barcodes) >= 1:
+                list_of_flowcells = [prep.seq_fc for prep in sampleObj.preps.values()]
+                if len(list_of_flowcells) != len(
+                    list_of_flowcells
+                ):  # The sample was run twice on the same flowcell,
                     # only possible with different barcodes for the same sample
-                    log.error( #TODO: fix this check
+                    log.error(
                         "Ambiguous preps for barcodes on flowcell. Please run ngi_reports "
                         "without the -b flag and amend the report manually"
                     )
