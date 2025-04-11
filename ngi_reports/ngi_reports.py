@@ -91,7 +91,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     working_base_dir = os.path.split(os.getcwd())[1]
 
     # check if the current dir is correct
-    if working_base_dir != proj.ngi_id:
+    if working_base_dir not in [proj.ngi_id, proj.ngi_name]:
         question = f"The current directory {working_dir} does not belong to the chosen project {report.project}. Continue? "
         if proceed_or_not(question):
             LOG.info(
