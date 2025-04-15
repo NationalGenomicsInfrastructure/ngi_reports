@@ -705,7 +705,7 @@ class Project:
             # Go through all samples in project to identify their prep_ID (only if they are on the flowcell)
             for sample_ID in self.samples:
                 sampleObj = self.samples.get(sample_ID)
-                for prep_ID in self.samples.get(sample_ID).preps:
+                for prep_ID in sampleObj.preps:
                     prepObj = sampleObj.preps.get(prep_ID)
                     if prepObj.barcode != "NA" and prepObj.qc_status != "NA":
                         prepObj.seq_fc = []
