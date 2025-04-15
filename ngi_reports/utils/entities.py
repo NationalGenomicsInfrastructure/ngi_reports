@@ -686,6 +686,7 @@ class Project:
             )
 
     def replace_barcodes(self, log):
+        # TODO: Add more sanity checks to this function and exit if it's not applicable, e.g. for single cell
         log.info(
             "'barcodes_from_fc' option was given so index sequences "
             "for the report will be taken from the flowcell instead of LIMS"
@@ -728,27 +729,6 @@ class Project:
                         preps_samples_on_fc.append([sample_ID, prep_ID])
                     else:
                         continue
-
-                list_of_barcodes = [prep.barcode for prep in sampleObj.preps.values()]
-                if len(list_of_barcodes) >= 1:
-                    list_of_flowcells = [
-                        prep.seq_fc for prep in sampleObj.preps.values()
-                    ]
-                    if len(list_of_flowcells) != len(
-                        list_of_flowcells
-                    ):  # The sample was run twice on the same flowcell,
-                        # only possible with different barcodes for the same sample
-                        log.error(
-                            "Ambiguous preps for barcodes on flowcell. Please run ngi_reports "
-                            "without the -b flag and amend the report manually"
-                        )
-                        sys.exit("Stopping execution...")
-                else:
-                    log.error(
-                        "Barcodes not defined in sample sheet. Please run ngi_reports "
-                        "without the -b flag and amend the report manually"
-                    )
-                    sys.exit("Stopping execution...")
 
             # Get samples that are on the fc but are not recorded in LIMS (i.e. added bc from undet reads)
             if len(set(self.samples)) != len(set(fc_samples)):
