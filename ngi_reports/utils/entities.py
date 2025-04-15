@@ -62,26 +62,6 @@ class Sample:
             prepObj = Prep(prep_id, prep_info)
             prepObj.populate_prep(log, library_construction)
 
-            # Get flow cell information for each prep from project database (only if -b flag is set)
-            if kwargs.get("barcode_from_fc"):
-                if prepObj.barcode != "NA" and prepObj.qc_status != "NA":
-                    prepObj.seq_fc = []
-                    if (
-                        not self.sample_info.get("library_prep")
-                        .get(prep_id)
-                        .get("sequenced_fc")
-                    ):
-                        log.error(
-                            'Sequenced flowcell not defined for the project. Run ngi_pipelines without the "-b" flag and amend the report manually.'
-                        )
-                        sys.exit("Stopping execution...")
-                    for fc in (
-                        self.sample_info.get("library_prep")
-                        .get(prep_id)
-                        .get("sequenced_fc")
-                    ):
-                        prepObj.seq_fc.append(fc.split("_")[-1])
-
             if prepObj.barcode == "NA":
                 log.warning(
                     f"Barcode missing for sample {self.ngi_id} in prep {prep_id}. "
@@ -98,30 +78,6 @@ class Sample:
             log.warning(
                 f"No library prep information was available for sample {self.ngi_id}"
             )
-
-        # Exception for case of multi-barcoded sample from different preps run on the same fc (only if -b flag is set)
-        if kwargs.get("barcode_from_fc"):
-            list_of_barcodes = sum(
-                [[all_barcodes.barcode for all_barcodes in self.preps.values()]],
-                [],
-            )
-            if len(dict.fromkeys(list_of_barcodes)) >= 1:
-                list_of_flowcells = sum(
-                    [all_flowcells.seq_fc for all_flowcells in self.preps.values()],
-                    [],
-                )
-                if (
-                    len(list_of_flowcells) != len(dict.fromkeys(list_of_flowcells))
-                ):  # The sample was run twice on the same flowcell, only possible with different barcodes for the same sample
-                    log.error(
-                        "Ambiguous preps for barcodes on flowcell. Please run ngi_pipelines without the -b flag and amend the report manually"
-                    )
-                    sys.exit("Stopping execution...")
-            else:
-                log.error(
-                    "Barcodes not defined in sample sheet. Please run ngi_pipelines without the -b flag and amend the report manually"
-                )
-                sys.exit("Stopping execution...")
 
 
 class Prep:
@@ -652,22 +608,32 @@ class Project:
                     else:
                         sample_qval[sample] = fcObj.fc_sample_qvalues[sample]
 
-                if kwargs.get("barcode_from_fc"):
-                    self.replace_barcodes(log, fcObj)
-
             elif fc["db"] == "nanopore_runs":
                 fcObj = Flowcell(fc, self.ngi_name, ontcon)
                 fcObj.populate_ont_flowcell()
-                if kwargs.get("barcode_from_fc"):
-                    log.warn(
-                        "barcode_from_fc was given but is not applicable for ONT data. Ignoring it."
-                    )
 
             else:
                 log.error(f"Unkown database: {fc['db']}. Exiting.")
                 sys.exit(1)
 
             self.flowcells[fcObj.name] = fcObj
+
+        if kwargs.get("barcode_from_fc"):
+            if self.sequencer_manufacturer == "illumina":
+                if self.library_construction_method in ["SmartSeq 3", "10X Chromium"]:
+                    log.warning(
+                        f"--barcode_from_fc option is not applicable for {self.library_construction_method} "
+                        "projects. Please run ngi_reports without this option and amend the report "
+                        "manually in necessary."
+                    )
+                    sys.exit(1)
+                else:
+                    self.replace_barcodes(log)
+            else:
+                log.warning(
+                    "barcode_from_fc was given but is not applicable "
+                    f"for {self.sequencer_manufacturer} data. Ignoring it."
+                )
 
         if not self.flowcells:
             log.warning(f"There is no flowcell to process for project {self.ngi_name}")
@@ -719,73 +685,100 @@ class Project:
                 self.samples[sample].total_reads / float(samples_divisor)
             )
 
-    def replace_barcodes(self, log, fcObj):
+    def replace_barcodes(self, log):
+        # TODO: Add more sanity checks to this function and exit if it's not applicable, e.g. for single cell
         log.info(
             "'barcodes_from_fc' option was given so index sequences "
             "for the report will be taken from the flowcell instead of LIMS"
         )
 
-        preps_samples_on_fc = []
-        additional_samples = []
+        for fcObj in self.flowcells.values():
+            preps_samples_on_fc = []
+            additional_samples = []
 
-        # Get all samples from flow cell that belong to the project
-        fc_samples = []
-        for fc_sample in fcObj.sample_sheet_data:
-            if fc_sample.get("Sample_Name").split("_")[0] == self.ngi_id:
-                fc_samples.append(fc_sample.get("Sample_Name"))
+            # Get all samples from flow cell that belong to the project
+            fc_samples = []
+            for fc_sample in fcObj.sample_sheet_data:
+                if fc_sample.get("Sample_Name").split("_")[0] == self.ngi_id:
+                    fc_samples.append(fc_sample.get("Sample_Name"))
 
-        # Go through all samples in project to identify their prep_ID (only if they are on the flowcell)
-        for sample_ID in self.samples:
-            for prep_ID in self.samples.get(sample_ID).preps:
-                sample_preps = self.samples.get(sample_ID).preps
-                if fcObj.name in sample_preps.get(prep_ID).seq_fc:
-                    preps_samples_on_fc.append([sample_ID, prep_ID])
-                else:
-                    continue
+            # Go through all samples in project to identify their prep_ID (only if they are on the flowcell)
+            for sample_ID in self.samples:
+                sampleObj = self.samples.get(sample_ID)
+                for prep_ID in sampleObj.preps:
+                    prepObj = sampleObj.preps.get(prep_ID)
+                    if prepObj.barcode != "NA" and prepObj.qc_status != "NA":
+                        prepObj.seq_fc = []
+                        if (
+                            not sampleObj.sample_info.get("library_prep")
+                            .get(prep_ID)
+                            .get("sequenced_fc")
+                        ):
+                            log.error(
+                                "Sequenced flowcell not defined for the project. "
+                                'Run ngi_pipelines without the "-b" flag and amend the report manually.'
+                            )
+                            sys.exit("Stopping execution...")
+                        for fc in (
+                            sampleObj.sample_info.get("library_prep")
+                            .get(prep_ID)
+                            .get("sequenced_fc")
+                        ):
+                            prepObj.seq_fc.append(fc.split("_")[-1])
+                    if fcObj.name in prepObj.seq_fc:
+                        preps_samples_on_fc.append([sample_ID, prep_ID])
+                    else:
+                        continue
 
-        # Get samples that are on the fc but are not recorded in LIMS (i.e. added bc from undet reads)
-        if len(set(self.samples)) != len(set(fc_samples)):
-            additional_samples = list(set(fc_samples) - set(self.samples))
-            additional_samples.sort()
-            log.info(
-                f"The flowcell {fcObj.run_name} contains {len(additional_samples)} sample(s) "
-                f"({', '.join(additional_samples)}) that has/have not been defined in LIMS. "
-                "They will be added to the report."
-            )
-
-            undet_iteration = 1
-            # Create additional sample and prep Objects
-            for additional_sample in additional_samples:
-                additional_sample_info = {
-                    "customer_name": "unknown" + str(undet_iteration)
-                }  # Additional samples will be named "unknown[number]" in the report
-                sample_obj = Sample(
-                    additional_sample, additional_sample_info, status="Sequenced"
+            # Get samples that are on the fc but are not recorded in LIMS (i.e. added bc from undet reads)
+            if len(set(self.samples)) != len(set(fc_samples)):
+                additional_samples = list(set(fc_samples) - set(self.samples))
+                additional_samples.sort()
+                log.info(
+                    f"The flowcell {fcObj.run_name} contains {len(additional_samples)} sample(s) "
+                    f"({', '.join(additional_samples)}) that has/have not been defined in LIMS. "
+                    "They will be added to the report."
                 )
-                sample_obj.preps["NA"] = Prep(prep_id="NA", prep_info={"NA": "NA"})
-                sample_obj.preps["NA"].label = "NA"
-                sample_obj.initial_qc = {
-                    "initial_qc_status": "NA",
-                }
-                self.samples[additional_sample] = sample_obj
-                preps_samples_on_fc.append([additional_sample, "NA"])
-                undet_iteration += 1
 
-        for sample_stat in fcObj.barcode_lane_statistics:
-            new_barcode = "-".join(sample_stat.get("Barcode sequence").split("+"))
-            lib_prep = []  # Adding the now required library prep, set to NA for all non-LIMS samples
-            if sample_stat.get("Sample") in additional_samples:
-                lib_prep.append("NA")
-            else:  # Adding library prep for LIMS samples, we identified them earlier
-                for sub_prep_sample in preps_samples_on_fc:
-                    if sub_prep_sample[0] == sample_stat.get("Sample"):
-                        lib_prep.append(sub_prep_sample[1])
+                undet_iteration = 1
+                # Create additional sample and prep Objects
+                for additional_sample in additional_samples:
+                    additional_sample_info = {
+                        "customer_name": "unknown" + str(undet_iteration)
+                    }  # Additional samples will be named "unknown[number]" in the report
+                    sample_obj = Sample(
+                        additional_sample, additional_sample_info, status="Sequenced"
+                    )
+                    sample_obj.preps["NA"] = Prep(prep_id="NA", prep_info={"NA": "NA"})
+                    sample_obj.preps["NA"].label = "NA"
+                    sample_obj.initial_qc = {
+                        "initial_qc_status": "NA",
+                    }
+                    self.samples[additional_sample] = sample_obj
+                    preps_samples_on_fc.append([additional_sample, "NA"])
+                    undet_iteration += 1
 
-            for prep_o_samples in lib_prep:
-                # Changing the barcode happens here!
-                self.samples.get(sample_stat.get("Sample")).preps.get(
-                    prep_o_samples
-                ).barcode = new_barcode
+            for sample_stat in fcObj.barcode_lane_statistics:
+                new_barcode = "-".join(sample_stat.get("Barcode sequence").split("+"))
+                lib_prep = []  # Adding the now required library prep, set to NA for all non-LIMS samples
+                if sample_stat.get("Sample") in additional_samples:
+                    lib_prep.append("NA")
+                else:  # Adding library prep for LIMS samples, we identified them earlier
+                    for sub_prep_sample in preps_samples_on_fc:
+                        if sub_prep_sample[0] == sample_stat.get("Sample"):
+                            lib_prep.append(sub_prep_sample[1])
+
+                for prep_o_samples in lib_prep:
+                    # Changing the barcode happens here!
+                    self.samples.get(sample_stat.get("Sample")).preps.get(
+                        prep_o_samples
+                    ).barcode = new_barcode
+        log.info(
+            "The barcode_from_fc option was used and the barcodes have been replaced. "
+            "Please make sure to double check that the barcodes in the report are "
+            "correct and, if needed, add the relevant information to the 'Additions to,"
+            " deviations or exclusions from the accredited method(s)' section of the report."
+        )
 
     def get_library_method(
         self,
