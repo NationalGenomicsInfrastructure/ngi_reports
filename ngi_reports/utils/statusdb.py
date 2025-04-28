@@ -132,12 +132,6 @@ class ProjectSummaryConnection(statusdb_connection):
         }
 
 
-class SampleRunMetricsConnection(statusdb_connection):
-    def __init__(self, dbname="samples"):
-        super(SampleRunMetricsConnection, self).__init__()
-        self.dbname = dbname
-
-
 class X_FlowcellRunMetricsConnection(statusdb_connection):
     def __init__(self, dbname="x_flowcells"):
         super(X_FlowcellRunMetricsConnection, self).__init__()
