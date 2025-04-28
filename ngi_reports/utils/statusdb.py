@@ -39,12 +39,12 @@ class statusdb_connection(object):
 
         # Initialize IBM Cloudant client
         authenticator = CouchDbSessionAuthenticator(self.user, self.pwrd)
-        self.cloudant = cloudant_v1.CloudantV1(authenticator=authenticator)
-        self.cloudant.set_service_url(f"https://{self.url}")
+        self.connection = cloudant_v1.CloudantV1(authenticator=authenticator)
+        self.connection.set_service_url(f"https://{self.url}")
 
         # Test connection
         try:
-            self.cloudant.get_server_information().get_result()
+            self.connection.get_server_information().get_result()
         except Exception as e:
             raise SystemExit(
                 f"Connection failed for URL {self.display_url_string}. Error: {e}"
@@ -62,7 +62,7 @@ class statusdb_connection(object):
             return None
 
         try:
-            doc = self.cloudant.get_document(
+            doc = self.connection.get_document(
                 db=self.dbname, doc_id=view[name]
             ).get_result()
             return doc
@@ -120,13 +120,13 @@ class ProjectSummaryConnection(statusdb_connection):
         self.dbname = dbname
         self.name_view = {
             row["key"]: row["id"]
-            for row in self.cloudant.post_view(
+            for row in self.connection.post_view(
                 db=self.dbname, ddoc="project", view="project_name", reduce=False
             ).get_result()["rows"]
         }
         self.id_view = {
             row["key"]: row["id"]
-            for row in self.cloudant.post_view(
+            for row in self.connection.post_view(
                 db=self.dbname, ddoc="project", view="project_id", reduce=False
             ).get_result()["rows"]
         }
@@ -144,13 +144,13 @@ class X_FlowcellRunMetricsConnection(statusdb_connection):
         self.dbname = dbname
         self.name_view = {
             row["key"]: row["id"]
-            for row in self.cloudant.post_view(
+            for row in self.connection.post_view(
                 db=self.dbname, ddoc="names", view="name", reduce=False
             ).get_result()["rows"]
         }
         self.proj_list = {
             row["key"]: row["value"]
-            for row in self.cloudant.post_view(
+            for row in self.connection.post_view(
                 db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
             ).get_result()["rows"]
             if row["key"]
@@ -163,13 +163,13 @@ class NanoporeRunConnection(statusdb_connection):
         self.dbname = dbname
         self.name_view = {
             row["key"]: row["id"]
-            for row in self.cloudant.post_view(
+            for row in self.connection.post_view(
                 db=self.dbname, ddoc="names", view="name", reduce=False
             ).get_result()["rows"]
         }
         self.proj_list = {
             row["key"]: row["value"]
-            for row in self.cloudant.post_view(
+            for row in self.connection.post_view(
                 db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
             ).get_result()["rows"]
             if row["key"]
