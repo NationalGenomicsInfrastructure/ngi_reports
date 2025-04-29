@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-import couchdb
 import os
 import yaml
-
 from datetime import datetime
 from ibmcloudant import CouchDbSessionAuthenticator, cloudant_v1
 
@@ -13,7 +11,7 @@ class statusdb_connection(object):
     file in home, if not try with provided config
 
     :param dict config: a dictionary with essential info to make a connection
-    :param logger log: a logger instance to log information when neccesary
+    :param logger log: a logger instance to log information when necessary
     """
 
     def __init__(self, config=None, log=None):
@@ -37,45 +35,41 @@ class statusdb_connection(object):
         self.user = config.get("username")
         self.pwrd = config.get("password")
         self.url = config.get("url")
-        self.url_string = "https://{}:{}@{}".format(self.user, self.pwrd, self.url)
-        self.display_url_string = "https://{}:{}@{}".format(
-            self.user, "*********", self.url
-        )
-        self.connection = couchdb.Server(url=self.url_string)
-        cloudant = cloudant_v1.CloudantV1(
-            authenticator=CouchDbSessionAuthenticator(self.user, self.pwrd)
-        )
-        cloudant.set_service_url(f"https://{self.url}")
-        if cloudant:
-            self.cloudant = cloudant
-        if (not self.connection) or (not self.cloudant):
+        self.display_url_string = f"https://{self.user}:********@{self.url}"
+
+        # Initialize IBM Cloudant client
+        authenticator = CouchDbSessionAuthenticator(self.user, self.pwrd)
+        self.connection = cloudant_v1.CloudantV1(authenticator=authenticator)
+        self.connection.set_service_url(f"https://{self.url}")
+
+        # Test connection
+        try:
+            self.connection.get_server_information().get_result()
+        except Exception as e:
             raise SystemExit(
-                "Connection failed for url {}, also check the information in config".format(
-                    self.display_url_string
-                )
+                f"Connection failed for URL {self.display_url_string}. Error: {e}"
             )
 
     def get_entry(self, name, use_id_view=False):
         """Retrieve entry from given db for a given name.
 
         :param name: unique name identifier (primary key, not the uuid)
-        :param db: name of db to fetch data from
         """
-        if use_id_view:
-            view = self.id_view
-        else:
-            view = self.name_view
-        if not view.get(name, None):
+        view = self.id_view if use_id_view else self.name_view
+        if name not in view:
             if self.log:
-                self.log.warn("no entry '{}' in {}".format(name, self.db))
+                self.log.warn(f"No entry '{name}' in {self.dbname}")
             return None
-        if type(self) is NanoporeRunConnection:
-            doc = self.cloudant.get_document(
-                db=self.dbname, doc_id=view.get(name)
+
+        try:
+            doc = self.connection.get_document(
+                db=self.dbname, doc_id=view[name]
             ).get_result()
-        else:
-            doc = self.db.get(view.get(name))
-        return doc
+            return doc
+        except Exception as e:
+            if self.log:
+                self.log.error(f"Error retrieving document '{name}': {e}")
+            return None
 
     def get_project_flowcell(
         self, project_id, open_date="2015-01-01", date_format="%Y-%m-%d"
@@ -88,85 +82,72 @@ class statusdb_connection(object):
         """
         try:
             open_date = datetime.strptime(open_date, date_format)
-        except:
+        except TypeError:
             open_date = datetime.strptime("2015-01-01", "%Y-%m-%d")
 
         project_flowcells = {}
-        if type(self) is NanoporeRunConnection:
-            found_fcs = []
-            for flowcell in self.proj_list.keys():
-                found_fcs.append(flowcell)
-            date_sorted_fcs = sorted(
-                found_fcs,
-                key=lambda k: datetime.strptime(k.split("_")[0], "%Y%m%d"),
-                reverse=True,
-            )
-            for fc in date_sorted_fcs:
+        time_format = "%Y%m%d" if type(self) is NanoporeRunConnection else "%y%m%d"
+        date_sorted_fcs = sorted(
+            list(self.proj_list.keys()),
+            key=lambda k: datetime.strptime(k.split("_")[0], time_format),
+            reverse=True,
+        )
+        for fc in date_sorted_fcs:
+            if type(self) is NanoporeRunConnection:
                 fc_date, fc_time, position, fc_name, fc_hash = fc.split(
                     "_"
                 )  # 20220721_1216_1G_PAM62368_3ae8de85
-                if (
-                    project_id in self.proj_list[fc]
-                    and fc_name not in project_flowcells.keys()
-                ):
-                    project_flowcells[fc_name] = {
-                        "name": fc_name,
-                        "run_name": fc,
-                        "date": fc_date,
-                        "db": self.dbname,
-                    }
-        else:
-            date_sorted_fcs = sorted(
-                list(self.proj_list.keys()),
-                key=lambda k: datetime.strptime(k.split("_")[0], "%y%m%d"),
-                reverse=True,
-            )
-            for fc in date_sorted_fcs:
-                fc_date, fc_name = fc.split("_")
-                if (
-                    datetime.strptime(fc_date, "%y%m%d") < open_date
-                ):  # 220404_000000000-K797K
-                    break
-                if (
-                    project_id in self.proj_list[fc]
-                    and fc_name not in project_flowcells.keys()
-                ):
-                    project_flowcells[fc_name] = {
-                        "name": fc_name,
-                        "run_name": fc,
-                        "date": fc_date,
-                        "db": self.db.name,
-                    }
+            else:
+                fc_date, fc_name = fc.split("_")  # 220404_000000000-K797K
+            if datetime.strptime(fc_date, time_format) < open_date:
+                break
+            if (
+                project_id in self.proj_list[fc]
+                and fc_name not in project_flowcells.keys()
+            ):
+                project_flowcells[fc_name] = {
+                    "name": fc_name,
+                    "run_name": fc,
+                    "date": fc_date,
+                    "db": self.dbname,
+                }
         return project_flowcells
 
 
 class ProjectSummaryConnection(statusdb_connection):
     def __init__(self, dbname="projects"):
         super(ProjectSummaryConnection, self).__init__()
-        self.db = self.connection[dbname]
+        self.dbname = dbname
         self.name_view = {
-            k.key: k.id for k in self.db.view("project/project_name", reduce=False)
+            row["key"]: row["id"]
+            for row in self.connection.post_view(
+                db=self.dbname, ddoc="project", view="project_name", reduce=False
+            ).get_result()["rows"]
         }
         self.id_view = {
-            k.key: k.id for k in self.db.view("project/project_id", reduce=False)
+            row["key"]: row["id"]
+            for row in self.connection.post_view(
+                db=self.dbname, ddoc="project", view="project_id", reduce=False
+            ).get_result()["rows"]
         }
-
-
-class SampleRunMetricsConnection(statusdb_connection):
-    def __init__(self, dbname="samples"):
-        super(SampleRunMetricsConnection, self).__init__()
-        self.db = self.connection[dbname]
 
 
 class X_FlowcellRunMetricsConnection(statusdb_connection):
     def __init__(self, dbname="x_flowcells"):
         super(X_FlowcellRunMetricsConnection, self).__init__()
-        self.db = self.connection[dbname]
-        self.name_view = {k.key: k.id for k in self.db.view("names/name", reduce=False)}
+        self.dbname = dbname
+        self.name_view = {
+            row["key"]: row["id"]
+            for row in self.connection.post_view(
+                db=self.dbname, ddoc="names", view="name", reduce=False
+            ).get_result()["rows"]
+        }
         self.proj_list = {
-            k.key: k.value
-            for k in self.db.view("names/project_ids_list", reduce=False)
-            if k.key
+            row["key"]: row["value"]
+            for row in self.connection.post_view(
+                db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
+            ).get_result()["rows"]
+            if row["key"]
         }
 
 
@@ -175,15 +156,15 @@ class NanoporeRunConnection(statusdb_connection):
         super(NanoporeRunConnection, self).__init__()
         self.dbname = dbname
         self.name_view = {
-            k["key"]: k["id"]
-            for k in self.cloudant.post_view(
+            row["key"]: row["id"]
+            for row in self.connection.post_view(
                 db=self.dbname, ddoc="names", view="name", reduce=False
             ).get_result()["rows"]
         }
         self.proj_list = {
-            k["key"]: k["value"]
-            for k in self.cloudant.post_view(
+            row["key"]: row["value"]
+            for row in self.connection.post_view(
                 db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
             ).get_result()["rows"]
-            if k["key"]
+            if row["key"]
         }

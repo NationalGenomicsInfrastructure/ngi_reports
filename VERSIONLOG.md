@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20250428.1
+Replace couchdb package with ibmcloudant
+
 ## 20250409.1
 Refactor entities.py by populating Lane object in the Lane instead
 

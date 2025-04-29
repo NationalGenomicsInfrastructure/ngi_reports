@@ -1,7 +1,5 @@
 from setuptools import setup, find_packages
 from ngi_reports import __version__
-import sys, os
-
 
 try:
     with open("requirements.txt", "r") as f:
