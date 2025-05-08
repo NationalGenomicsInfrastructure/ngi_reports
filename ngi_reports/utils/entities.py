@@ -299,6 +299,9 @@ class Flowcell:
             laneObj.total_reads_proj = round(laneObj.total_reads_proj / lane_divisor, 2)
             laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
             laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
+            
+    def populate_element_flowcell(self):
+        pass
 
     def populate_ont_flowcell(self):
         final_acquisition = self.fc_details.get("acquisitions")[-1]
@@ -585,10 +588,13 @@ class Project:
         assert xcon, "Could not connect to x_flowcells database in StatusDB"
         ontcon = statusdb.NanoporeRunConnection()
         assert ontcon, "Could not connect to nanopore_runs database in StatusDB"
+        elementcon = statusdb.ElementRunConnection()
+        assert elementcon, "Could not connect to element_runs database in StatusDB"
         flowcell_info = xcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
         flowcell_info.update(
             ontcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
         )
+        flowcell_info.update(elementcon.get_project_flowcell(self.ngi_id))
 
         sample_qval = defaultdict(dict)
 
@@ -611,6 +617,10 @@ class Project:
             elif fc["db"] == "nanopore_runs":
                 fcObj = Flowcell(fc, self.ngi_name, ontcon)
                 fcObj.populate_ont_flowcell()
+
+            elif fc["db"] == "element_runs":
+                fcObj = Flowcell(fc, self.ngi_name, elementcon)
+                fcObj.populate_element_flowcell()
 
             else:
                 log.error(f"Unkown database: {fc['db']}. Exiting.")

@@ -86,7 +86,11 @@ class statusdb_connection(object):
             open_date = datetime.strptime("2015-01-01", "%Y-%m-%d")
 
         project_flowcells = {}
-        time_format = "%Y%m%d" if type(self) is NanoporeRunConnection else "%y%m%d"
+        time_format = (
+            "%Y%m%d"
+            if type(self) is NanoporeRunConnection or ElementRunConnection
+            else "%y%m%d"
+        )
         date_sorted_fcs = sorted(
             list(self.proj_list.keys()),
             key=lambda k: datetime.strptime(k.split("_")[0], time_format),
@@ -94,11 +98,14 @@ class statusdb_connection(object):
         )
         for fc in date_sorted_fcs:
             if type(self) is NanoporeRunConnection:
-                fc_date, fc_time, position, fc_name, fc_hash = fc.split(
-                    "_"
-                )  # 20220721_1216_1G_PAM62368_3ae8de85
+                # 20220721_1216_1G_PAM62368_3ae8de85
+                fc_date, fc_time, position, fc_name, fc_hash = fc.split("_")
+            elif type(self) is ElementRunConnection:
+                # 20250417_AV242106_A2440533805
+                fc_date, sequencer_id, fc_name = fc.split("_")
             else:
-                fc_date, fc_name = fc.split("_")  # 220404_000000000-K797K
+                # 220404_000000000-K797K
+                fc_date, fc_name = fc.split("_")
             if datetime.strptime(fc_date, time_format) < open_date:
                 break
             if (
@@ -148,6 +155,25 @@ class X_FlowcellRunMetricsConnection(statusdb_connection):
                 db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
             ).get_result()["rows"]
             if row["key"]
+        }
+
+
+class ElementRunConnection(statusdb_connection):
+    def __init__(self, dbname="element_runs"):
+        super(ElementRunConnection, self).__init__()
+        self.dbname = dbname
+        self.name_view = {
+            k["key"]: k["id"]
+            for k in self.cloudant.post_view(
+                db=self.dbname, ddoc="names", view="name", reduce=False
+            ).get_result()["rows"]  # TODO: add views to statusdb
+        }
+        self.proj_list = {
+            k["key"]: k["value"]
+            for k in self.cloudant.post_view(
+                db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
+            ).get_result()["rows"]
+            if k["key"]
         }
 
 

@@ -64,19 +64,20 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
             )
         elif proj.sequencer_manufacturer == "ont":
             report_mod = __import__(
-                "ngi_reports.reports.ont_project_summary", fromlist=["ngi_reports.reports"]
+                "ngi_reports.reports.ont_project_summary",
+                fromlist=["ngi_reports.reports"],
             )
         elif proj.sequencer_manufacturer == "element":
-            LOG.warning(
-                "Project summary report for Element sequencing projects is not yet implemented. Aborting."
+            report_mod = __import__(
+                "ngi_reports.reports.element_project_summary",
+                fromlist=["ngi_reports.reports"],
             )
-            sys.exit(0)
         elif proj.sequencer_manufacturer == "unknown":
             LOG.warning(
                 "Unknown sequencer manufacturer detected. Please make sure that the sequencing_platform field in statusdb is filled in."
             )
             sys.exit(1)
-    else: 
+    else:
         LOG.warning(f"Report type '{report_type}' is not yet implemented. Aborting.")
         sys.exit(0)
 
@@ -122,7 +123,9 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
         if report_type == "project_summary":
             template = env.get_template("project_summary.md")
         else:
-            LOG.warning(f"Report type '{report_type}' is not yet implemented. Aborting.")
+            LOG.warning(
+                f"Report type '{report_type}' is not yet implemented. Aborting."
+            )
             sys.exit(0)
     except:
         LOG.error("Could not load the Jinja report template")
