@@ -40,7 +40,6 @@ class Report(ngi_reports.reports.project_summary.Report):
         )
 
         for fc in sorted_project_fcs.values():
-            # TODO: {"R1": 301, "R2": 301, "I1": 10, "I2": 10} -> 301nt(Read1)-10nt(Index1)-10nt(Index2)-301nt(Read2)
             run_setup_text = f"{fc.run_setup['R1']}nt(Read1)-{fc.run_setup['I1']}nt(Index1)-{fc.run_setup['I2']}nt(Index2)-{fc.run_setup['R2']}nt(Read2)"
             throughput_versions = {
                 "High": "High",  # TODO: check this in statusdb

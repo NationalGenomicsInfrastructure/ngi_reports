@@ -305,7 +305,6 @@ class Flowcell:
         fc_runparameters = self.fc_details.get("instrument_generated_files", {}).get(
             "RunParameters.json", {}
         )
-        self.fc_type = fc_runparameters.get("")  # TODO: add
         self.run_setup = fc_runparameters.get(
             "Cycles", {}
         )  # {"R1": 301, "R2": 301, "I1": 10, "I2": 10}
