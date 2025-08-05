@@ -12,7 +12,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         super(Report, self).__init__(LOG, working_dir, **kwargs)
 
     def generate_report_template(self, proj, template, support_email):
-        ## Check and exit if signature not provided
+        # Check and exit if signature not provided
         if not self.signature:
             self.LOG.error(
                 "It is required to provide Signature/Name while generating 'project_summary' report, see -s opition in help"
@@ -21,11 +21,11 @@ class Report(ngi_reports.reports.project_summary.Report):
         else:
             self.report_info["signature"] = self.signature
 
-        ## Helper vars
+        # Helper vars
         seq_methods = OrderedDict()
         dem_methods = OrderedDict()
 
-        ## Get information for the report
+        # Get information for the report
         self.report_basename = proj.ngi_name
         self.report_info["support_email"] = support_email
         self.report_info["dates"] = self.get_order_dates(proj.dates)
@@ -34,88 +34,41 @@ class Report(ngi_reports.reports.project_summary.Report):
             proj.accredited, proj.library_construction, proj.ngi_name
         )
 
-        ## Get sequecing method for the flowcell
-        seq_template = "{}) Samples were sequenced on {} ({}) with a {} setup using {}."  # TODO: Update
-        ## Get demultiplexing method for the flowcell
-        dem_template = "{}) The Bases to FastQ conversion was performed using {} version {}."  # TODO: update
-        ## Collect required information for all flowcell run for the project
+        # Collect required information for all flowcell run for the project
         sorted_project_fcs = dict(
             sorted(proj.flowcells.items(), key=lambda item: item[1].date)
         )
 
         for fc in sorted_project_fcs.values():
-            ## Sort by the order of reads
-            run_setup = sorted(fc.run_setup, key=lambda k: k["Number"])
-            run_setup_text = ""
-            read_count = 0
-            index_count = 0
-            for read in run_setup:
-                run_setup_text += read["NumCycles"]
-                run_setup_text += "nt"
-                if read["IsIndexedRead"] == "N":
-                    read_count += 1
-                    run_setup_text += "(Read"
-                    run_setup_text += str(read_count)
-                elif read["IsIndexedRead"] == "Y":
-                    index_count += 1
-                    run_setup_text += "(Index"
-                    run_setup_text += str(index_count)
-                if run_setup.index(read) == len(run_setup) - 1:
-                    run_setup_text += ")"
-                else:
-                    run_setup_text += ")-"
+            # TODO: {"R1": 301, "R2": 301, "I1": 10, "I2": 10} -> 301nt(Read1)-10nt(Index1)-10nt(Index2)-301nt(Read2)
+            run_setup_text = f"{fc.run_setup['R1']}nt(Read1)-{fc.run_setup['I1']}nt(Index1)-{fc.run_setup['I2']}nt(Index2)-{fc.run_setup['R2']}nt(Read2)"
+            throughput_versions = {
+                "High": "High",  # TODO: check this in statusdb
+                "Med": "Medium",
+                "Low": "Low",
+            }
+            throughput_text = f"{fc.fc_type['Type']} {throughput_versions[fc.fc_type['Throughput']]} Output"  # Cloudbreak FS Medium Output
+            tmp_seq_method = f"SECTION) Samples were sequenced on {fc.type} with {throughput_text} throughput and a {run_setup_text} setup."
+            tmp_dem_method = f"SECTION) The Bases to FastQ conversion was performed using bases2fastq version {fc.seq_software['bases2fastq_version']}."
 
-            if fc.type == "NovaSeq6000":
-                fc_chem = "'{}' workflow in '{}' mode flowcell".format(
-                    fc.chemistry.get("WorkflowType"), fc.chemistry.get("FlowCellMode")
-                )
-            elif fc.type == "NovaSeqXPlus":
-                fc_chem = "'{}' mode flowcell".format(
-                    fc.chemistry.get("RecipeName").replace(" Sequencing", "")
-                )
-            elif fc.type == "NextSeq500":
-                fc_chem = "'{}-Output' chemistry".format(fc.chemistry.get("Chemistry"))
-            elif fc.type == "NextSeq2000":
-                fc_chem = "'{}' flowcell".format(fc.chemistry.get("Chemistry"))
-            else:
-                fc_chem = "'{}' chemistry".format(fc.chemistry.get("Chemistry"))
-
-            applicationName = (
-                "MSC" if fc.type == "MiSeq" else fc.seq_software.get("ApplicationName")
-            )
-            if fc.type == "NovaSeqXPlus":
-                seq_software = "{} {}".format(
-                    applicationName, fc.seq_software.get("ApplicationVersion")
-                )
-            else:
-                seq_software = "{} {}/RTA {}".format(
-                    applicationName,
-                    fc.seq_software.get("ApplicationVersion"),
-                    fc.seq_software.get("RTAVersion"),
-                )
-            tmp_seq_method = seq_template.format(
-                "SECTION", fc.type, seq_software, run_setup_text, fc_chem
-            )
-            tmp_dem_method = dem_template.format("SECTION", fc.casava)
-
-            ## to make sure the sequencing methods are unique
+            # Make sure the sequencing methods are unique
             if tmp_seq_method not in list(seq_methods.keys()):
                 seq_methods[tmp_seq_method] = alphabets[len(list(seq_methods.keys()))]
             fc.seq_meth = seq_methods[tmp_seq_method]
 
-            ## to make sure the demux methods are unique
+            # Make sure the demux methods are unique
             if tmp_dem_method not in list(dem_methods.keys()):
                 dem_methods[tmp_dem_method] = alphabets[len(list(dem_methods.keys()))]
             fc.dem_meth = dem_methods[tmp_dem_method]
 
-        ## give proper section name for the methods
+        # Give proper section name for the methods
         self.report_info["sequencing_methods"] = "\n\n".join(
             [m.replace("SECTION", seq_methods[m]) for m in seq_methods]
         )
         self.report_info["demultiplexing_methods"] = "\n\n".join(
             [m.replace("SECTION", dem_methods[m]) for m in dem_methods]
         )
-        ## Check if sequencing and demultiplexing info is complete
+        # Check if sequencing and demultiplexing info is complete
         if not self.report_info["sequencing_methods"]:
             self.LOG.warn(
                 "Sequencing methods may have some missing information, kindly check your inputs."
@@ -129,7 +82,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         ##### Create table text and header explanation from collected information #####
         ###############################################################################
 
-        ## sample_info table
+        # sample_info table
         unit_magnitude = {"#reads": "", "Kreads": " Thousand", "Mreads": " Million"}
         sample_header = ["NGI ID", "User ID", "RC", proj.samples_unit, ">=Q30"]
         sample_filter = [
@@ -160,7 +113,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             )
         )
 
-        ## library_info table
+        # library_info table
         library_header = ["NGI ID", "Index", "Lib. Prep", "Avg. FS(bp)", "Lib. QC"]
         library_filter = ["ngi_id", "barcode", "label", "avg_size", "qc_status"]
         library_list = []
@@ -188,12 +141,12 @@ class Report(ngi_reports.reports.project_summary.Report):
             "* _Lib. QC:_ Library quality control status\n"
         )
 
-        ## lanes_info table
+        # lanes_info table
         lanes_header = [
             "Date",
             "FC id",
             "Lane",
-            "Cluster(M)",
+            "Polonies(M)",
             ">=Q30(%)",
             "Phix",
             "Method",
@@ -225,7 +178,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             "* _Date:_ Date of sequencing\n"
             "* _Flowcell:_ Flowcell identifier\n"
             "* _Lane:_ Flowcell lane number\n"
-            "* _Clusters:_ Number of clusters that passed the read filters (millions)\n"
+            "* _Polonies:_ Number of polonies that passed the read filters (millions)\n"
             "* _>=Q30:_ Aggregated percentage of bases that have a quality score ≥ Q30\n"
             "* _PhiX:_ Average PhiX error rate for the lane\n"
             "* _Method:_ Sequencing method used. See description under Sequencing heading above.\n"

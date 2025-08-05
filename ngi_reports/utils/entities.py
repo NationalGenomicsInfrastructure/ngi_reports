@@ -299,9 +299,25 @@ class Flowcell:
             laneObj.total_reads_proj = round(laneObj.total_reads_proj / lane_divisor, 2)
             laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
             laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
-            
+
     def populate_element_flowcell(self):
-        pass
+        self.type = "Element AVITI"
+        fc_runparameters = self.fc_details.get("instrument_generated_files", {}).get(
+            "RunParameters.json", {}
+        )
+        self.fc_type = fc_runparameters.get("")  # TODO: add
+        self.run_setup = fc_runparameters.get(
+            "Cycles", {}
+        )  # {"R1": 301, "R2": 301, "I1": 10, "I2": 10}
+        self.fc_type = {
+            "Type": fc_runparameters.get("ChemistryVersion", {}),
+            "Throughput": fc_runparameters.get("ThroughputSelection", ""),
+        }  # = "Med"
+        self.seq_software = {
+            "bases2fastq_version": self.fc_details.get("Software", {}).get(
+                "Version", {}
+            )
+        }
 
     def populate_ont_flowcell(self):
         final_acquisition = self.fc_details.get("acquisitions")[-1]

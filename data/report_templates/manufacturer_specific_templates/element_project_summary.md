@@ -80,7 +80,7 @@ Below you can find an explanation of the header column used in the table.
 {% if project.missing_fc %}
 No lanes information to be displayed.
 {% else %}
-Date | Flowcell | Lane | Clusters(M) | >=Q30(%) | PhiX | Method
+Date | Flowcell | Lane | Polonies(M) | >=Q30(%) | PhiX | Method
 :-----|:----------|:------|:-------------|:----------|:------|:-------
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {% for lane in fc.lanes.values() -%}
