@@ -1,4 +1,3 @@
-NGI is an accredited facility. However, the workflows used for this project is not under accreditation.
 
 # Methods
 
@@ -27,18 +26,7 @@ Data delivery is done via the SciLifeLab **Data Delivery System (DDS)**, from wh
 When Best Practice analysis is applicable, information about the pipeline that has been used (version etc.) can be found in the corresponding MultiQC report.
 
 ### Workflow
-
-Library preparation
-:   {{ report_info.accredit.library_preparation }}
-
-Sequencing
-:   {{ report_info.accredit.sequencing }}
-
-Data Processing
-:   {{ report_info.accredit.data_processing }}
-
-Data Analysis
-:   {{ report_info.accredit.data_analysis }}
+NGI is an accredited facility. However, the workflows used for this project is not under accreditation.
 
 # Sample Information
 {% if not project.samples %}

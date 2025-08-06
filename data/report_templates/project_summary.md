@@ -72,6 +72,7 @@ In cases where samples and/or libraries have failed the QC, the user is always c
 {% if not project.skip_fastq -%}
 ## Naming conventions
 
+{% if "illumina" in project.sequencer_manufacturer -%}
 The data is delivered in FastQ format using Illumina 1.8 quality scores.
 There will be one file for the forward reads and one file for the
 reverse reads (if the run was a paired-end run).
@@ -87,6 +88,22 @@ The naming of the files follow the convention:
 * _LANE:_ Sequencing lane that the file originates from
 * _READ:_ Forward(1) or reverse(2) read identifier
 * _VOLUME:_ Volume index when file is large enough to be split into volumes
+{% elif "element" in project.sequencer_manufacturer -%}
+The data is delivered in FastQ format. There will be one file for the forward 
+reads and one file for the reverse reads (if the run was a paired-end run).
+
+The naming of the files follow the legacy format based on Illumina output naming:
+
+```
+[NGI-NAME]_[CONVERSION-ID]_[LANE]_[READ]_[VOLUME].fastq.gz
+```
+
+* _NGI-NAME:_ Internal NGI sample identifier
+* _CONVERSION-ID:_ Identifier set by bases2fastq tool while demultiplexing
+* _LANE:_ Sequencing lane that the file originates from
+* _READ:_ Forward(1) or reverse(2) read identifier
+* _VOLUME:_ Volume index when file is large enough to be split into volumes
+{%- endif %}
 {%- endif %}
 
 
