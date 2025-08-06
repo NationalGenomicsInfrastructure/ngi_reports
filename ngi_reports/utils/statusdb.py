@@ -67,7 +67,7 @@ class statusdb_connection(object):
         project_flowcells = {}
         time_format = (
             "%Y%m%d"
-            if type(self) is (NanoporeRunConnection or ElementRunConnection)
+            if type(self) in (NanoporeRunConnection, ElementRunConnection)
             else "%y%m%d"
         )
         date_sorted_fcs = sorted(
