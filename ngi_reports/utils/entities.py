@@ -212,7 +212,7 @@ class Flowcell:
         self.barcode_lane_statistics = (
             self.fc_details.get("illumina", {})
             .get("Demultiplex_Stats", {})
-            .get("Barcode_lane_statistics", [])
+            .get("Barcode_lane_statistics", [])  # TODO: what is this for aviti?
         )
         for barcode_stat in self.barcode_lane_statistics:
             if (
@@ -268,7 +268,7 @@ class Flowcell:
             )
             if lane not in self.lanes:
                 laneObj = Lane(lane)
-                laneObj.populate_lane(
+                laneObj.populate_illumina_lane(
                     fc_lane_summary_lims,
                     fc_lane_summary_demux,
                     num_cycles,
@@ -300,7 +300,7 @@ class Flowcell:
             laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
             laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
 
-    def populate_element_flowcell(self):
+    def populate_element_flowcell(self, log, **kwargs):
         self.type = "Element AVITI"
         fc_runparameters = self.fc_details.get("instrument_generated_files", {}).get(
             "RunParameters.json", {}
@@ -317,6 +317,87 @@ class Flowcell:
                 "Version", {}
             )
         }
+        self.barcode_lane_statistics = (
+            self.fc_details.get("Element", {})
+            .get("Demultiplex_Stats", {})
+            .get("Index_Assignment", [])
+        )
+        for barcode_stat in self.barcode_lane_statistics:
+            if re.sub("_+", ".", barcode_stat["Project"], 1) != self.project_name:
+                continue
+
+            lane = barcode_stat.get("Lane")
+            sample = barcode_stat.get("SampleName")
+            barcode = f"{barcode_stat.get('I1')}+{barcode_stat.get('I2')}"
+
+            if not lane or not sample or not barcode:
+                log.warning(
+                    "Insufficient info/malformed data in Index_Assignment "
+                    f"in FC {self.run_name}, skipping..."
+                )
+                continue
+
+            if kwargs.get("samples", []) and sample not in kwargs.get("samples", []):
+                continue
+
+            try:
+                read_index = f"{lane}_{self.name}_{barcode}"
+                num_cycles = [
+                    int(self.run_setup.get("R1")),
+                    int(self.run_setup.get("R2")),
+                ]
+                qval = float(barcode_stat.get("PercentQ30"))
+                pf_reads = int(
+                    barcode_stat.get("NumPoloniesAssigned")
+                )  # TODO: check that this is the right field
+                base = pf_reads * sum(num_cycles)
+                self.fc_sample_qvalues[sample][read_index] = {
+                    "qval": qval,
+                    "reads": pf_reads,
+                    "bases": base,
+                }
+
+            except (TypeError, ValueError, AttributeError) as e:
+                log.warning(
+                    f"Something went wrong while fetching Q30 for sample {sample} with "
+                    f"barcode {barcode} in FC {self.name} at lane {lane}. Error was: \n{e}"
+                )
+                pass
+
+            # Collect lanes of interest
+            fc_lane_summary_lims = self.fc_details.get("lims_data", {}).get(
+                "run_summary", {}
+            )
+            fc_lane_summary_demux = (
+                self.fc_details.get("instrument_generated_files", {})
+                .get("AvitiRunStats.json", {})
+                .get("LaneStats", {})
+            )
+            if lane not in self.lanes:
+                laneObj = Lane(lane)
+                laneObj.populate_element_lane(
+                    fc_lane_summary_lims,
+                    fc_lane_summary_demux,
+                    num_cycles,
+                    self.name,
+                    **kwargs,
+                )
+                laneObj.increase_total_reads_and_q30(pf_reads, qval)
+                self.lanes[lane] = laneObj
+            # Add total reads and Q30 to lane data
+            else:
+                laneObj = self.lanes[lane]
+                laneObj.increase_total_reads_and_q30(pf_reads, qval)
+
+        # Add units and round off value
+        for lane in self.lanes:
+            laneObj = self.lanes[lane]
+            laneObj.reads_unit, lane_divisor = get_units_and_divisor(
+                laneObj.total_reads_proj
+            )
+            laneObj.total_reads_proj = round(laneObj.total_reads_proj / lane_divisor, 2)
+            laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
+            laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
 
     def populate_ont_flowcell(self):
         final_acquisition = self.fc_details.get("acquisitions")[-1]
@@ -374,7 +455,7 @@ class Lane:
         self.total_reads_with_qval_proj = 0
         self.reads_unit = "#reads"
 
-    def populate_lane(
+    def populate_illumina_lane(
         self,
         fc_lane_summary_lims,
         fc_lane_summary_demux,
@@ -394,6 +475,37 @@ class Lane:
         self.avg_qval = "{:.2f}".format(
             round(float(lane_sum_demux.get("% >= Q30bases", "0.00")), 2)
         )
+        try:
+            mean_phix = np.mean(
+                [
+                    float(lane_sum_lims.get(f"% Error Rate R{r}"))
+                    for r in range(1, len(num_cycles) + 1)
+                ]
+            )
+            self.phix = "{:.2f}".format(round(mean_phix, 2))
+        except TypeError:
+            self.phix = None
+        if kwargs.get("fc_phix", {}).get(FC_name, {}):
+            self.phix = kwargs.get("fc_phix").get(FC_name).get(self.id)
+
+    def populate_element_lane(
+        self,
+        fc_lane_summary_lims,
+        fc_lane_summary_demux,
+        num_cycles,
+        FC_name,
+        **kwargs,
+    ):
+        lane_sum_lims = fc_lane_summary_lims.get(
+            self.id, fc_lane_summary_lims.get("A", {})
+        )
+        for d in fc_lane_summary_demux:
+            if str(d.get("Lane")) == (self.id):
+                lane_sum_demux = d
+        pf_polonies = float(lane_sum_demux.get("PFCount", "0"))
+        print(f"PF Polonies: {pf_polonies}")
+        mil_pf_polonies = round(pf_polonies / 1000000, 2)
+        self.polonies = "{:.2f}".format(mil_pf_polonies)
         try:
             mean_phix = np.mean(
                 [
@@ -647,7 +759,15 @@ class Project:
 
             elif fc["db"] == "element_runs":
                 fcObj = Flowcell(fc, self.ngi_name, elementcon)
-                fcObj.populate_element_flowcell()
+                fcObj.populate_element_flowcell(log, **kwargs)
+                for sample in fcObj.fc_sample_qvalues.keys():
+                    if sample_qval[sample]:
+                        for sample_run in fcObj.fc_sample_qvalues[sample].keys():
+                            sample_qval[sample][sample_run] = fcObj.fc_sample_qvalues[
+                                sample
+                            ][sample_run]
+                    else:
+                        sample_qval[sample] = fcObj.fc_sample_qvalues[sample]
 
             else:
                 log.error(f"Unkown database: {fc['db']}. Exiting.")
