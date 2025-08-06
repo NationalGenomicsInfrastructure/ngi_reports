@@ -50,27 +50,6 @@ class statusdb_connection(object):
                 f"Connection failed for URL {self.display_url_string}. Error: {e}"
             )
 
-    def get_entry(self, name, use_id_view=False):
-        """Retrieve entry from given db for a given name.
-
-        :param name: unique name identifier (primary key, not the uuid)
-        """
-        view = self.id_view if use_id_view else self.name_view
-        if name not in view:
-            if self.log:
-                self.log.warn(f"No entry '{name}' in {self.dbname}")
-            return None
-
-        try:
-            doc = self.connection.get_document(
-                db=self.dbname, doc_id=view[name]
-            ).get_result()
-            return doc
-        except Exception as e:
-            if self.log:
-                self.log.error(f"Error retrieving document '{name}': {e}")
-            return None
-
     def get_project_flowcell(
         self, project_id, open_date="2015-01-01", date_format="%Y-%m-%d"
     ):
@@ -88,7 +67,7 @@ class statusdb_connection(object):
         project_flowcells = {}
         time_format = (
             "%Y%m%d"
-            if type(self) is NanoporeRunConnection or ElementRunConnection
+            if type(self) is (NanoporeRunConnection or ElementRunConnection)
             else "%y%m%d"
         )
         date_sorted_fcs = sorted(
@@ -125,30 +104,61 @@ class ProjectSummaryConnection(statusdb_connection):
     def __init__(self, dbname="projects"):
         super(ProjectSummaryConnection, self).__init__()
         self.dbname = dbname
-        self.name_view = {
-            row["key"]: row["id"]
-            for row in self.connection.post_view(
-                db=self.dbname, ddoc="project", view="project_name", reduce=False
-            ).get_result()["rows"]
-        }
-        self.id_view = {
-            row["key"]: row["id"]
-            for row in self.connection.post_view(
-                db=self.dbname, ddoc="project", view="project_id", reduce=False
-            ).get_result()["rows"]
-        }
+
+    def get_entry(self, name, use_id_view=False):
+        """Retrieve entry from given db for a given name.
+
+        :param name: unique name identifier (primary key, not the uuid)
+        """
+        try:
+            doc = self.connection.post_view(
+                db=self.dbname,
+                ddoc="project",
+                view="project_name" if not use_id_view else "project_id",
+                key=name,
+                reduce=False,
+                include_docs=True,
+            ).get_result()["rows"][0]["doc"]
+            if not doc:
+                if self.log:
+                    self.log.warn(f"No entry '{name}' in {self.dbname}")
+                return None
+            return doc
+        except Exception as e:
+            if self.log:
+                self.log.error(f"Error retrieving document '{name}': {e}")
+            return None
 
 
-class X_FlowcellRunMetricsConnection(statusdb_connection):
+class GenericRunConnection(statusdb_connection):
+    def __init__(self, dbname=None):
+        super(GenericRunConnection, self).__init__()
+
+    def get_entry(self, name):
+        try:
+            doc = self.connection.post_view(
+                db=self.dbname,
+                ddoc="names",
+                view="project_ids_list",
+                key=name,
+                reduce=False,
+                include_docs=True,
+            ).get_result()["rows"][0]["doc"]
+            if not doc:
+                if self.log:
+                    self.log.warn(f"No entry '{name}' in {self.dbname}")
+                return None
+            return doc
+        except Exception as e:
+            if self.log:
+                self.log.error(f"Error retrieving document '{name}': {e}")
+            return None
+
+
+class X_FlowcellRunMetricsConnection(GenericRunConnection):
     def __init__(self, dbname="x_flowcells"):
         super(X_FlowcellRunMetricsConnection, self).__init__()
         self.dbname = dbname
-        self.name_view = {
-            row["key"]: row["id"]
-            for row in self.connection.post_view(
-                db=self.dbname, ddoc="names", view="name", reduce=False
-            ).get_result()["rows"]
-        }
         self.proj_list = {
             row["key"]: row["value"]
             for row in self.connection.post_view(
@@ -158,26 +168,20 @@ class X_FlowcellRunMetricsConnection(statusdb_connection):
         }
 
 
-class ElementRunConnection(statusdb_connection):
+class ElementRunConnection(GenericRunConnection):
     def __init__(self, dbname="element_runs"):
         super(ElementRunConnection, self).__init__()
         self.dbname = dbname
-        self.name_view = {
-            k["key"]: k["id"]
-            for k in self.cloudant.post_view(
-                db=self.dbname, ddoc="names", view="name", reduce=False
-            ).get_result()["rows"]  # TODO: add views to statusdb
-        }
         self.proj_list = {
             k["key"]: k["value"]
-            for k in self.cloudant.post_view(
+            for k in self.connection.post_view(
                 db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
             ).get_result()["rows"]
             if k["key"]
         }
 
 
-class NanoporeRunConnection(statusdb_connection):
+class NanoporeRunConnection(GenericRunConnection):
     def __init__(self, dbname="nanopore_runs"):
         super(NanoporeRunConnection, self).__init__()
         self.dbname = dbname
