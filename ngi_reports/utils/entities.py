@@ -599,17 +599,21 @@ class Project:
             self.samples[sample_id] = sampleObj
 
         # Get Flowcell data
-        xcon = statusdb.X_FlowcellRunMetricsConnection()
-        assert xcon, "Could not connect to x_flowcells database in StatusDB"
-        ontcon = statusdb.NanoporeRunConnection()
-        assert ontcon, "Could not connect to nanopore_runs database in StatusDB"
-        elementcon = statusdb.ElementRunConnection()
-        assert elementcon, "Could not connect to element_runs database in StatusDB"
-        flowcell_info = xcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
-        flowcell_info.update(
-            ontcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
-        )
-        flowcell_info.update(elementcon.get_project_flowcell(self.ngi_id))
+        if self.sequencer_manufacturer == "illumina":
+            xcon = statusdb.X_FlowcellRunMetricsConnection()
+            assert xcon, "Could not connect to x_flowcells database in StatusDB"
+            flowcell_info = xcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
+        elif self.sequencer_manufacturer == "ont":
+            ontcon = statusdb.NanoporeRunConnection()
+            assert ontcon, "Could not connect to nanopore_runs database in StatusDB"
+            flowcell_info = ontcon.get_project_flowcell(self.ngi_id, self.dates["open_date"])
+        elif self.sequencer_manufacturer == "element":
+            elementcon = statusdb.ElementRunConnection()
+            assert elementcon, "Could not connect to element_runs database in StatusDB"
+            flowcell_info = elementcon.get_project_flowcell(self.ngi_id)
+        else:
+            log.error(f"Unkown sequencer manufacturer: {self.sequencer_manufacturer}. Exiting.")
+            sys.exit(1)
 
         sample_qval = defaultdict(dict)
 
