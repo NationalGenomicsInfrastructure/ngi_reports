@@ -503,7 +503,6 @@ class Lane:
             if str(d.get("Lane")) == (self.id):
                 lane_sum_demux = d
         pf_polonies = float(lane_sum_demux.get("PFCount", "0"))
-        print(f"PF Polonies: {pf_polonies}")
         mil_pf_polonies = round(pf_polonies / 1000000, 2)
         self.polonies = "{:.2f}".format(mil_pf_polonies)
         try:
