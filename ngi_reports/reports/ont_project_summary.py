@@ -12,13 +12,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         super(Report, self).__init__(LOG, working_dir, **kwargs)
 
     def generate_report_template(self, proj, template, support_email):
-        if not self.signature:
-            self.LOG.error(
-                "It is required to provide Signature/Name while generating 'project_summary' report, see -s option in help"
-            )
-            raise SystemExit
-        else:
-            self.report_info["signature"] = self.signature
+        self.set_signature()
 
         seq_methods = OrderedDict()
 

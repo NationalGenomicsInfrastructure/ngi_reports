@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" Module for producing the Project Summary Report
+"""Module for producing the Project Summary Report
 Note: Much of this code was written by Pontus and lifted from
 the SciLifeLab repo
 """
@@ -13,7 +13,6 @@ import ngi_reports.reports
 
 
 class Report(ngi_reports.reports.BaseReport):
-
     ## initialize class and assign basic variables
     def __init__(self, LOG, working_dir, **kwargs):
         # Initialise the parent class
@@ -24,19 +23,10 @@ class Report(ngi_reports.reports.BaseReport):
         # report name and directory to be created
         self.report_dir = os.path.join(working_dir, "reports")
         self.report_basename = ""
-        self.signature = kwargs.get("signature")
         self.project = kwargs.get("project")
 
     def generate_report_template(self, proj, template, support_email):
-
-        ## Check and exit if signature not provided
-        if not self.signature:
-            self.LOG.error(
-                "It is required to provide Signature/Name while generating 'project_summary' report, see -s opition in help"
-            )
-            raise SystemExit
-        else:
-            self.report_info["signature"] = self.signature
+        self.set_signature()
 
         ## Helper vars
         seq_methods = OrderedDict()
@@ -60,7 +50,9 @@ class Report(ngi_reports.reports.BaseReport):
         )
         ## Collect required information for all flowcell run for the project
 
-        sorted_project_fcs = dict(sorted(proj.flowcells.items(), key=lambda item: item[1].date))
+        sorted_project_fcs = dict(
+            sorted(proj.flowcells.items(), key=lambda item: item[1].date)
+        )
 
         for fc in sorted_project_fcs.values():
             ## Sort by the order of readss
@@ -217,7 +209,15 @@ class Report(ngi_reports.reports.BaseReport):
             "Phix",
             "Method",
         ]
-        lanes_filter = ["date", "name", "id", "total_reads_proj", "weighted_avg_qval_proj", "phix", "seq_meth"]
+        lanes_filter = [
+            "date",
+            "name",
+            "id",
+            "total_reads_proj",
+            "weighted_avg_qval_proj",
+            "phix",
+            "seq_meth",
+        ]
         lanes_list = []
         for f, v in list(proj.flowcells.items()):
             for l in list(v.lanes.values()):
