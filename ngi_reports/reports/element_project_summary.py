@@ -55,10 +55,10 @@ class Report(ngi_reports.reports.project_summary.Report):
 
         # Give proper section name for the methods
         self.report_info["sequencing_methods"] = "\n\n".join(
-            [m.replace("SECTION", seq_methods[m]) for m in seq_methods]
+            [method.replace("SECTION", seq_methods[method]) for method in seq_methods]
         )
         self.report_info["demultiplexing_methods"] = "\n\n".join(
-            [m.replace("SECTION", dem_methods[m]) for m in dem_methods]
+            [method.replace("SECTION", dem_methods[method]) for method in dem_methods]
         )
         # Check if sequencing and demultiplexing info is complete
         if not self.report_info["sequencing_methods"]:
@@ -84,7 +84,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             "total_reads",
             "qscore",
         ]
-        for s, sample in list(proj.samples.items()):
+        for sample_id, sample in list(proj.samples.items()):
             sample = vars(sample)
             if sample["initial_qc"]["initial_qc_status"] == "PASSED":
                 sample["initial_qc"]["initial_qc_status"] = "[pass]"
@@ -109,17 +109,17 @@ class Report(ngi_reports.reports.project_summary.Report):
         library_header = ["NGI ID", "Index", "Lib. Prep", "Avg. FS(bp)", "Lib. QC"]
         library_filter = ["ngi_id", "barcode", "label", "avg_size", "qc_status"]
         library_list = []
-        for s, sample in list(proj.samples.items()):
-            for p in list(sample.preps.values()):
-                prep = vars(p)
-                prep["ngi_id"] = s
+        for sample_id, sample in list(proj.samples.items()):
+            for prep in list(sample.preps.values()):
+                prep = vars(prep)
+                prep["ngi_id"] = sample_id
                 if prep["qc_status"] == "PASSED":
                     prep["qc_status"] = "[pass]"
                 elif prep["qc_status"] == "FAILED":
                     prep["qc_status"] = "[fail]"
                 elif prep["qc_status"] == "NA":
                     prep["qc_status"] = "[na]"
-                library_list.append(p)
+                library_list.append(prep)
         self.tables_info["tables"]["library_info"] = self.create_table_text(
             sorted(library_list, key=lambda d: d["ngi_id"]),
             filter_keys=library_filter,
@@ -153,8 +153,8 @@ class Report(ngi_reports.reports.project_summary.Report):
             "seq_meth",
         ]
         lanes_list = []
-        for f, flowcell in list(proj.flowcells.items()):
-            for lane in list(v.lanes.values()):
+        for flowcell_id, flowcell in list(proj.flowcells.items()):
+            for lane in list(flowcell.lanes.values()):
                 lane = vars(lane)
                 lane["date"] = flowcell.date
                 lane["name"] = flowcell.name
