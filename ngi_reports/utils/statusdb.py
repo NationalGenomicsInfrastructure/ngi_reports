@@ -185,12 +185,6 @@ class NanoporeRunConnection(GenericRunConnection):
     def __init__(self, dbname="nanopore_runs"):
         super(NanoporeRunConnection, self).__init__()
         self.dbname = dbname
-        self.name_view = {
-            row["key"]: row["id"]
-            for row in self.connection.post_view(
-                db=self.dbname, ddoc="names", view="name", reduce=False
-            ).get_result()["rows"]
-        }
         self.proj_list = {
             row["key"]: row["value"]
             for row in self.connection.post_view(
