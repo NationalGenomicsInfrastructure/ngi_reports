@@ -212,7 +212,7 @@ class Flowcell:
         self.barcode_lane_statistics = (
             self.fc_details.get("illumina", {})
             .get("Demultiplex_Stats", {})
-            .get("Barcode_lane_statistics", [])  # TODO: what is this for aviti?
+            .get("Barcode_lane_statistics", [])
         )
         for barcode_stat in self.barcode_lane_statistics:
             if (
@@ -349,7 +349,7 @@ class Flowcell:
                 qval = float(barcode_stat.get("PercentQ30"))
                 pf_reads = int(
                     barcode_stat.get("NumPoloniesAssigned")
-                )  # TODO: check that this is the right field
+                )
                 base = pf_reads * sum(num_cycles)
                 self.fc_sample_qvalues[sample][read_index] = {
                     "qval": qval,
