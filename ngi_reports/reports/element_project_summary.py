@@ -84,14 +84,14 @@ class Report(ngi_reports.reports.project_summary.Report):
             "total_reads",
             "qscore",
         ]
-        for s, v in list(proj.samples.items()):
-            v = vars(v)
-            if v["initial_qc"]["initial_qc_status"] == "PASSED":
-                v["initial_qc"]["initial_qc_status"] = "[pass]"
-            elif v["initial_qc"]["initial_qc_status"] == "FAILED":
-                v["initial_qc"]["initial_qc_status"] = "[fail]"
-            elif v["initial_qc"]["initial_qc_status"] == "NA":
-                v["initial_qc"]["initial_qc_status"] = "[na]"
+        for s, sample in list(proj.samples.items()):
+            sample = vars(sample)
+            if sample["initial_qc"]["initial_qc_status"] == "PASSED":
+                sample["initial_qc"]["initial_qc_status"] = "[pass]"
+            elif sample["initial_qc"]["initial_qc_status"] == "FAILED":
+                sample["initial_qc"]["initial_qc_status"] = "[fail]"
+            elif sample["initial_qc"]["initial_qc_status"] == "NA":
+                sample["initial_qc"]["initial_qc_status"] = "[na]"
         self.tables_info["tables"]["sample_info"] = self.create_table_text(
             proj.samples.values(), filter_keys=sample_filter, header=sample_header
         )
@@ -109,16 +109,16 @@ class Report(ngi_reports.reports.project_summary.Report):
         library_header = ["NGI ID", "Index", "Lib. Prep", "Avg. FS(bp)", "Lib. QC"]
         library_filter = ["ngi_id", "barcode", "label", "avg_size", "qc_status"]
         library_list = []
-        for s, v in list(proj.samples.items()):
-            for p in list(v.preps.values()):
-                p = vars(p)
-                p["ngi_id"] = s
-                if p["qc_status"] == "PASSED":
-                    p["qc_status"] = "[pass]"
-                elif p["qc_status"] == "FAILED":
-                    p["qc_status"] = "[fail]"
-                elif p["qc_status"] == "NA":
-                    p["qc_status"] = "[na]"
+        for s, sample in list(proj.samples.items()):
+            for p in list(sample.preps.values()):
+                prep = vars(p)
+                prep["ngi_id"] = s
+                if prep["qc_status"] == "PASSED":
+                    prep["qc_status"] = "[pass]"
+                elif prep["qc_status"] == "FAILED":
+                    prep["qc_status"] = "[fail]"
+                elif prep["qc_status"] == "NA":
+                    prep["qc_status"] = "[na]"
                 library_list.append(p)
         self.tables_info["tables"]["library_info"] = self.create_table_text(
             sorted(library_list, key=lambda d: d["ngi_id"]),
@@ -153,13 +153,13 @@ class Report(ngi_reports.reports.project_summary.Report):
             "seq_meth",
         ]
         lanes_list = []
-        for f, v in list(proj.flowcells.items()):
-            for l in list(v.lanes.values()):
-                l = vars(l)
-                l["date"] = v.date
-                l["name"] = v.name
-                l["seq_meth"] = v.seq_meth
-                lanes_list.append(l)
+        for f, flowcell in list(proj.flowcells.items()):
+            for lane in list(v.lanes.values()):
+                lane = vars(lane)
+                lane["date"] = flowcell.date
+                lane["name"] = flowcell.name
+                lane["seq_meth"] = flowcell.seq_meth
+                lanes_list.append(lane)
 
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
             sorted(lanes_list, key=lambda d: "{}_{}".format(d["date"], d["id"])),
