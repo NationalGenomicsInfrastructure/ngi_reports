@@ -95,15 +95,11 @@ class Report(ngi_reports.reports.BaseReport):
                 "MSC" if fc.type == "MiSeq" else fc.seq_software.get("ApplicationName")
             )
             if fc.type == "NovaSeqXPlus":
-                seq_software = "{} {}".format(
-                    applicationName, fc.seq_software.get("ApplicationVersion")
+                seq_software = (
+                    f"{applicationName} {fc.seq_software.get('ApplicationVersion')}"
                 )
             else:
-                seq_software = "{} {}/RTA {}".format(
-                    applicationName,
-                    fc.seq_software.get("ApplicationVersion"),
-                    fc.seq_software.get("RTAVersion"),
-                )
+                seq_software = f"{applicationName} {fc.seq_software.get('ApplicationVersion')}/RTA {fc.seq_software.get('RTAVersion')}"
             tmp_seq_method = seq_template.format(
                 "SECTION", fc.type, seq_software, run_setup_text, fc_chem
             )
@@ -165,10 +161,8 @@ class Report(ngi_reports.reports.BaseReport):
             "* _NGI ID:_ Internal NGI sample identifier\n"
             "* _User ID:_ Sample name submitted by user\n"
             '* _RC:_ Reception control status. Value "NA" means this is a finished library and results are presented in Lib. QC below.\n'
-            "* _{}:_ Total{} reads (or pairs) for a sample\n"
-            "* _>=Q30:_ Aggregated percentage of bases that have a quality score >= Q30".format(
-                proj.samples_unit, unit_magnitude[proj.samples_unit]
-            )
+            f"* _{proj.samples_unit}:_ Total{unit_magnitude[proj.samples_unit]} reads (or pairs) for a sample\n"
+            "* _>=Q30:_ Aggregated percentage of bases that have a quality score >= Q30"
         )
 
         ## library_info table
@@ -228,7 +222,7 @@ class Report(ngi_reports.reports.BaseReport):
                 lanes_list.append(l)
 
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
-            sorted(lanes_list, key=lambda d: "{}_{}".format(d["date"], d["id"])),
+            sorted(lanes_list, key=lambda d: f"{d['date']}_{d['id']}"),
             filter_keys=lanes_filter,
             header=lanes_header,
         )
@@ -247,7 +241,7 @@ class Report(ngi_reports.reports.BaseReport):
             os.path.join(
                 self.working_dir,
                 self.report_dir,
-                "{}_project_summary".format(self.report_basename),
+                f"{self.report_basename}_project_summary",
             )
         )
 
@@ -307,9 +301,7 @@ class Report(ngi_reports.reports.BaseReport):
         for item in project_dates:
             if project_dates.get(item):
                 dates.append(
-                    "_{}:_ {}".format(
-                        item.replace("_", " ").capitalize(), project_dates[item]
-                    )
+                    f"_{item.replace('_', ' ').capitalize()}:_ {project_dates[item]}"
                 )
         return ", ".join(dates)
 
@@ -335,9 +327,7 @@ class Report(ngi_reports.reports.BaseReport):
                 accredit_info[key] = "Not Applicable"
             else:
                 self.LOG.error(
-                    "Accreditation step {} for project {} is found, but no value is set".format(
-                        key, proj_name
-                    )
+                    f"Accreditation step {key} for project {proj_name} is found, but no value is set"
                 )
         return accredit_info
 
@@ -354,7 +344,7 @@ class Report(ngi_reports.reports.BaseReport):
                 tb_cont = tb_cont.replace("[pass]", "Pass")
                 tb_cont = tb_cont.replace("[fail]", "Fail")
                 tb_cont = tb_cont.replace("[na]", "NA")
-            op_fl = "{}_{}.txt".format(self.report_basename, tb_nm)
+            op_fl = f"{self.report_basename}_{tb_nm}.txt"
             if op_dir:
                 op_fl = os.path.join(op_dir, op_fl)
             with open(op_fl, "w") as TXT:

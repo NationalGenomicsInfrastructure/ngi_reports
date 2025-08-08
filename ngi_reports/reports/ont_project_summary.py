@@ -69,9 +69,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         self.tables_info["header_explanation"]["sample_info"] = (
             "* _NGI ID:_ Internal NGI sample identifier\n"
             "* _User ID:_ Sample name submitted by user\n"
-            "* _{}:_ Number of reads per sample ({})\n".format(
-                proj.samples_unit, unit_magnitude[proj.samples_unit]
-            )
+            f"* _{proj.samples_unit}:_ Number of reads per sample ({unit_magnitude[proj.samples_unit]})\n"
         )
 
         # library_info table
@@ -125,7 +123,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             os.path.join(
                 self.working_dir,
                 self.report_dir,
-                "{}_project_summary".format(self.report_basename),
+                f"{self.report_basename}_project_summary",
             )
         )
 

@@ -99,10 +99,8 @@ class Report(ngi_reports.reports.project_summary.Report):
             "* _NGI ID:_ Internal NGI sample identifier\n"
             "* _User ID:_ Sample name submitted by user\n"
             '* _RC:_ Reception control status. Value "NA" means this is a finished library and results are presented in Lib. QC below.\n'
-            "* _{}:_ Total{} reads (or pairs) for a sample\n"
-            "* _>=Q30:_ Aggregated percentage of bases that have a quality score >= Q30".format(
-                proj.samples_unit, unit_magnitude[proj.samples_unit]
-            )
+            f"* _{proj.samples_unit}:_ Total{unit_magnitude[proj.samples_unit]} reads (or pairs) for a sample\n"
+            "* _>=Q30:_ Aggregated percentage of bases that have a quality score >= Q30"
         )
 
         # library_info table
@@ -162,7 +160,7 @@ class Report(ngi_reports.reports.project_summary.Report):
                 lanes_list.append(lane)
 
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
-            sorted(lanes_list, key=lambda d: "{}_{}".format(d["date"], d["id"])),
+            sorted(lanes_list, key=lambda d: f"{d['date']}_{d['id']}"),
             filter_keys=lanes_filter,
             header=lanes_header,
         )
@@ -181,7 +179,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             os.path.join(
                 self.working_dir,
                 self.report_dir,
-                "{}_project_summary".format(self.report_basename),
+                f"{self.report_basename}_project_summary",
             )
         )
 
