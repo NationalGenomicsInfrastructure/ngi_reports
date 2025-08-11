@@ -12,13 +12,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         super(Report, self).__init__(LOG, working_dir, **kwargs)
 
     def generate_report_template(self, proj, template, support_email):
-        if not self.signature:
-            self.LOG.error(
-                "It is required to provide Signature/Name while generating 'project_summary' report, see -s option in help"
-            )
-            raise SystemExit
-        else:
-            self.report_info["signature"] = self.signature
+        self.set_signature()
 
         seq_methods = OrderedDict()
 
@@ -75,9 +69,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         self.tables_info["header_explanation"]["sample_info"] = (
             "* _NGI ID:_ Internal NGI sample identifier\n"
             "* _User ID:_ Sample name submitted by user\n"
-            "* _{}:_ Number of reads per sample ({})\n".format(
-                proj.samples_unit, unit_magnitude[proj.samples_unit]
-            )
+            f"* _{proj.samples_unit}:_ Number of reads per sample ({unit_magnitude[proj.samples_unit]})\n"
         )
 
         # library_info table
@@ -131,7 +123,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             os.path.join(
                 self.working_dir,
                 self.report_dir,
-                "{}_project_summary".format(self.report_basename),
+                f"{self.report_basename}_project_summary",
             )
         )
 

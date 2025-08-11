@@ -18,3 +18,15 @@ class BaseReport(object):
 
         # Standalone fields
         self.creation_date = datetime.now().strftime('%Y-%m-%d')
+        self.signature = kwargs.get("signature")
+
+    def set_signature(self):
+        """Set the signature for the report.
+        Exit if not provided."""
+        if not self.signature:
+            self.LOG.error(
+                "It is required to provide Signature/Name while generating 'project_summary' report, see -s opition in help"
+            )
+            raise SystemExit
+        else:
+            self.report_info["signature"] = self.signature

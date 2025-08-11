@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" Module for producing the Project Summary Report
+"""Module for producing the Project Summary Report
 Note: Much of this code was written by Pontus and lifted from
 the SciLifeLab repo
 """
@@ -13,7 +13,6 @@ import ngi_reports.reports
 
 
 class Report(ngi_reports.reports.BaseReport):
-
     ## initialize class and assign basic variables
     def __init__(self, LOG, working_dir, **kwargs):
         # Initialise the parent class
@@ -24,19 +23,10 @@ class Report(ngi_reports.reports.BaseReport):
         # report name and directory to be created
         self.report_dir = os.path.join(working_dir, "reports")
         self.report_basename = ""
-        self.signature = kwargs.get("signature")
         self.project = kwargs.get("project")
 
     def generate_report_template(self, proj, template, support_email):
-
-        ## Check and exit if signature not provided
-        if not self.signature:
-            self.LOG.error(
-                "It is required to provide Signature/Name while generating 'project_summary' report, see -s opition in help"
-            )
-            raise SystemExit
-        else:
-            self.report_info["signature"] = self.signature
+        self.set_signature()
 
         ## Helper vars
         seq_methods = OrderedDict()
@@ -60,7 +50,9 @@ class Report(ngi_reports.reports.BaseReport):
         )
         ## Collect required information for all flowcell run for the project
 
-        sorted_project_fcs = dict(sorted(proj.flowcells.items(), key=lambda item: item[1].date))
+        sorted_project_fcs = dict(
+            sorted(proj.flowcells.items(), key=lambda item: item[1].date)
+        )
 
         for fc in sorted_project_fcs.values():
             ## Sort by the order of readss
@@ -103,15 +95,11 @@ class Report(ngi_reports.reports.BaseReport):
                 "MSC" if fc.type == "MiSeq" else fc.seq_software.get("ApplicationName")
             )
             if fc.type == "NovaSeqXPlus":
-                seq_software = "{} {}".format(
-                    applicationName, fc.seq_software.get("ApplicationVersion")
+                seq_software = (
+                    f"{applicationName} {fc.seq_software.get('ApplicationVersion')}"
                 )
             else:
-                seq_software = "{} {}/RTA {}".format(
-                    applicationName,
-                    fc.seq_software.get("ApplicationVersion"),
-                    fc.seq_software.get("RTAVersion"),
-                )
+                seq_software = f"{applicationName} {fc.seq_software.get('ApplicationVersion')}/RTA {fc.seq_software.get('RTAVersion')}"
             tmp_seq_method = seq_template.format(
                 "SECTION", fc.type, seq_software, run_setup_text, fc_chem
             )
@@ -129,10 +117,10 @@ class Report(ngi_reports.reports.BaseReport):
 
         ## give proper section name for the methods
         self.report_info["sequencing_methods"] = "\n\n".join(
-            [m.replace("SECTION", seq_methods[m]) for m in seq_methods]
+            [method.replace("SECTION", seq_methods[method]) for method in seq_methods]
         )
         self.report_info["demultiplexing_methods"] = "\n\n".join(
-            [m.replace("SECTION", dem_methods[m]) for m in dem_methods]
+            [method.replace("SECTION", dem_methods[method]) for method in dem_methods]
         )
         ## Check if sequencing and demultiplexing info is complete
         if not self.report_info["sequencing_methods"]:
@@ -158,14 +146,14 @@ class Report(ngi_reports.reports.BaseReport):
             "total_reads",
             "qscore",
         ]
-        for s, v in list(proj.samples.items()):
-            v = vars(v)
-            if v["initial_qc"]["initial_qc_status"] == "PASSED":
-                v["initial_qc"]["initial_qc_status"] = "[pass]"
-            elif v["initial_qc"]["initial_qc_status"] == "FAILED":
-                v["initial_qc"]["initial_qc_status"] = "[fail]"
-            elif v["initial_qc"]["initial_qc_status"] == "NA":
-                v["initial_qc"]["initial_qc_status"] = "[na]"
+        for s, sample in list(proj.samples.items()):
+            sample = vars(sample)
+            if sample["initial_qc"]["initial_qc_status"] == "PASSED":
+                sample["initial_qc"]["initial_qc_status"] = "[pass]"
+            elif sample["initial_qc"]["initial_qc_status"] == "FAILED":
+                sample["initial_qc"]["initial_qc_status"] = "[fail]"
+            elif sample["initial_qc"]["initial_qc_status"] == "NA":
+                sample["initial_qc"]["initial_qc_status"] = "[na]"
         self.tables_info["tables"]["sample_info"] = self.create_table_text(
             proj.samples.values(), filter_keys=sample_filter, header=sample_header
         )
@@ -173,27 +161,25 @@ class Report(ngi_reports.reports.BaseReport):
             "* _NGI ID:_ Internal NGI sample identifier\n"
             "* _User ID:_ Sample name submitted by user\n"
             '* _RC:_ Reception control status. Value "NA" means this is a finished library and results are presented in Lib. QC below.\n'
-            "* _{}:_ Total{} reads (or pairs) for a sample\n"
-            "* _>=Q30:_ Aggregated percentage of bases that have a quality score >= Q30".format(
-                proj.samples_unit, unit_magnitude[proj.samples_unit]
-            )
+            f"* _{proj.samples_unit}:_ Total{unit_magnitude[proj.samples_unit]} reads (or pairs) for a sample\n"
+            "* _>=Q30:_ Aggregated percentage of bases that have a quality score >= Q30"
         )
 
         ## library_info table
         library_header = ["NGI ID", "Index", "Lib. Prep", "Avg. FS(bp)", "Lib. QC"]
         library_filter = ["ngi_id", "barcode", "label", "avg_size", "qc_status"]
         library_list = []
-        for s, v in list(proj.samples.items()):
-            for p in list(v.preps.values()):
-                p = vars(p)
-                p["ngi_id"] = s
-                if p["qc_status"] == "PASSED":
-                    p["qc_status"] = "[pass]"
-                elif p["qc_status"] == "FAILED":
-                    p["qc_status"] = "[fail]"
-                elif p["qc_status"] == "NA":
-                    p["qc_status"] = "[na]"
-                library_list.append(p)
+        for sample_id, sample in list(proj.samples.items()):
+            for prep in list(sample.preps.values()):
+                prep = vars(prep)
+                prep["ngi_id"] = sample_id
+                if prep["qc_status"] == "PASSED":
+                    prep["qc_status"] = "[pass]"
+                elif prep["qc_status"] == "FAILED":
+                    prep["qc_status"] = "[fail]"
+                elif prep["qc_status"] == "NA":
+                    prep["qc_status"] = "[na]"
+                library_list.append(prep)
         self.tables_info["tables"]["library_info"] = self.create_table_text(
             sorted(library_list, key=lambda d: d["ngi_id"]),
             filter_keys=library_filter,
@@ -217,7 +203,15 @@ class Report(ngi_reports.reports.BaseReport):
             "Phix",
             "Method",
         ]
-        lanes_filter = ["date", "name", "id", "total_reads_proj", "weighted_avg_qval_proj", "phix", "seq_meth"]
+        lanes_filter = [
+            "date",
+            "name",
+            "id",
+            "total_reads_proj",
+            "weighted_avg_qval_proj",
+            "phix",
+            "seq_meth",
+        ]
         lanes_list = []
         for f, v in list(proj.flowcells.items()):
             for l in list(v.lanes.values()):
@@ -228,7 +222,7 @@ class Report(ngi_reports.reports.BaseReport):
                 lanes_list.append(l)
 
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
-            sorted(lanes_list, key=lambda d: "{}_{}".format(d["date"], d["id"])),
+            sorted(lanes_list, key=lambda d: f"{d['date']}_{d['id']}"),
             filter_keys=lanes_filter,
             header=lanes_header,
         )
@@ -247,7 +241,7 @@ class Report(ngi_reports.reports.BaseReport):
             os.path.join(
                 self.working_dir,
                 self.report_dir,
-                "{}_project_summary".format(self.report_basename),
+                f"{self.report_basename}_project_summary",
             )
         )
 
@@ -307,9 +301,7 @@ class Report(ngi_reports.reports.BaseReport):
         for item in project_dates:
             if project_dates.get(item):
                 dates.append(
-                    "_{}:_ {}".format(
-                        item.replace("_", " ").capitalize(), project_dates[item]
-                    )
+                    f"_{item.replace('_', ' ').capitalize()}:_ {project_dates[item]}"
                 )
         return ", ".join(dates)
 
@@ -335,9 +327,7 @@ class Report(ngi_reports.reports.BaseReport):
                 accredit_info[key] = "Not Applicable"
             else:
                 self.LOG.error(
-                    "Accreditation step {} for project {} is found, but no value is set".format(
-                        key, proj_name
-                    )
+                    f"Accreditation step {key} for project {proj_name} is found, but no value is set"
                 )
         return accredit_info
 
@@ -354,7 +344,7 @@ class Report(ngi_reports.reports.BaseReport):
                 tb_cont = tb_cont.replace("[pass]", "Pass")
                 tb_cont = tb_cont.replace("[fail]", "Fail")
                 tb_cont = tb_cont.replace("[na]", "NA")
-            op_fl = "{}_{}.txt".format(self.report_basename, tb_nm)
+            op_fl = f"{self.report_basename}_{tb_nm}.txt"
             if op_dir:
                 op_fl = os.path.join(op_dir, op_fl)
             with open(op_fl, "w") as TXT:

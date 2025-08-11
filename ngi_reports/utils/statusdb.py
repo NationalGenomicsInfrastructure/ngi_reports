@@ -50,21 +50,55 @@ class statusdb_connection(object):
                 f"Connection failed for URL {self.display_url_string}. Error: {e}"
             )
 
+
+class ProjectSummaryConnection(statusdb_connection):
+    def __init__(self, dbname="projects"):
+        super(ProjectSummaryConnection, self).__init__()
+        self.dbname = dbname
+
     def get_entry(self, name, use_id_view=False):
         """Retrieve entry from given db for a given name.
 
         :param name: unique name identifier (primary key, not the uuid)
         """
-        view = self.id_view if use_id_view else self.name_view
-        if name not in view:
+        try:
+            doc = self.connection.post_view(
+                db=self.dbname,
+                ddoc="project",
+                view="project_name" if not use_id_view else "project_id",
+                key=name,
+                reduce=False,
+                include_docs=True,
+            ).get_result()["rows"][0]["doc"]
+            if not doc:
+                if self.log:
+                    self.log.warn(f"No entry '{name}' in {self.dbname}")
+                return None
+            return doc
+        except Exception as e:
             if self.log:
-                self.log.warn(f"No entry '{name}' in {self.dbname}")
+                self.log.error(f"Error retrieving document '{name}': {e}")
             return None
 
+
+class GenericRunConnection(statusdb_connection):
+    def __init__(self, dbname=None):
+        super(GenericRunConnection, self).__init__()
+
+    def get_entry(self, name):
         try:
-            doc = self.connection.get_document(
-                db=self.dbname, doc_id=view[name]
-            ).get_result()
+            doc = self.connection.post_view(
+                db=self.dbname,
+                ddoc="names",
+                view="project_ids_list",
+                key=name,
+                reduce=False,
+                include_docs=True,
+            ).get_result()["rows"][0]["doc"]
+            if not doc:
+                if self.log:
+                    self.log.warn(f"No entry '{name}' in {self.dbname}")
+                return None
             return doc
         except Exception as e:
             if self.log:
@@ -86,7 +120,11 @@ class statusdb_connection(object):
             open_date = datetime.strptime("2015-01-01", "%Y-%m-%d")
 
         project_flowcells = {}
-        time_format = "%Y%m%d" if type(self) is NanoporeRunConnection else "%y%m%d"
+        time_format = (
+            "%Y%m%d"
+            if type(self) in (NanoporeRunConnection, ElementRunConnection)
+            else "%y%m%d"
+        )
         date_sorted_fcs = sorted(
             list(self.proj_list.keys()),
             key=lambda k: datetime.strptime(k.split("_")[0], time_format),
@@ -94,11 +132,14 @@ class statusdb_connection(object):
         )
         for fc in date_sorted_fcs:
             if type(self) is NanoporeRunConnection:
-                fc_date, fc_time, position, fc_name, fc_hash = fc.split(
-                    "_"
-                )  # 20220721_1216_1G_PAM62368_3ae8de85
+                # 20220721_1216_1G_PAM62368_3ae8de85
+                fc_date, fc_time, position, fc_name, fc_hash = fc.split("_")
+            elif type(self) is ElementRunConnection:
+                # 20250417_AV242106_A2440533805
+                fc_date, sequencer_id, fc_name = fc.split("_")
             else:
-                fc_date, fc_name = fc.split("_")  # 220404_000000000-K797K
+                # 220404_000000000-K797K
+                fc_date, fc_name = fc.split("_")
             if datetime.strptime(fc_date, time_format) < open_date:
                 break
             if (
@@ -114,34 +155,10 @@ class statusdb_connection(object):
         return project_flowcells
 
 
-class ProjectSummaryConnection(statusdb_connection):
-    def __init__(self, dbname="projects"):
-        super(ProjectSummaryConnection, self).__init__()
-        self.dbname = dbname
-        self.name_view = {
-            row["key"]: row["id"]
-            for row in self.connection.post_view(
-                db=self.dbname, ddoc="project", view="project_name", reduce=False
-            ).get_result()["rows"]
-        }
-        self.id_view = {
-            row["key"]: row["id"]
-            for row in self.connection.post_view(
-                db=self.dbname, ddoc="project", view="project_id", reduce=False
-            ).get_result()["rows"]
-        }
-
-
-class X_FlowcellRunMetricsConnection(statusdb_connection):
+class X_FlowcellRunMetricsConnection(GenericRunConnection):
     def __init__(self, dbname="x_flowcells"):
         super(X_FlowcellRunMetricsConnection, self).__init__()
         self.dbname = dbname
-        self.name_view = {
-            row["key"]: row["id"]
-            for row in self.connection.post_view(
-                db=self.dbname, ddoc="names", view="name", reduce=False
-            ).get_result()["rows"]
-        }
         self.proj_list = {
             row["key"]: row["value"]
             for row in self.connection.post_view(
@@ -151,16 +168,23 @@ class X_FlowcellRunMetricsConnection(statusdb_connection):
         }
 
 
-class NanoporeRunConnection(statusdb_connection):
+class ElementRunConnection(GenericRunConnection):
+    def __init__(self, dbname="element_runs"):
+        super(ElementRunConnection, self).__init__()
+        self.dbname = dbname
+        self.proj_list = {
+            k["key"]: k["value"]
+            for k in self.connection.post_view(
+                db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
+            ).get_result()["rows"]
+            if k["key"]
+        }
+
+
+class NanoporeRunConnection(GenericRunConnection):
     def __init__(self, dbname="nanopore_runs"):
         super(NanoporeRunConnection, self).__init__()
         self.dbname = dbname
-        self.name_view = {
-            row["key"]: row["id"]
-            for row in self.connection.post_view(
-                db=self.dbname, ddoc="names", view="name", reduce=False
-            ).get_result()["rows"]
-        }
         self.proj_list = {
             row["key"]: row["value"]
             for row in self.connection.post_view(

@@ -35,7 +35,7 @@ allowed_report_types = [
 def proceed_or_not(question):
     yes = set(["yes", "y", "ye", "Y", "YES", "YE", "Yes"])
     no = set(["no", "n", "N", "NO", "No"])
-    sys.stdout.write("{}".format(question))
+    sys.stdout.write(f"{question}")
     while True:
         choice = input().lower()
         if choice in yes:
@@ -48,7 +48,7 @@ def proceed_or_not(question):
 
 def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwargs):
     # Setup
-    LOG.info("Report type: {}".format(report_type))
+    LOG.info(f"Report type: {report_type}")
 
     # Use default config or override it if file is specified
     config = report_config.load_config(config_file)
@@ -64,19 +64,20 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
             )
         elif proj.sequencer_manufacturer == "ont":
             report_mod = __import__(
-                "ngi_reports.reports.ont_project_summary", fromlist=["ngi_reports.reports"]
+                "ngi_reports.reports.ont_project_summary",
+                fromlist=["ngi_reports.reports"],
             )
         elif proj.sequencer_manufacturer == "element":
-            LOG.warning(
-                "Project summary report for Element sequencing projects is not yet implemented. Aborting."
+            report_mod = __import__(
+                "ngi_reports.reports.element_project_summary",
+                fromlist=["ngi_reports.reports"],
             )
-            sys.exit(0)
         elif proj.sequencer_manufacturer == "unknown":
             LOG.warning(
                 "Unknown sequencer manufacturer detected. Please make sure that the sequencing_platform field in statusdb is filled in."
             )
             sys.exit(1)
-    else: 
+    else:
         LOG.warning(f"Report type '{report_type}' is not yet implemented. Aborting.")
         sys.exit(0)
 
@@ -95,9 +96,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
         question = f"The current directory {working_dir} does not belong to the chosen project {report.project}. Continue? "
         if proceed_or_not(question):
             LOG.info(
-                "The reports for project {} will be generated in the current directory {}".format(
-                    report.project, working_dir
-                )
+                f"The reports for project {report.project} will be generated in the current directory {working_dir}"
             )
         else:
             LOG.error(
@@ -106,9 +105,7 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
             sys.exit(1)
     else:
         LOG.info(
-            "The reports for project {} will be generated in the current directory {}".format(
-                report.project, working_dir
-            )
+            f"The reports for project {report.project} will be generated in the current directory {working_dir}"
         )
 
     # Create the directory if we don't already have it
@@ -122,7 +119,9 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
         if report_type == "project_summary":
             template = env.get_template("project_summary.md")
         else:
-            LOG.warning(f"Report type '{report_type}' is not yet implemented. Aborting.")
+            LOG.warning(
+                f"Report type '{report_type}' is not yet implemented. Aborting."
+            )
             sys.exit(0)
     except:
         LOG.error("Could not load the Jinja report template")
@@ -139,13 +138,11 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
     )
     for output_basename, output_md in list(output_mds.items()):
         try:
-            with open("{}.md".format(output_basename), "w", encoding="utf-8") as fh:
+            with open(f"{output_basename}.md", "w", encoding="utf-8") as fh:
                 print(output_md, file=fh)
         except IOError as e:
             LOG.error(
-                "Error printing markdown report {} - skipping. {}".format(
-                    output_md, IOError(e)
-                )
+                f"Error printing markdown report {output_md} - skipping. {IOError(e)}"
             )
             continue
         # Convert markdown to html
@@ -154,12 +151,10 @@ def make_reports(report_type, working_dir=os.getcwd(), config_file=None, **kwarg
             jinja2_env=env,
             markdown_text=output_md,
             reports_dir=reports_dir,
-            out_path="{}.html".format(output_basename),
+            out_path=f"{output_basename}.html",
         )
         LOG.info(
-            "{} HTML report written to: {}".format(
-                output_basename.rsplit("/", 1)[1], html_out
-            )
+            f"{output_basename.rsplit('/', 1)[1]} HTML report written to: {html_out}"
         )
 
     # Generate CSV files for project_summary reports
@@ -239,9 +234,7 @@ def main():
         "report_type",
         choices=allowed_report_types,
         metavar="<report type>",
-        help="Type of report to generate. Choose from: {}".format(
-            ", ".join(allowed_report_types)
-        ),
+        help=f"Type of report to generate. Choose from: {', '.join(allowed_report_types)}",
     )
     parser.add_argument(
         "-d",
@@ -327,7 +320,7 @@ def main():
     parser.add_argument(
         "--version",
         action="version",
-        version="NGI reports version - {}".format(__version__),
+        version=f"NGI reports version - {__version__}",
     )
     parser.add_argument(
         "-md",
