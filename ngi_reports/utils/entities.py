@@ -347,9 +347,7 @@ class Flowcell:
                     int(self.run_setup.get("R2")),
                 ]
                 qval = float(barcode_stat.get("PercentQ30"))
-                pf_reads = int(
-                    barcode_stat.get("NumPoloniesAssigned")
-                )
+                pf_reads = int(barcode_stat.get("NumPoloniesAssigned"))
                 base = pf_reads * sum(num_cycles)
                 self.fc_sample_qvalues[sample][read_index] = {
                     "qval": qval,
@@ -432,14 +430,7 @@ class Flowcell:
         ont_seq_versions = fc_runparameters.get("software_versions", "")
         self.seq_software = {
             "MinKNOW version": ont_seq_versions.get("minknow", "").get("full", ""),
-            "Guppy version": ont_seq_versions.get("guppy_build_version", ""),
         }
-        self.basecall_model = (
-            fc_runparameters.get("meta_info", "")
-            .get("tags", "")
-            .get("default basecall model")
-            .get("string_value")
-        )
 
 
 class Lane:

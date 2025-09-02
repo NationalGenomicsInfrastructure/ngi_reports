@@ -265,14 +265,6 @@ def main():
         help="Signature/Name for person who generates 'project_summary' report",
     )
     parser.add_argument(
-        "-q",
-        "--quality",
-        default=None,
-        action="store",
-        type=int,
-        help="Q30 threshold for samples to set status",
-    )
-    parser.add_argument(
         "-y",
         "--yield_from_fc",
         default=False,
@@ -282,14 +274,14 @@ def main():
     parser.add_argument(
         "--skip_fastq",
         action="store_true",
-        help="Option to skip naming convention of fastq files from report. ",
+        help="Option to skip naming convention of fastq files from report.",
     )
     parser.add_argument(
         "--exclude_fc",
         nargs="*",
         default=[],
         action="store",
-        help="Exclude these FCs while processing, Format should be BH3JLWCCXX/000000000-AEUUP.",
+        help="Exclude these FCs while processing, format should be BH3JLWCCXX/000000000-AEUUP, multiple flowcells should be separated with spaces.",
     )
     parser.add_argument(
         "--no_txt",
