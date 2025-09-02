@@ -32,8 +32,6 @@ class Report(ngi_reports.reports.project_summary.Report):
                 fc.type,
                 fc.fc_type,
                 fc.seq_software.get("MinKNOW version"),
-                fc.seq_software.get("Guppy version"),
-                fc.basecall_model,
                 fc.qual_threshold,
             )
 
