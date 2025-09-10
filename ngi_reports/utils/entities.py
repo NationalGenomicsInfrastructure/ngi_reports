@@ -347,9 +347,7 @@ class Flowcell:
                     int(self.run_setup.get("R2")),
                 ]
                 qval = float(barcode_stat.get("PercentQ30"))
-                pf_reads = int(
-                    barcode_stat.get("NumPoloniesAssigned")
-                )
+                pf_reads = int(barcode_stat.get("NumPoloniesAssigned"))
                 base = pf_reads * sum(num_cycles)
                 self.fc_sample_qvalues[sample][read_index] = {
                     "qval": qval,
@@ -404,10 +402,9 @@ class Flowcell:
 
         if "_PA" in self.run_name or "_PB" in self.run_name:
             self.type = "PromethION"
-            fc_runparameters = self.fc_details.get("protocol_run_info", {})
         elif "_MN" in self.run_name:
             self.type = "MinION"
-            fc_runparameters = self.fc_details.get("protocol_run_info", {})
+        fc_runparameters = self.fc_details.get("protocol_run_info", {})
 
         self.fc_type = fc_runparameters.get("flow_cell").get(
             "user_specified_product_code"
@@ -432,14 +429,15 @@ class Flowcell:
         ont_seq_versions = fc_runparameters.get("software_versions", "")
         self.seq_software = {
             "MinKNOW version": ont_seq_versions.get("minknow", "").get("full", ""),
-            "Guppy version": ont_seq_versions.get("guppy_build_version", ""),
         }
-        self.basecall_model = (
-            fc_runparameters.get("meta_info", "")
-            .get("tags", "")
-            .get("default basecall model")
-            .get("string_value")
+
+        lims_samples = (
+            self.fc_details.get("lims", {}).get("loading", {})[0].get("sample_data", [])
         )
+        self.fc_sample_barcodes = {}
+        for lims_sample in lims_samples:
+            sample_id = lims_sample.get("sample_name", "")
+            self.fc_sample_barcodes[sample_id] = lims_sample.get("ont_barcode", "NoIndex")
 
 
 class Lane:
@@ -694,7 +692,10 @@ class Project:
                 )
                 continue
             # Check if sample was sequenced. More accurate value will be calculated from flowcell yield.
-            if not sample_info.get("details", {}).get("total_reads_(m)"):
+            if (
+                not sample_info.get("details", {}).get("total_reads_(m)")
+                and not self.sequencer_manufacturer == "ont"
+            ):
                 log.warning(
                     f"Sample {sample_id} doesn't have total reads, "
                     "adding it to NOT sequenced samples list."
@@ -755,6 +756,16 @@ class Project:
             elif fc["db"] == "nanopore_runs":
                 fcObj = Flowcell(fc, self.ngi_name, ontcon)
                 fcObj.populate_ont_flowcell()
+                for fc_sample in fcObj.fc_sample_barcodes:
+                    if fc_sample in self.samples.keys():
+                        for prep in self.samples[fc_sample].preps:
+                            self.samples[fc_sample].preps[
+                                prep
+                            ].barcode = fcObj.fc_sample_barcodes[
+                                fc_sample
+                            ]  # TODO: could add nr of reads and average length too and provide lists of which samples were on which FC
+                            # Get the total reads for each sample from the FC during population and += to sample total reads here. Do the same for N50 and calculate average
+                            # Might need to think about how to handle multiple preps per sample, similar to Illimina (sample_qval dict)
 
             elif fc["db"] == "element_runs":
                 fcObj = Flowcell(fc, self.ngi_name, elementcon)

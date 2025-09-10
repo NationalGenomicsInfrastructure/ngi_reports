@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20250919.1
+Improvements to ONT project summary reports
+
 ## 20250428.1
 Replace couchdb package with ibmcloudant
 

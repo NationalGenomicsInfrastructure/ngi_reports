@@ -23,10 +23,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         self.report_info["report_date"] = self.creation_date
 
         # Get sequecing method for the flowcell
-        seq_template = (
-            "{}) Samples were sequenced on {}, flowcell type {}, MinKNOW version {}. Basecalling was performed "
-            "using Guppy version {}, {} model. The quality scale used is Phred and the quality score threshold is {}."
-        )
+        seq_template = "{}) Samples were sequenced on {}, flowcell type {}, MinKNOW version {}. The quality scale used is Phred and the quality score threshold is {}."
 
         # Collect required information for all flowcells run for the project
         for fc in proj.flowcells.values():
@@ -35,8 +32,6 @@ class Report(ngi_reports.reports.project_summary.Report):
                 fc.type,
                 fc.fc_type,
                 fc.seq_software.get("MinKNOW version"),
-                fc.seq_software.get("Guppy version"),
-                fc.basecall_model,
                 fc.qual_threshold,
             )
 
