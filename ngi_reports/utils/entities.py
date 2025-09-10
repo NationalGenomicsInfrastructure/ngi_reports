@@ -763,7 +763,9 @@ class Project:
                                 prep
                             ].barcode = fcObj.fc_sample_barcodes[
                                 fc_sample
-                            ]  # TODO: could add nr of reads and average length too
+                            ]  # TODO: could add nr of reads and average length too and provide lists of which samples were on which FC
+                            # Get the total reads for each sample from the FC during population and += to sample total reads here. Do the same for N50 and calculate average
+                            # Might need to think about how to handle multiple preps per sample, similar to Illimina (sample_qval dict)
 
             elif fc["db"] == "element_runs":
                 fcObj = Flowcell(fc, self.ngi_name, elementcon)
