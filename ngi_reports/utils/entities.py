@@ -399,7 +399,6 @@ class Flowcell:
 
     def populate_ont_flowcell(self):
         final_acquisition = self.fc_details.get("acquisitions")[-1]
-
         if "_PA" in self.run_name or "_PB" in self.run_name:
             self.type = "PromethION"
         elif "_MN" in self.run_name:
@@ -437,7 +436,51 @@ class Flowcell:
         self.fc_sample_barcodes = {}
         for lims_sample in lims_samples:
             sample_id = lims_sample.get("sample_name", "")
-            self.fc_sample_barcodes[sample_id] = lims_sample.get("ont_barcode", "NoIndex")
+            self.fc_sample_barcodes[sample_id] = lims_sample.get(
+                "ont_barcode", "NoIndex"
+            )
+        self.samples_run = []
+        for sample in self.fc_sample_barcodes.keys():
+            self.samples_run.append(str(sample))
+
+        self.sample_reads = {}
+        self.sample_yield_bp = {}
+
+        for arg in run_arguments:
+            if "--split_files_by_barcode=on" in arg:
+                fc_barcode_info = statusdb.NanoporeBarcodeConnection().proj_list[
+                    self.run_name
+                ]
+                if fc_barcode_info:
+                    for barcode in fc_barcode_info:
+                        barcode_alias = fc_barcode_info[barcode].get("barcode_alias")
+                        if barcode != barcode_alias:
+                            for lims_sample in lims_samples:
+                                sample_id = lims_sample.get("sample_name", "")
+                                if sample_id == barcode_alias:
+                                    self.sample_reads[sample_id] = float(
+                                        fc_barcode_info[barcode].get(
+                                            "basecalled_pass_read_count"
+                                        )
+                                    )
+                                    self.sample_yield_bp[sample_id] = float(
+                                        fc_barcode_info[barcode].get(
+                                            "basecalled_pass_bases"
+                                        )
+                                    )
+            elif "--split_files_by_barcode=off" in arg:
+                for lims_sample in lims_samples:
+                    print(
+                        final_acquisition.get("acquisition_run_info").get(
+                            "yield_summary"
+                        )
+                    )
+                    sample_id = lims_sample.get("sample_name", "")
+                    self.sample_reads[sample_id] = float(
+                        final_acquisition.get("acquisition_run_info")
+                        .get("yield_summary")
+                        .get("read_count")
+                    )
 
 
 class Lane:
@@ -674,7 +717,6 @@ class Project:
             self.accredited[key] = proj_details.get(f"accredited_({key})")
 
         self.sequencing_setup = proj_details.get("sequencing_setup")
-
         for sample_id, sample_info in sorted(proj.get("samples", {}).items()):
             if kwargs.get("samples", []) and sample_id not in kwargs.get("samples", []):
                 log.info(
@@ -721,10 +763,17 @@ class Project:
             )
         elif self.sequencer_manufacturer == "ont":
             ontcon = statusdb.NanoporeRunConnection()
-            assert ontcon, "Could not connect to nanopore_runs database in StatusDB"
+            ontcon2 = statusdb.NanoporeBarcodeConnection()
+            assert (
+                ontcon
+            ), "Could not connect to nanopore_runs (names) database in StatusDB"
+            assert (
+                ontcon2
+            ), "Could not connect to nanopore_runs (info) database in StatusDB"
             flowcell_info = ontcon.get_project_flowcell(
                 self.ngi_id, self.dates["open_date"]
             )
+
         elif self.sequencer_manufacturer == "element":
             elementcon = statusdb.ElementRunConnection()
             assert elementcon, "Could not connect to element_runs database in StatusDB"
@@ -759,13 +808,15 @@ class Project:
                 for fc_sample in fcObj.fc_sample_barcodes:
                     if fc_sample in self.samples.keys():
                         for prep in self.samples[fc_sample].preps:
-                            self.samples[fc_sample].preps[
-                                prep
-                            ].barcode = fcObj.fc_sample_barcodes[
-                                fc_sample
-                            ]  # TODO: could add nr of reads and average length too and provide lists of which samples were on which FC
-                            # Get the total reads for each sample from the FC during population and += to sample total reads here. Do the same for N50 and calculate average
-                            # Might need to think about how to handle multiple preps per sample, similar to Illimina (sample_qval dict)
+                            self.samples[fc_sample].preps[prep].barcode = (
+                                fcObj.fc_sample_barcodes[fc_sample]
+                            )
+                        self.samples[fc_sample].total_reads += float(
+                            fcObj.sample_reads[fc_sample]
+                        )
+                    # TODO: could add nr of reads and average length too and provide lists of which samples were on which FC
+                    # Get the total reads for each sample from the FC during population and += to sample total reads here. Do the same for N50 and calculate average
+                    # Might need to think about how to handle multiple preps per sample, similar to Illimina (sample_qval dict)
 
             elif fc["db"] == "element_runs":
                 fcObj = Flowcell(fc, self.ngi_name, elementcon)
@@ -927,7 +978,8 @@ class Project:
 
             for sample_stat in fcObj.barcode_lane_statistics:
                 new_barcode = "-".join(sample_stat.get("Barcode sequence").split("+"))
-                lib_prep = []  # Adding the now required library prep, set to NA for all non-LIMS samples
+                lib_prep = []
+                # Adding the now required library prep, set to NA for all non-LIMS samples
                 if sample_stat.get("Sample") in additional_samples:
                     lib_prep.append("NA")
                 else:  # Adding library prep for LIMS samples, we identified them earlier

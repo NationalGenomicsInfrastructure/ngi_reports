@@ -75,6 +75,12 @@ class Report(ngi_reports.reports.project_summary.Report):
             for prep in list(sample_info.preps.values()):
                 prep = vars(prep)
                 prep["ngi_id"] = sample
+                if prep["qc_status"] == "PASSED":
+                    prep["qc_status"] = "[pass]"
+                elif prep["qc_status"] == "FAILED":
+                    prep["qc_status"] = "[fail]"
+                elif prep["qc_status"] == "NA":
+                    prep["qc_status"] = "[na]"
                 if len(proj.samples.items()) == 1 and prep.get("barcode") == "NA":
                     prep["barcode"] = "no index"
                 library_list.append(prep)
@@ -88,11 +94,12 @@ class Report(ngi_reports.reports.project_summary.Report):
             "* _Index:_ Barcode sequence used for the sample\n"
             "* _Avg. FS:_ Average fragment size of the library\n"
             "* _Lib. QC:_ Library quality control status\n"
+            "* _Flowcell:_ Which flowcell this sample was run on\n"
         )
 
         # lanes_info table
-        lanes_header = ["Date", "Flow cell", "Reads (M)", "N50"]
-        lanes_filter = ["date", "name", "reads", "n50"]
+        lanes_header = ["Date", "Flow cell", "Reads (M)", "N50", "Samples"]
+        lanes_filter = ["date", "name", "reads", "n50", "samples"]
         lanes_list = []
         for flowcell, flowcell_info in list(proj.flowcells.items()):
             lane = {}
@@ -100,6 +107,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             lane["name"] = flowcell_info.run_name
             lane["reads"] = flowcell_info.total_reads
             lane["n50"] = flowcell_info.n50
+            lane["samples"] = flowcell_info.samples_run
             lanes_list.append(lane)
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
             sorted(lanes_list, key=lambda d: d["date"]),
@@ -111,9 +119,10 @@ class Report(ngi_reports.reports.project_summary.Report):
             "* _Flow cell:_ Flow cell identifier\n"
             "* _Reads (M):_ Number of reads generated (million)\n"
             "* _N50:_ Estimated N50\n"
+            "* _Samples:_ Samples run on this flowcell\n"
         )
-        # TODO: Add lists of samples for each FC
-        # Make the file basename
+        # TODO: Make the file basename
+
         output_basename = os.path.realpath(
             os.path.join(
                 self.working_dir,

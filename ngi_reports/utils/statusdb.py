@@ -122,7 +122,8 @@ class GenericRunConnection(statusdb_connection):
         project_flowcells = {}
         time_format = (
             "%Y%m%d"
-            if type(self) in (NanoporeRunConnection, ElementRunConnection)
+            if type(self)
+            in (NanoporeRunConnection, NanoporeBarcodeConnection, ElementRunConnection)
             else "%y%m%d"
         )
         date_sorted_fcs = sorted(
@@ -131,7 +132,7 @@ class GenericRunConnection(statusdb_connection):
             reverse=True,
         )
         for fc in date_sorted_fcs:
-            if type(self) is NanoporeRunConnection:
+            if type(self) in (NanoporeRunConnection, NanoporeBarcodeConnection):
                 # 20220721_1216_1G_PAM62368_3ae8de85
                 fc_date, fc_time, position, fc_name, fc_hash = fc.split("_")
             elif type(self) is ElementRunConnection:
@@ -189,6 +190,19 @@ class NanoporeRunConnection(GenericRunConnection):
             row["key"]: row["value"]
             for row in self.connection.post_view(
                 db=self.dbname, ddoc="names", view="project_ids_list", reduce=False
+            ).get_result()["rows"]
+            if row["key"]
+        }
+
+
+class NanoporeBarcodeConnection(GenericRunConnection):
+    def __init__(self, dbname="nanopore_runs"):
+        super(NanoporeBarcodeConnection, self).__init__()
+        self.dbname = dbname
+        self.proj_list = {
+            row["key"]: row["value"]
+            for row in self.connection.post_view(
+                db=self.dbname, ddoc="info", view="barcodes", reduce=False
             ).get_result()["rows"]
             if row["key"]
         }
