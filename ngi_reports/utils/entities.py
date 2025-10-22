@@ -61,7 +61,6 @@ class Sample:
         for prep_id, prep_info in self.sample_info.get("library_prep", {}).items():
             prepObj = Prep(prep_id, prep_info)
             prepObj.populate_prep(log, library_construction)
-
             if prepObj.barcode == "NA":
                 log.warning(
                     f"Barcode missing for sample {self.ngi_id} in prep {prep_id}. "
@@ -397,7 +396,8 @@ class Flowcell:
             laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
             laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
 
-    def populate_ont_flowcell(self):
+    def populate_ont_flowcell(self, log):
+        # TODO Handle no data
         final_acquisition = self.fc_details.get("acquisitions")[-1]
         if "_PA" in self.run_name or "_PB" in self.run_name:
             self.type = "PromethION"
@@ -441,16 +441,14 @@ class Flowcell:
             )
         self.samples_run = []
         for sample in self.fc_sample_barcodes.keys():
-            self.samples_run.append(str(sample))
+            self.samples_run.append(f"{sample}")
+        self.samples_run = ", ".join(self.samples_run)
 
         self.sample_reads = {}
-        self.sample_yield_bp = {}
-
+        self.average_read_length_passed = {}
+        fc_barcode_info = statusdb.NanoporeBarcodeConnection().proj_list[self.run_name]
         for arg in run_arguments:
             if "--split_files_by_barcode=on" in arg:
-                fc_barcode_info = statusdb.NanoporeBarcodeConnection().proj_list[
-                    self.run_name
-                ]
                 if fc_barcode_info:
                     for barcode in fc_barcode_info:
                         barcode_alias = fc_barcode_info[barcode].get("barcode_alias")
@@ -463,23 +461,30 @@ class Flowcell:
                                             "basecalled_pass_read_count"
                                         )
                                     )
-                                    self.sample_yield_bp[sample_id] = float(
-                                        fc_barcode_info[barcode].get(
-                                            "basecalled_pass_bases"
+                                    self.average_read_length_passed[sample_id] = round(
+                                        float(
+                                            fc_barcode_info[barcode].get(
+                                                "basecalled_pass_bases"
+                                            )
                                         )
+                                        / self.sample_reads[sample_id]
                                     )
+
             elif "--split_files_by_barcode=off" in arg:
                 for lims_sample in lims_samples:
-                    print(
-                        final_acquisition.get("acquisition_run_info").get(
-                            "yield_summary"
-                        )
-                    )
                     sample_id = lims_sample.get("sample_name", "")
                     self.sample_reads[sample_id] = float(
                         final_acquisition.get("acquisition_run_info")
                         .get("yield_summary")
-                        .get("read_count")
+                        .get("basecalled_pass_read_count")
+                    )
+                    self.average_read_length_passed[sample_id] = round(
+                        float(
+                            final_acquisition.get("acquisition_run_info")
+                            .get("yield_summary")
+                            .get("basecalled_pass_bases")
+                        )
+                        / self.sample_reads[sample_id]
                     )
 
 
@@ -804,7 +809,7 @@ class Project:
 
             elif fc["db"] == "nanopore_runs":
                 fcObj = Flowcell(fc, self.ngi_name, ontcon)
-                fcObj.populate_ont_flowcell()
+                fcObj.populate_ont_flowcell(log)
                 for fc_sample in fcObj.fc_sample_barcodes:
                     if fc_sample in self.samples.keys():
                         for prep in self.samples[fc_sample].preps:
@@ -813,6 +818,9 @@ class Project:
                             )
                         self.samples[fc_sample].total_reads += float(
                             fcObj.sample_reads[fc_sample]
+                        )
+                        self.samples[fc_sample].read_length = float(
+                            fcObj.average_read_length_passed[fc_sample]
                         )
                     # TODO: could add nr of reads and average length too and provide lists of which samples were on which FC
                     # Get the total reads for each sample from the FC during population and += to sample total reads here. Do the same for N50 and calculate average
@@ -867,33 +875,39 @@ class Project:
 
         # Calculate average Q30 over all lanes and flowcell
         max_total_reads = 0
-        for sample in sorted(sample_qval.keys()):
-            try:
-                qinfo = sample_qval[sample]
-                total_qvalsbp, total_bases, total_reads = (0, 0, 0)
-                for k in qinfo:
-                    total_qvalsbp += qinfo[k]["qval"] * qinfo[k]["bases"]
-                    total_bases += qinfo[k]["bases"]
-                    total_reads += qinfo[k]["reads"]
-                avg_qval = (
-                    float(total_qvalsbp) / total_bases
-                    if total_bases
-                    else float(total_qvalsbp)
-                )
-                self.samples[sample].qscore = "{:.2f}".format(round(avg_qval, 2))
-                # Sample has been sequenced and should be removed from the aborted/not sequenced list
-                if sample in self.aborted_samples:
-                    log.info(
-                        f"Sample {sample} was sequenced, so removing it from NOT sequenced samples list"
+        if sample_qval:
+            for sample in sorted(sample_qval.keys()):
+                try:
+                    qinfo = sample_qval[sample]
+                    total_qvalsbp, total_bases, total_reads = (0, 0, 0)
+                    for k in qinfo:
+                        total_qvalsbp += qinfo[k]["qval"] * qinfo[k]["bases"]
+                        total_bases += qinfo[k]["bases"]
+                        total_reads += qinfo[k]["reads"]
+                    avg_qval = (
+                        float(total_qvalsbp) / total_bases
+                        if total_bases
+                        else float(total_qvalsbp)
                     )
-                    del self.aborted_samples[sample]
-                # Get/overwrite yield from the FCs computed instead of statusDB value
-                if total_reads:
-                    self.samples[sample].total_reads = total_reads
-                    if total_reads > max_total_reads:
-                        max_total_reads = total_reads
-            except (TypeError, KeyError):
-                log.error(f"Could not calcluate average Q30 for sample {sample}")
+                    self.samples[sample].qscore = "{:.2f}".format(round(avg_qval, 2))
+                    # Sample has been sequenced and should be removed from the aborted/not sequenced list
+                    if sample in self.aborted_samples:
+                        log.info(
+                            f"Sample {sample} was sequenced, so removing it from NOT sequenced samples list"
+                        )
+                        del self.aborted_samples[sample]
+                    # Get/overwrite yield from the FCs computed instead of statusDB value
+                    if total_reads:
+                        self.samples[sample].total_reads = total_reads
+                        if total_reads > max_total_reads:
+                            max_total_reads = total_reads
+                except (TypeError, KeyError):
+                    log.error(f"Could not calcluate average Q30 for sample {sample}")
+        else:
+            for sample in sorted(self.samples.keys()):
+                total_reads = self.samples[sample].total_reads
+                if total_reads > max_total_reads:
+                    max_total_reads = total_reads
 
         # Cut down total reads to bite sized numbers
         self.samples_unit, samples_divisor = get_units_and_divisor(max_total_reads)

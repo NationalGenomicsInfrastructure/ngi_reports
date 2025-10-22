@@ -56,7 +56,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         ###############################################################################
         # sample_info table
         unit_magnitude = {"#reads": "", "Kreads": "Thousand", "Mreads": "Million"}
-        sample_header = ["NGI ID", "User ID", proj.samples_unit]
+        sample_header = ["NGI ID", "User ID", proj.samples_unit, "Avg. read length"]
         sample_filter = ["ngi_id", "customer_name", "total_reads"]
         self.tables_info["tables"]["sample_info"] = self.create_table_text(
             proj.samples.values(), filter_keys=sample_filter, header=sample_header
@@ -65,6 +65,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             "* _NGI ID:_ Internal NGI sample identifier\n"
             "* _User ID:_ Sample name submitted by user\n"
             f"* _{proj.samples_unit}:_ Number of reads per sample ({unit_magnitude[proj.samples_unit]})\n"
+            "* _Avg. read length:_ Average read length of passed reads\n"
         )
 
         # library_info table

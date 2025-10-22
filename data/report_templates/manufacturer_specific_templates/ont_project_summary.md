@@ -22,10 +22,10 @@ delivery. These include checking the yield, sequence read quality and average re
 {% if not project.samples %}
 No sample information to be displayed.
 {% else %}
-NGI ID | User ID | {{ project.samples_unit }}
--------|---------|----------
+NGI ID | User ID | {{ project.samples_unit }}| Avg.read length passed
+-------|---------|----------|----------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
-{{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }}
+{{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }}| {{ sample.read_length }}
 {% endfor %}
 
 
