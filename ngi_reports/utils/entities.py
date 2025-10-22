@@ -132,7 +132,6 @@ class Flowcell:
         self.run_name = self.fc.get("run_name", "")
         self.date = self.fc.get("date", "")
         self.fc_details = self.db_connection.get_entry(self.run_name)
-
         self.lanes = OrderedDict()
         self.fc_sample_qvalues = defaultdict(dict)
 
@@ -672,6 +671,7 @@ class Project:
             self.sequencer_manufacturer = "illumina"
         elif proj_details.get("sequencing_platform") in ["PromethION", "MinION"]:
             self.sequencer_manufacturer = "ont"
+            self.skip_fastq = True
         elif proj_details.get("sequencing_platform") in ["Element AVITI"]:
             self.sequencer_manufacturer = "element"
         else:
