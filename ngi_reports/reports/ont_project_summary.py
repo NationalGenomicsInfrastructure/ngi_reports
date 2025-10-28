@@ -75,7 +75,7 @@ class Report(ngi_reports.reports.project_summary.Report):
 
         # library_info table
         library_header = ["NGI ID", "Index", "Lib. Prep", "Avg. FS(bp)", "Lib. QC"]
-        library_filter = ["ngi_id", "barcode", "label", "avg_size", "qc_status"]
+        library_filter = ["ngi_id", "barcode", "prep_id", "avg_size", "qc_status"]
         library_list = []
         for sample, sample_info in list(proj.samples.items()):
             for prep in list(sample_info.preps.values()):
@@ -104,7 +104,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         )
 
         # lanes_info table
-        lanes_header = ["Date", "Flow cell", "Reads (M)", "N50"]
+        lanes_header = ["Date", "Flowcell", "Reads (M)", "N50"]
         lanes_filter = ["date", "name", "reads", "n50"]
         lanes_list = []
         for flowcell, flowcell_info in list(proj.flowcells.items()):
@@ -121,13 +121,13 @@ class Report(ngi_reports.reports.project_summary.Report):
         )
         self.tables_info["header_explanation"]["lanes_info"] = (
             "* _Date:_ Date of sequencing\n"
-            "* _Flow cell:_ Flow cell identifier\n"
+            "* _Flowcell:_ Flowcell identifier\n"
             "* _Reads (M):_ Number of reads generated (million)\n"
             "* _N50:_ Estimated N50\n"
         )
 
         # FC-sample info table
-        fc_header = ["Date", "Flow cell", "Samples"]
+        fc_header = ["Date", "Flowcell", "Samples"]
         fc_filter = ["date", "name", "samples"]
         fc_list = []
         for flowcell, flowcell_info in list(proj.flowcells.items()):
@@ -143,7 +143,7 @@ class Report(ngi_reports.reports.project_summary.Report):
         )
         self.tables_info["header_explanation"]["fc_info"] = (
             "* _Date:_ Date of sequencing\n"
-            "* _Flow cell:_ Flow cell identifier\n"
+            "* _Flowcell:_ Flowcell identifier\n"
             "* _Samples:_ Samples run on this flowcell\n"
         )
         # TODO: Make the file basename

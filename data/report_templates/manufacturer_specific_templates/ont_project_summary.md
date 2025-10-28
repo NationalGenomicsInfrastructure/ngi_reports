@@ -44,7 +44,7 @@ NGI ID | Index | Lib. Prep | Avg. FS (bp) | Lib. QC
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.label }} |{{ prep.avg_size }} | {{ prep.qc_status }}
+{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.prep_id }} |{{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
 {% endif -%}
 {%- endfor %}
@@ -56,11 +56,11 @@ Below you can find an explanation of the header column used in the table.
 {% endif %}
 
 
-# Flow cell Information
+# Flowcell Information
 {% if project.missing_fc %}
-No flow cell information to be displayed.
+No flowcell information to be displayed.
 {% else %}
-Date | Flow cell | Reads (M) | N50 
+Date | Flowcell | Reads (M) | N50 
 -----|----------|-------|----
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {{ fc.date }} | `{{ fc.run_name }}` | {{ fc.total_reads }} | {{ fc.n50 }} 
@@ -71,11 +71,11 @@ Below you can find an explanation of the header column used in the table.
 {{ tables.lanes_info }}
 {% endif %}
 
-# Flow cell-Sample Information
+# Flowcell-Sample Information
 {% if project.missing_fc %}
-No flow cell information to be displayed.
+No flowcell information to be displayed.
 {% else %}
-Date | Flow cell | Samples
+Date | Flowcell | Samples
 -----|----------|-------
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
 {{ fc.date }} | `{{ fc.run_name }}` | `{{ fc.samples_run }}`
