@@ -104,8 +104,8 @@ class Report(ngi_reports.reports.project_summary.Report):
         )
 
         # lanes_info table
-        lanes_header = ["Date", "Flowcell", "Reads (M)", "N50"]
-        lanes_filter = ["date", "name", "reads", "n50"]
+        lanes_header = ["Date", "Flowcell", "Reads (M)", "N50", "Method"]
+        lanes_filter = ["date", "name", "reads", "n50", "seq_meth"]
         lanes_list = []
         for flowcell, flowcell_info in list(proj.flowcells.items()):
             lane = {}
@@ -113,6 +113,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             lane["name"] = flowcell_info.run_name
             lane["reads"] = flowcell_info.total_reads
             lane["n50"] = flowcell_info.n50
+            lane["seq_meth"] = flowcell_info.seq_meth
             lanes_list.append(lane)
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
             sorted(lanes_list, key=lambda d: d["date"]),
@@ -124,6 +125,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             "* _Flowcell:_ Flowcell identifier\n"
             "* _Reads (M):_ Number of reads generated (million)\n"
             "* _N50:_ Estimated N50\n"
+            "* _Method:_ Sequencing method used. See description under Sequencing heading above.\n"
         )
 
         # FC-sample info table
