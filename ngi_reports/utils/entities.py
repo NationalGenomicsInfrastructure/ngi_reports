@@ -403,8 +403,9 @@ class Flowcell:
     def populate_ont_flowcell(self, log):
         # TODO Handle no data
         if self.fc_details.get("lims", {}) == {}:
-            # TODO:
-            log.warning(f"Flowcell {self.run_name} has no LIMS information")
+            log.warning(
+                f"Flowcell {self.run_name} has no LIMS information, please check and amend report manually"
+            )
             self.exclude = True
         else:
             final_acquisition = self.fc_details.get("acquisitions")[-1]
@@ -417,6 +418,10 @@ class Flowcell:
             self.fc_type = fc_runparameters.get("flow_cell").get(
                 "user_specified_product_code"
             )  # product_code not specified for minion
+
+            self.fc_id = fc_runparameters.get("flow_cell").get(
+                "user_specified_flow_cell_id"
+            )
             run_arguments = fc_runparameters.get("args")
             for arg in run_arguments:
                 if "min_qscore" in arg:
@@ -456,36 +461,34 @@ class Flowcell:
 
             self.sample_reads = {}
             self.average_read_length_passed = {}
-            fc_barcode_info = statusdb.NanoporeBarcodeConnection().proj_list[
-                self.run_name
-            ]
+            fc_barcode_info = final_acquisition.get("acquisition_output")[1]
             for arg in run_arguments:
                 if "--split_files_by_barcode=on" in arg:
-                    if fc_barcode_info:
-                        for barcode in fc_barcode_info:
-                            barcode_alias = fc_barcode_info[barcode].get(
+                    if fc_barcode_info.get("type") == "SplitByBarcode":
+                        for barcode in fc_barcode_info.get("plot")[0].get("snapshots"):
+                            barcode_name = barcode.get("filtering")[0].get(
+                                "barcode_name"
+                            )
+                            barcode_alias = barcode.get("filtering")[0].get(
                                 "barcode_alias"
                             )
-                            if barcode != barcode_alias:
+                            if barcode_name != barcode_alias:
                                 for lims_sample in lims_samples:
                                     sample_id = lims_sample.get("sample_name", "")
                                     if sample_id == barcode_alias:
                                         self.sample_reads[sample_id] = float(
-                                            fc_barcode_info[barcode].get(
-                                                "basecalled_pass_read_count"
-                                            )
+                                            barcode.get("snapshots")[-1]
+                                            .get("yield_summary")
+                                            .get("basecalled_pass_read_count")
                                         )
                                         self.average_read_length_passed[sample_id] = (
-                                            round(
-                                                float(
-                                                    fc_barcode_info[barcode].get(
-                                                        "basecalled_pass_bases"
-                                                    )
-                                                )
-                                                / self.sample_reads[sample_id]
+                                            float(
+                                                barcode.get("snapshots")[-1]
+                                                .get("yield_summary")
+                                                .get("basecalled_pass_bases")
                                             )
+                                            / self.sample_reads[sample_id]
                                         )
-
                 elif "--split_files_by_barcode=off" in arg:
                     for lims_sample in lims_samples:
                         sample_id = lims_sample.get("sample_name", "")
@@ -783,13 +786,9 @@ class Project:
             )
         elif self.sequencer_manufacturer == "ont":
             ontcon = statusdb.NanoporeRunConnection()
-            ontcon2 = statusdb.NanoporeBarcodeConnection()
             assert (
                 ontcon
             ), "Could not connect to nanopore_runs (names) database in StatusDB"
-            assert (
-                ontcon2
-            ), "Could not connect to nanopore_runs (info) database in StatusDB"
             flowcell_info = ontcon.get_project_flowcell(
                 self.ngi_id, self.dates["open_date"]
             )
@@ -809,7 +808,6 @@ class Project:
         for fc in flowcell_info.values():
             if fc["name"] in kwargs.get("exclude_fc"):
                 continue
-
             if fc["db"] == "x_flowcells":
                 fcObj = Flowcell(fc, self.ngi_name, xcon)
                 fcObj.populate_illumina_flowcell(log, **kwargs)
@@ -840,8 +838,7 @@ class Project:
                             self.samples[fc_sample].read_length += float(
                                 fcObj.average_read_length_passed[fc_sample]
                             )
-                    # TODO: could add nr of reads and average length too and provide lists of which samples were on which FC
-                    # Get the total reads for each sample from the FC during population and += to sample total reads here. Do the same for N50 and calculate average
+                    # TODO:
                     # Might need to think about how to handle multiple preps per sample, similar to Illimina (sample_qval dict)
 
             elif fc["db"] == "element_runs":
@@ -933,7 +930,7 @@ class Project:
             self.samples[sample].total_reads = "{:.2f}".format(
                 self.samples[sample].total_reads / float(samples_divisor)
             )
-            if self.sequencer_manufacturer == "ont":
+            if self.sequencer_manufacturer == "ont" and self.samples[sample].flowcells:
                 self.samples[sample].read_length = "{:.2f}".format(
                     self.samples[sample].read_length
                     / len(self.samples[sample].flowcells)
