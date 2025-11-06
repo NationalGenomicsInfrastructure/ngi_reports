@@ -489,6 +489,11 @@ class Flowcell:
                                             )
                                             / self.sample_reads[sample_id]
                                         )
+                        if self.sample_reads == {}:
+                            log.warning(
+                                f"Flowcell {self.run_name} has no barcode aliases corresponding to sample IDs."
+                            )
+
                 elif "--split_files_by_barcode=off" in arg:
                     for lims_sample in lims_samples:
                         sample_id = lims_sample.get("sample_name", "")
