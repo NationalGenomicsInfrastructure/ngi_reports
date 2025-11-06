@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20251027.1
+Handle Lane 0 issue for AVITI
+
 ## 20250919.1
 Improvements to ONT project summary reports
 

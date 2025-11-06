@@ -564,6 +564,7 @@ class Lane:
         lane_sum_lims = fc_lane_summary_lims.get(
             self.id, fc_lane_summary_lims.get("A", {})
         )
+        lane_sum_demux = {}
         for d in fc_lane_summary_demux:
             if str(d.get("Lane")) == (self.id):
                 lane_sum_demux = d
