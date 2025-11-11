@@ -464,35 +464,30 @@ class Flowcell:
             fc_barcode_info = final_acquisition.get("acquisition_output")[1]
             for arg in run_arguments:
                 if "--split_files_by_barcode=on" in arg:
-                    if fc_barcode_info.get("type") == "SplitByBarcode":
-                        for barcode in fc_barcode_info.get("plot")[0].get("snapshots"):
-                            barcode_name = barcode.get("filtering")[0].get(
-                                "barcode_name"
-                            )
-                            barcode_alias = barcode.get("filtering")[0].get(
-                                "barcode_alias"
-                            )
-                            if barcode_name != barcode_alias:
-                                for lims_sample in lims_samples:
-                                    sample_id = lims_sample.get("sample_name", "")
-                                    if sample_id == barcode_alias:
-                                        self.sample_reads[sample_id] = float(
+                    for barcode in fc_barcode_info.get("plot")[0].get("snapshots"):
+                        barcode_name = barcode.get("filtering")[0].get("barcode_name")
+                        barcode_alias = barcode.get("filtering")[0].get("barcode_alias")
+                        if barcode_name != barcode_alias:
+                            for lims_sample in lims_samples:
+                                sample_id = lims_sample.get("sample_name", "")
+                                if sample_id == barcode_alias:
+                                    self.sample_reads[sample_id] = float(
+                                        barcode.get("snapshots")[-1]
+                                        .get("yield_summary")
+                                        .get("basecalled_pass_read_count")
+                                    )
+                                    self.average_read_length_passed[sample_id] = (
+                                        float(
                                             barcode.get("snapshots")[-1]
                                             .get("yield_summary")
-                                            .get("basecalled_pass_read_count")
+                                            .get("basecalled_pass_bases")
                                         )
-                                        self.average_read_length_passed[sample_id] = (
-                                            float(
-                                                barcode.get("snapshots")[-1]
-                                                .get("yield_summary")
-                                                .get("basecalled_pass_bases")
-                                            )
-                                            / self.sample_reads[sample_id]
-                                        )
-                        if self.sample_reads == {}:
-                            log.warning(
-                                f"Flowcell {self.run_name} has no barcode aliases corresponding to sample IDs."
-                            )
+                                        / self.sample_reads[sample_id]
+                                    )
+                    if self.sample_reads == {}:
+                        log.warning(
+                            f"Flowcell {self.run_name} has no barcode aliases corresponding to sample IDs."
+                        )
 
                 elif "--split_files_by_barcode=off" in arg:
                     for lims_sample in lims_samples:
@@ -838,12 +833,17 @@ class Project:
                                 self.samples[fc_sample].preps[prep].barcode = (
                                     fcObj.fc_sample_barcodes[fc_sample]
                                 )
-                            self.samples[fc_sample].total_reads += float(
-                                fcObj.sample_reads[fc_sample]
-                            )
-                            self.samples[fc_sample].read_length += float(
-                                fcObj.average_read_length_passed[fc_sample]
-                            )
+                            try:
+                                self.samples[fc_sample].total_reads += float(
+                                    fcObj.sample_reads[fc_sample]
+                                )
+                                self.samples[fc_sample].read_length += float(
+                                    fcObj.average_read_length_passed[fc_sample]
+                                )
+                            except KeyError:
+                                log.error(
+                                    f"Could not find reads for sample {fc_sample}"
+                                )
                     # TODO:
                     # Might need to think about how to handle multiple preps per sample, similar to Illimina (sample_qval dict)
 
