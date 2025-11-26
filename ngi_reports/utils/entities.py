@@ -451,7 +451,54 @@ class Flowcell:
         )
         self.fc_sample_barcodes = {}
         self.samples_run = ""
+        self.sample_reads = {}
+        self.average_read_length_passed = {}
+        
+        barcode_name_alias_mismatches = {}
+        fc_barcode_info = final_acquisition.get("acquisition_output")[1].get("plot")[0].get("snapshots")
+        for barcode in fc_barcode_info:
+            barcode_name = barcode.get("filtering")[0].get("barcode_name")
+            barcode_alias = barcode.get("filtering")[0].get("barcode_alias")
+            if barcode_name != barcode_alias:
+                barcode_name_alias_mismatches[barcode_alias] = barcode.get("snapshots")[-1].get("yield_summary")
+
+        names = []
         for lims_sample in lims_samples:
+            sample_id = lims_sample.get("sample_name", "")
+            names.append(str(sample_id))
+            self.fc_sample_barcodes[sample_id] = lims_sample.get(
+                "ont_barcode", "NoIndex"
+            )
+
+            if split_files_by_barcode == "off":
+                self.sample_reads[sample_id] = float(yield_summary.get("basecalled_pass_read_count"))
+                self.average_read_length_passed[sample_id] = round(
+                    float(
+                        yield_summary.get("basecalled_pass_bases")
+                    )
+                    / self.sample_reads[sample_id]
+                )
+            elif split_files_by_barcode == "on":
+                if sample_id in barcode_name_alias_mismatches:
+                    self.sample_reads[sample_id] = float(
+                                barcode_name_alias_mismatches[sample_id]
+                                .get("basecalled_pass_read_count")
+                            )
+                    self.average_read_length_passed[sample_id] = (
+                        float(
+                            barcode_name_alias_mismatches[sample_id]
+                            .get("basecalled_pass_bases")
+                        )
+                        / self.sample_reads[sample_id]
+                    )
+
+          
+        self.samples_run = ", ".join(names)
+        
+        if not self.sample_reads:
+                log.warning(
+                    f"Flowcell {self.run_name} has no barcode aliases corresponding to sample IDs."
+                )
             sample_id = lims_sample.get("sample_name", "")
             self.fc_sample_barcodes[sample_id] = lims_sample.get(
                 "ont_barcode", "NoIndex"
