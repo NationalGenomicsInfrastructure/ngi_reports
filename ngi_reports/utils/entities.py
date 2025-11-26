@@ -428,19 +428,16 @@ class Flowcell:
                 self.qual_threshold = float(arg.split("=")[-1])
             if "split_files_by_barcode" in arg:
                 split_files_by_barcode = arg.split("=")[-1]
-                self.qual_threshold = float(arg.split("=")[-1])
         self.n50 = float(
             final_acquisition.get("read_length_histogram")[-1]
             .get("plot")
             .get("histogram_data")[0]
             .get("n50")
         )
-        self.total_reads = float(
-            final_acquisition.get("acquisition_run_info")
-            .get("yield_summary")
-            .get("read_count")
+        yield_summary = final_acquisition.get("acquisition_run_info").get(
+            "yield_summary"
         )
-        self.total_reads = round(self.total_reads / 1000000, 2)
+        self.total_reads = round(float(yield_summary.get("read_count")) / 1000000, 2)
 
         ont_seq_versions = fc_runparameters.get("software_versions", "")
         self.seq_software = {
@@ -453,14 +450,20 @@ class Flowcell:
         self.samples_run = ""
         self.sample_reads = {}
         self.average_read_length_passed = {}
-        
+
         barcode_name_alias_mismatches = {}
-        fc_barcode_info = final_acquisition.get("acquisition_output")[1].get("plot")[0].get("snapshots")
+        fc_barcode_info = (
+            final_acquisition.get("acquisition_output")[1]
+            .get("plot")[0]
+            .get("snapshots")
+        )
         for barcode in fc_barcode_info:
             barcode_name = barcode.get("filtering")[0].get("barcode_name")
             barcode_alias = barcode.get("filtering")[0].get("barcode_alias")
             if barcode_name != barcode_alias:
-                barcode_name_alias_mismatches[barcode_alias] = barcode.get("snapshots")[-1].get("yield_summary")
+                barcode_name_alias_mismatches[barcode_alias] = barcode.get("snapshots")[
+                    -1
+                ].get("yield_summary")
 
         names = []
         for lims_sample in lims_samples:
@@ -471,89 +474,35 @@ class Flowcell:
             )
 
             if split_files_by_barcode == "off":
-                self.sample_reads[sample_id] = float(yield_summary.get("basecalled_pass_read_count"))
+                self.sample_reads[sample_id] = float(
+                    yield_summary.get("basecalled_pass_read_count")
+                )
                 self.average_read_length_passed[sample_id] = round(
-                    float(
-                        yield_summary.get("basecalled_pass_bases")
-                    )
+                    float(yield_summary.get("basecalled_pass_bases"))
                     / self.sample_reads[sample_id]
                 )
             elif split_files_by_barcode == "on":
                 if sample_id in barcode_name_alias_mismatches:
                     self.sample_reads[sample_id] = float(
-                                barcode_name_alias_mismatches[sample_id]
-                                .get("basecalled_pass_read_count")
-                            )
+                        barcode_name_alias_mismatches[sample_id].get(
+                            "basecalled_pass_read_count"
+                        )
+                    )
                     self.average_read_length_passed[sample_id] = (
                         float(
-                            barcode_name_alias_mismatches[sample_id]
-                            .get("basecalled_pass_bases")
+                            barcode_name_alias_mismatches[sample_id].get(
+                                "basecalled_pass_bases"
+                            )
                         )
                         / self.sample_reads[sample_id]
                     )
 
-          
         self.samples_run = ", ".join(names)
-        
+
         if not self.sample_reads:
-                log.warning(
-                    f"Flowcell {self.run_name} has no barcode aliases corresponding to sample IDs."
-                )
-            sample_id = lims_sample.get("sample_name", "")
-            self.fc_sample_barcodes[sample_id] = lims_sample.get(
-                "ont_barcode", "NoIndex"
+            log.warning(
+                f"Flowcell {self.run_name} has no barcode aliases corresponding to sample IDs."
             )
-        self.samples_run = []
-        for sample in self.fc_sample_barcodes.keys():
-            self.samples_run.append(f"{sample}")
-        self.samples_run = ", ".join(self.samples_run)
-
-        self.sample_reads = {}
-        self.average_read_length_passed = {}
-        fc_barcode_info = final_acquisition.get("acquisition_output")[1]
-
-        if "--split_files_by_barcode=on" in run_arguments:
-            for barcode in fc_barcode_info.get("plot")[0].get("snapshots"):
-                barcode_name = barcode.get("filtering")[0].get("barcode_name")
-                barcode_alias = barcode.get("filtering")[0].get("barcode_alias")
-                if barcode_name != barcode_alias:
-                    for lims_sample in lims_samples:
-                        sample_id = lims_sample.get("sample_name", "")
-                        if sample_id == barcode_alias:
-                            self.sample_reads[sample_id] = float(
-                                barcode.get("snapshots")[-1]
-                                .get("yield_summary")
-                                .get("basecalled_pass_read_count")
-                            )
-                            self.average_read_length_passed[sample_id] = (
-                                float(
-                                    barcode.get("snapshots")[-1]
-                                    .get("yield_summary")
-                                    .get("basecalled_pass_bases")
-                                )
-                                / self.sample_reads[sample_id]
-                            )
-            if self.sample_reads == {}:
-                log.warning(
-                    f"Flowcell {self.run_name} has no barcode aliases corresponding to sample IDs."
-                )
-
-        elif "--split_files_by_barcode=off" in run_arguments:
-            for lims_sample in lims_samples:
-                sample_id = lims_sample.get("sample_name", "")
-                self.sample_reads[sample_id] = float(
-                    final_acquisition.get("acquisition_run_info")
-                    .get("yield_summary")
-                    .get("basecalled_pass_read_count")
-                )
-                self.average_read_length_passed[sample_id] = round(
-                    float(
-                        final_acquisition.get("acquisition_run_info")
-                        .get("yield_summary")
-                        .get("basecalled_pass_bases")
-                    )
-                    / self.sample_reads[sample_id]
-                )
 
 
 class Lane:
