@@ -426,6 +426,9 @@ class Flowcell:
         for arg in run_arguments:
             if "min_qscore" in arg:
                 self.qual_threshold = float(arg.split("=")[-1])
+            if "split_files_by_barcode" in arg:
+                split_files_by_barcode = arg.split("=")[-1]
+                self.qual_threshold = float(arg.split("=")[-1])
         self.n50 = float(
             final_acquisition.get("read_length_histogram")[-1]
             .get("plot")
