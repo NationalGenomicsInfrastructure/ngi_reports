@@ -138,7 +138,6 @@ class Flowcell:
         self.fc_details = self.db_connection.get_entry(self.run_name)
         self.lanes = OrderedDict()
         self.fc_sample_qvalues = defaultdict(dict)
-        self.exclude = False
 
     def populate_illumina_flowcell(self, log, **kwargs):
         fc_instrument = self.fc_details.get("RunInfo", {}).get("Instrument", "")
@@ -406,8 +405,7 @@ class Flowcell:
             log.warning(
                 f"Flowcell {self.run_name} has no LIMS information, please check and amend report manually"
             )
-            self.exclude = True
-            return None
+            return "no LIMS information"
         final_acquisition = self.fc_details.get("acquisitions")[-1]
         if "_PA" in self.run_name or "_PB" in self.run_name:
             self.type = "PromethION"
@@ -821,8 +819,8 @@ class Project:
 
             elif fc["db"] == "nanopore_runs":
                 fcObj = Flowcell(fc, self.ngi_name, ontcon)
-                fcObj.populate_ont_flowcell(log)
-                if fcObj.exclude:
+                val = fcObj.populate_ont_flowcell(log)
+                if val == "no LIMS information":
                     continue
                 for fc_sample in fcObj.fc_sample_barcodes:
                     if fc_sample in self.samples.keys():
