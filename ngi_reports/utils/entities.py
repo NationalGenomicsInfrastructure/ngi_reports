@@ -73,8 +73,7 @@ class Sample:
                     f"Prep status missing for sample {self.ngi_id} in prep {prep_id}"
                 )
             for flowcell in prepObj.seq_fc:
-                if flowcell != "N" and flowcell != "A":
-                    self.flowcells.append(flowcell)
+                self.flowcells.append(flowcell)
             self.preps[prep_id] = prepObj
         if not self.preps:
             log.warning(
@@ -94,7 +93,7 @@ class Prep:
         self.avg_size = "NA"
         self.barcode = "NA"
         self.qc_status = "NA"
-        self.seq_fc = "NA"
+        self.seq_fc = []
 
     def populate_prep(self, log, library_construction):
         if "by user" in library_construction.lower():
