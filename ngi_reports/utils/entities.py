@@ -450,6 +450,7 @@ class Flowcell:
             self.fc_details.get("lims", {}).get("loading", {})[0].get("sample_data", [])
         )
         self.fc_sample_barcodes = {}
+        self.samples_run = ""
         for lims_sample in lims_samples:
             sample_id = lims_sample.get("sample_name", "")
             self.fc_sample_barcodes[sample_id] = lims_sample.get(
