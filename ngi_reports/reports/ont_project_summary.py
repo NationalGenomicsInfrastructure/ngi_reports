@@ -131,13 +131,14 @@ class Report(ngi_reports.reports.project_summary.Report):
         # FC-sample info table
         fc_header = ["Date", "Flowcell", "Samples"]
         fc_filter = ["date", "name", "samples"]
-        fc_list = []
-        for flowcell, flowcell_info in list(proj.flowcells.items()):
-            fc = {}
-            fc["date"] = flowcell_info.date
-            fc["name"] = flowcell_info.run_name
-            fc["samples"] = flowcell_info.samples_run
-            fc_list.append(fc)
+        fc_list = [
+              {
+                   "date": info.date,
+                   "name": info.run_name,
+                   "samples": info.samples_run,
+                }
+                for info in proj.flowcells.values()
+        ]
         self.tables_info["tables"]["fc_info"] = self.create_table_text(
             sorted(fc_list, key=lambda d: d["date"]),
             filter_keys=fc_filter,
