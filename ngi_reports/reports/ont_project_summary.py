@@ -56,25 +56,37 @@ class Report(ngi_reports.reports.project_summary.Report):
         ###############################################################################
         # sample_info table
         unit_magnitude = {"#reads": "", "Kreads": "Thousand", "Mreads": "Million"}
-        sample_header = ["NGI ID", "User ID", proj.samples_unit]
-        sample_filter = ["ngi_id", "customer_name", "total_reads"]
+        sample_header = [
+            "NGI ID",
+            "User ID",
+            proj.samples_unit,
+            "Avg. read length passed",
+        ]
+        sample_filter = ["ngi_id", "customer_name", "total_reads", "read_length"]
         self.tables_info["tables"]["sample_info"] = self.create_table_text(
             proj.samples.values(), filter_keys=sample_filter, header=sample_header
         )
         self.tables_info["header_explanation"]["sample_info"] = (
             "* _NGI ID:_ Internal NGI sample identifier\n"
             "* _User ID:_ Sample name submitted by user\n"
-            f"* _{proj.samples_unit}:_ Number of reads per sample ({unit_magnitude[proj.samples_unit]})\n"
+            f"* _{proj.samples_unit}:_ Number of passed reads per sample ({unit_magnitude[proj.samples_unit]})\n"
+            "* _Avg. read length passed:_ Average read length of passed reads\n"
         )
 
         # library_info table
-        library_header = ["NGI ID", "Index", "Avg. FS(bp)", "Lib. QC"]
-        library_filter = ["ngi_id", "barcode", "avg_size", "qc_status"]
+        library_header = ["NGI ID", "Index", "Lib. Prep", "Avg. FS(bp)", "Lib. QC"]
+        library_filter = ["ngi_id", "barcode", "prep_id", "avg_size", "qc_status"]
         library_list = []
         for sample, sample_info in list(proj.samples.items()):
             for prep in list(sample_info.preps.values()):
                 prep = vars(prep)
                 prep["ngi_id"] = sample
+                if prep["qc_status"] == "PASSED":
+                    prep["qc_status"] = "[pass]"
+                elif prep["qc_status"] == "FAILED":
+                    prep["qc_status"] = "[fail]"
+                elif prep["qc_status"] == "NA":
+                    prep["qc_status"] = "[na]"
                 if len(proj.samples.items()) == 1 and prep.get("barcode") == "NA":
                     prep["barcode"] = "no index"
                 library_list.append(prep)
@@ -86,13 +98,14 @@ class Report(ngi_reports.reports.project_summary.Report):
         self.tables_info["header_explanation"]["library_info"] = (
             "* _NGI ID:_ Internal NGI sample identifier\n"
             "* _Index:_ Barcode sequence used for the sample\n"
+            '* _Lib. Prep:_ NGI library identifier. The first library prep will be marked "A", the second "B" and so on.\n'
             "* _Avg. FS:_ Average fragment size of the library\n"
             "* _Lib. QC:_ Library quality control status\n"
         )
 
         # lanes_info table
-        lanes_header = ["Date", "Flow cell", "Reads (M)", "N50"]
-        lanes_filter = ["date", "name", "reads", "n50"]
+        lanes_header = ["Date", "Flowcell", "Reads (M)", "N50", "Method"]
+        lanes_filter = ["date", "name", "reads", "n50", "seq_meth"]
         lanes_list = []
         for flowcell, flowcell_info in list(proj.flowcells.items()):
             lane = {}
@@ -100,6 +113,7 @@ class Report(ngi_reports.reports.project_summary.Report):
             lane["name"] = flowcell_info.run_name
             lane["reads"] = flowcell_info.total_reads
             lane["n50"] = flowcell_info.n50
+            lane["seq_meth"] = flowcell_info.seq_meth
             lanes_list.append(lane)
         self.tables_info["tables"]["lanes_info"] = self.create_table_text(
             sorted(lanes_list, key=lambda d: d["date"]),
@@ -108,12 +122,35 @@ class Report(ngi_reports.reports.project_summary.Report):
         )
         self.tables_info["header_explanation"]["lanes_info"] = (
             "* _Date:_ Date of sequencing\n"
-            "* _Flow cell:_ Flow cell identifier\n"
+            "* _Flowcell:_ Flowcell identifier\n"
             "* _Reads (M):_ Number of reads generated (million)\n"
             "* _N50:_ Estimated N50\n"
+            "* _Method:_ Sequencing method used. See description under Sequencing heading above.\n"
         )
-        # TODO: Add lists of samples for each FC
-        # Make the file basename
+
+        # FC-sample info table
+        fc_header = ["Date", "Flowcell", "Samples"]
+        fc_filter = ["date", "name", "samples"]
+        fc_list = [
+              {
+                   "date": info.date,
+                   "name": info.run_name,
+                   "samples": info.samples_run,
+                }
+                for info in proj.flowcells.values()
+        ]
+        self.tables_info["tables"]["fc_info"] = self.create_table_text(
+            sorted(fc_list, key=lambda d: d["date"]),
+            filter_keys=fc_filter,
+            header=fc_header,
+        )
+        self.tables_info["header_explanation"]["fc_info"] = (
+            "* _Date:_ Date of sequencing\n"
+            "* _Flowcell:_ Flowcell identifier\n"
+            "* _Samples:_ Samples run on this flowcell\n"
+        )
+        # TODO: Make the file basename
+
         output_basename = os.path.realpath(
             os.path.join(
                 self.working_dir,

@@ -1,3 +1,3 @@
-""" Main ngi_reports module
-"""
-__version__="1.1.2"
+"""Main ngi_reports module"""
+
+__version__ = "1.2.0"

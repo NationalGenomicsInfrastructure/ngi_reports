@@ -22,10 +22,10 @@ delivery. These include checking the yield, sequence read quality and average re
 {% if not project.samples %}
 No sample information to be displayed.
 {% else %}
-NGI ID | User ID | {{ project.samples_unit }}
--------|---------|----------
+NGI ID | User ID | {{ project.samples_unit }}| Avg.read length passed
+-------|---------|----------|----------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
-{{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }}
+{{ sample.ngi_id }} | `{{ sample.customer_name }}` | {{ sample.total_reads }}| {{ sample.read_length }}
 {% endfor %}
 
 
@@ -39,12 +39,12 @@ Below you can find an explanation of the header column used in the table.
 {% if not project.samples %}
 No library information to be displayed.
 {% else %}
-NGI ID | Index | Avg. FS (bp) | Lib. QC
--------|-------|--------------|--------
+NGI ID | Index | Lib. Prep | Avg. FS (bp) | Lib. QC
+-------|-------|-------------|--------------|--------
 {% for sample in project.samples.values()|sort(attribute='ngi_id') -%}
 {% if sample.preps -%}
 {% for prep in sample.preps.values() -%}
-{{ sample.ngi_id }} | `{{ prep.barcode }}` | {{ prep.avg_size }} | {{ prep.qc_status }}
+{{ sample.ngi_id }} | `{{ prep.barcode }}` | Lib. {{ prep.prep_id }} |{{ prep.avg_size }} | {{ prep.qc_status }}
 {% endfor -%}
 {% endif -%}
 {%- endfor %}
@@ -56,20 +56,21 @@ Below you can find an explanation of the header column used in the table.
 {% endif %}
 
 
-# Flow cell Information
+# Flowcell Information
 {% if project.missing_fc %}
-No flow cell information to be displayed.
+No flowcell information to be displayed.
 {% else %}
-Date | Flow cell | Reads (M) | N50
------|----------|-------|----
+Date | Flowcell | Reads (M) | N50 | Method
+-----|----------|-------|----|----
 {% for fc in project.flowcells.values()|sort(attribute='date') -%}
-{{ fc.date }} | `{{ fc.run_name }}` | {{ fc.total_reads }} | {{ fc.n50 }}
+{{ fc.date }} | `{{ fc.run_name }}` | {{ fc.total_reads }} | {{ fc.n50 }}| Seq. {{ fc.seq_meth }} 
 {% endfor %}
 
 Below you can find an explanation of the header column used in the table.
 
 {{ tables.lanes_info }}
 {% endif %}
+
 
 # Additions to, deviations or exclusions from the accredited method(s)
 

@@ -44,6 +44,8 @@ class Sample:
         self.preps = {}
         self.qscore = ""
         self.total_reads = 0.0
+        self.read_length = 0.0
+        self.flowcells = []
 
     def populate_sample(self, log, library_construction, **kwargs):
         # Initial QC
@@ -61,7 +63,6 @@ class Sample:
         for prep_id, prep_info in self.sample_info.get("library_prep", {}).items():
             prepObj = Prep(prep_id, prep_info)
             prepObj.populate_prep(log, library_construction)
-
             if prepObj.barcode == "NA":
                 log.warning(
                     f"Barcode missing for sample {self.ngi_id} in prep {prep_id}. "
@@ -71,9 +72,9 @@ class Sample:
                 log.warning(
                     f"Prep status missing for sample {self.ngi_id} in prep {prep_id}"
                 )
-
+            for flowcell in prepObj.seq_fc:
+                self.flowcells.append(flowcell)
             self.preps[prep_id] = prepObj
-
         if not self.preps:
             log.warning(
                 f"No library prep information was available for sample {self.ngi_id}"
@@ -92,14 +93,15 @@ class Prep:
         self.avg_size = "NA"
         self.barcode = "NA"
         self.qc_status = "NA"
-        self.seq_fc = "NA"
+        self.seq_fc = []
 
     def populate_prep(self, log, library_construction):
         if "by user" in library_construction.lower():
             self.label = "NA"
         self.barcode = self.prep_info.get("reagent_label", "NA")
         self.qc_status = self.prep_info.get("prep_status", "NA")
-
+        if self.prep_info.get("sample_run_metrics"):
+            self.seq_fc = self.prep_info.get("sample_run_metrics").keys()
         if "pcr-free" not in library_construction.lower():
             if self.prep_info.get("library_validation"):
                 lib_valids = self.prep_info["library_validation"]
@@ -133,7 +135,6 @@ class Flowcell:
         self.run_name = self.fc.get("run_name", "")
         self.date = self.fc.get("date", "")
         self.fc_details = self.db_connection.get_entry(self.run_name)
-
         self.lanes = OrderedDict()
         self.fc_sample_qvalues = defaultdict(dict)
 
@@ -397,9 +398,14 @@ class Flowcell:
             laneObj.weighted_avg_qval_proj /= laneObj.total_reads_with_qval_proj
             laneObj.weighted_avg_qval_proj = round(laneObj.weighted_avg_qval_proj, 2)
 
-    def populate_ont_flowcell(self):
+    def populate_ont_flowcell(self, log):
+        # TODO Handle no data
+        if self.fc_details.get("lims", {}) == {}:
+            log.warning(
+                f"Flowcell {self.run_name} has no LIMS information, please check and amend report manually"
+            )
+            return "no LIMS information"
         final_acquisition = self.fc_details.get("acquisitions")[-1]
-
         if "_PA" in self.run_name or "_PB" in self.run_name:
             self.type = "PromethION"
         elif "_MN" in self.run_name:
@@ -409,35 +415,91 @@ class Flowcell:
         self.fc_type = fc_runparameters.get("flow_cell").get(
             "user_specified_product_code"
         )  # product_code not specified for minion
+
+        self.fc_id = fc_runparameters.get("flow_cell").get(
+            "user_specified_flow_cell_id"
+        )
         run_arguments = fc_runparameters.get("args")
         for arg in run_arguments:
             if "min_qscore" in arg:
                 self.qual_threshold = float(arg.split("=")[-1])
+            if "split_files_by_barcode" in arg:
+                split_files_by_barcode = arg.split("=")[-1]
         self.n50 = float(
             final_acquisition.get("read_length_histogram")[-1]
             .get("plot")
             .get("histogram_data")[0]
             .get("n50")
         )
-        self.total_reads = float(
-            final_acquisition.get("acquisition_run_info")
-            .get("yield_summary")
-            .get("read_count")
+        yield_summary = final_acquisition.get("acquisition_run_info").get(
+            "yield_summary"
         )
-        self.total_reads = round(self.total_reads / 1000000, 2)
+        self.total_reads = round(float(yield_summary.get("read_count")) / 1000000, 2)
 
         ont_seq_versions = fc_runparameters.get("software_versions", "")
         self.seq_software = {
             "MinKNOW version": ont_seq_versions.get("minknow", "").get("full", ""),
         }
-
         lims_samples = (
             self.fc_details.get("lims", {}).get("loading", {})[0].get("sample_data", [])
         )
         self.fc_sample_barcodes = {}
+        self.samples_run = ""
+        self.sample_reads = {}
+        self.average_read_length_passed = {}
+
+        barcode_name_alias_mismatches = {}
+        fc_barcode_info = (
+            final_acquisition.get("acquisition_output")[1]
+            .get("plot")[0]
+            .get("snapshots")
+        )
+        for barcode in fc_barcode_info:
+            barcode_name = barcode.get("filtering")[0].get("barcode_name")
+            barcode_alias = barcode.get("filtering")[0].get("barcode_alias")
+            if barcode_name != barcode_alias:
+                barcode_name_alias_mismatches[barcode_alias] = barcode.get("snapshots")[
+                    -1
+                ].get("yield_summary")
+
+        names = []
         for lims_sample in lims_samples:
             sample_id = lims_sample.get("sample_name", "")
-            self.fc_sample_barcodes[sample_id] = lims_sample.get("ont_barcode", "NoIndex")
+            names.append(str(sample_id))
+            self.fc_sample_barcodes[sample_id] = lims_sample.get(
+                "ont_barcode", "NoIndex"
+            )
+
+            if split_files_by_barcode == "off":
+                self.sample_reads[sample_id] = float(
+                    yield_summary.get("basecalled_pass_read_count")
+                )
+                self.average_read_length_passed[sample_id] = round(
+                    float(yield_summary.get("basecalled_pass_bases"))
+                    / self.sample_reads[sample_id]
+                )
+            elif split_files_by_barcode == "on":
+                if sample_id in barcode_name_alias_mismatches:
+                    self.sample_reads[sample_id] = float(
+                        barcode_name_alias_mismatches[sample_id].get(
+                            "basecalled_pass_read_count"
+                        )
+                    )
+                    self.average_read_length_passed[sample_id] = (
+                        float(
+                            barcode_name_alias_mismatches[sample_id].get(
+                                "basecalled_pass_bases"
+                            )
+                        )
+                        / self.sample_reads[sample_id]
+                    )
+
+        self.samples_run = ", ".join(names)
+
+        if not self.sample_reads:
+            log.warning(
+                f"Flowcell {self.run_name} has no barcode aliases corresponding to sample IDs."
+            )
 
 
 class Lane:
@@ -625,6 +687,7 @@ class Project:
             self.sequencer_manufacturer = "illumina"
         elif proj_details.get("sequencing_platform") in ["PromethION", "MinION"]:
             self.sequencer_manufacturer = "ont"
+            self.skip_fastq = True
         elif proj_details.get("sequencing_platform") in ["Element AVITI"]:
             self.sequencer_manufacturer = "element"
         else:
@@ -675,7 +738,6 @@ class Project:
             self.accredited[key] = proj_details.get(f"accredited_({key})")
 
         self.sequencing_setup = proj_details.get("sequencing_setup")
-
         for sample_id, sample_info in sorted(proj.get("samples", {}).items()):
             if kwargs.get("samples", []) and sample_id not in kwargs.get("samples", []):
                 log.info(
@@ -707,10 +769,8 @@ class Project:
                 # Don't gather unnecessary information if not going to be looked up
                 if not kwargs.get("yield_from_fc"):
                     continue
-
             sampleObj = Sample(sample_id, sample_info, status="Sequenced")
             sampleObj.populate_sample(log, self.library_construction, **kwargs)
-
             self.samples[sample_id] = sampleObj
 
         # Get Flowcell data
@@ -722,10 +782,13 @@ class Project:
             )
         elif self.sequencer_manufacturer == "ont":
             ontcon = statusdb.NanoporeRunConnection()
-            assert ontcon, "Could not connect to nanopore_runs database in StatusDB"
+            assert (
+                ontcon
+            ), "Could not connect to nanopore_runs (names) database in StatusDB"
             flowcell_info = ontcon.get_project_flowcell(
                 self.ngi_id, self.dates["open_date"]
             )
+
         elif self.sequencer_manufacturer == "element":
             elementcon = statusdb.ElementRunConnection()
             assert elementcon, "Could not connect to element_runs database in StatusDB"
@@ -741,7 +804,6 @@ class Project:
         for fc in flowcell_info.values():
             if fc["name"] in kwargs.get("exclude_fc"):
                 continue
-
             if fc["db"] == "x_flowcells":
                 fcObj = Flowcell(fc, self.ngi_name, xcon)
                 fcObj.populate_illumina_flowcell(log, **kwargs)
@@ -756,17 +818,26 @@ class Project:
 
             elif fc["db"] == "nanopore_runs":
                 fcObj = Flowcell(fc, self.ngi_name, ontcon)
-                fcObj.populate_ont_flowcell()
+                val = fcObj.populate_ont_flowcell(log)
+                if val == "no LIMS information":
+                    continue
                 for fc_sample in fcObj.fc_sample_barcodes:
                     if fc_sample in self.samples.keys():
                         for prep in self.samples[fc_sample].preps:
-                            self.samples[fc_sample].preps[
-                                prep
-                            ].barcode = fcObj.fc_sample_barcodes[
-                                fc_sample
-                            ]  # TODO: could add nr of reads and average length too and provide lists of which samples were on which FC
-                            # Get the total reads for each sample from the FC during population and += to sample total reads here. Do the same for N50 and calculate average
-                            # Might need to think about how to handle multiple preps per sample, similar to Illimina (sample_qval dict)
+                            self.samples[fc_sample].preps[prep].barcode = (
+                                fcObj.fc_sample_barcodes[fc_sample]
+                            )
+                        try:
+                            self.samples[fc_sample].total_reads += float(
+                                fcObj.sample_reads[fc_sample]
+                            )
+                            self.samples[fc_sample].read_length += float(
+                                fcObj.average_read_length_passed[fc_sample]
+                            )
+                        except KeyError:
+                            log.error(f"Could not find reads for sample {fc_sample}")
+                    # TODO:
+                    # Might need to think about how to handle multiple preps per sample, similar to Illimina (sample_qval dict)
 
             elif fc["db"] == "element_runs":
                 fcObj = Flowcell(fc, self.ngi_name, elementcon)
@@ -817,41 +888,51 @@ class Project:
 
         # Calculate average Q30 over all lanes and flowcell
         max_total_reads = 0
-        for sample in sorted(sample_qval.keys()):
-            try:
-                qinfo = sample_qval[sample]
-                total_qvalsbp, total_bases, total_reads = (0, 0, 0)
-                for k in qinfo:
-                    total_qvalsbp += qinfo[k]["qval"] * qinfo[k]["bases"]
-                    total_bases += qinfo[k]["bases"]
-                    total_reads += qinfo[k]["reads"]
-                avg_qval = (
-                    float(total_qvalsbp) / total_bases
-                    if total_bases
-                    else float(total_qvalsbp)
-                )
-                self.samples[sample].qscore = "{:.2f}".format(round(avg_qval, 2))
-                # Sample has been sequenced and should be removed from the aborted/not sequenced list
-                if sample in self.aborted_samples:
-                    log.info(
-                        f"Sample {sample} was sequenced, so removing it from NOT sequenced samples list"
+        if sample_qval:
+            for sample in sorted(sample_qval.keys()):
+                try:
+                    qinfo = sample_qval[sample]
+                    total_qvalsbp, total_bases, total_reads = (0, 0, 0)
+                    for k in qinfo:
+                        total_qvalsbp += qinfo[k]["qval"] * qinfo[k]["bases"]
+                        total_bases += qinfo[k]["bases"]
+                        total_reads += qinfo[k]["reads"]
+                    avg_qval = (
+                        float(total_qvalsbp) / total_bases
+                        if total_bases
+                        else float(total_qvalsbp)
                     )
-                    del self.aborted_samples[sample]
-                # Get/overwrite yield from the FCs computed instead of statusDB value
-                if total_reads:
-                    self.samples[sample].total_reads = total_reads
-                    if total_reads > max_total_reads:
-                        max_total_reads = total_reads
-            except (TypeError, KeyError):
-                log.error(f"Could not calcluate average Q30 for sample {sample}")
+                    self.samples[sample].qscore = "{:.2f}".format(round(avg_qval, 2))
+                    # Sample has been sequenced and should be removed from the aborted/not sequenced list
+                    if sample in self.aborted_samples:
+                        log.info(
+                            f"Sample {sample} was sequenced, so removing it from NOT sequenced samples list"
+                        )
+                        del self.aborted_samples[sample]
+                    # Get/overwrite yield from the FCs computed instead of statusDB value
+                    if total_reads:
+                        self.samples[sample].total_reads = total_reads
+                        if total_reads > max_total_reads:
+                            max_total_reads = total_reads
+                except (TypeError, KeyError):
+                    log.error(f"Could not calcluate average Q30 for sample {sample}")
+        else:
+            for sample in sorted(self.samples.keys()):
+                total_reads = self.samples[sample].total_reads
+                if total_reads > max_total_reads:
+                    max_total_reads = total_reads
 
         # Cut down total reads to bite sized numbers
         self.samples_unit, samples_divisor = get_units_and_divisor(max_total_reads)
-
         for sample in self.samples:
             self.samples[sample].total_reads = "{:.2f}".format(
                 self.samples[sample].total_reads / float(samples_divisor)
             )
+            if self.sequencer_manufacturer == "ont" and self.samples[sample].flowcells:
+                self.samples[sample].read_length = "{:.2f}".format(
+                    self.samples[sample].read_length
+                    / len(self.samples[sample].flowcells)
+                )
 
     def replace_barcodes(self, log):
         # TODO: Add more sanity checks to this function and exit if it's not applicable, e.g. for single cell
@@ -928,7 +1009,8 @@ class Project:
 
             for sample_stat in fcObj.barcode_lane_statistics:
                 new_barcode = "-".join(sample_stat.get("Barcode sequence").split("+"))
-                lib_prep = []  # Adding the now required library prep, set to NA for all non-LIMS samples
+                lib_prep = []
+                # Adding the now required library prep, set to NA for all non-LIMS samples
                 if sample_stat.get("Sample") in additional_samples:
                     lib_prep.append("NA")
                 else:  # Adding library prep for LIMS samples, we identified them earlier
