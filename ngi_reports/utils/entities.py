@@ -627,6 +627,7 @@ class Project:
         self.sequencing_setup = ""
         self.skip_fastq = False
         self.user_ID = ""
+        self.unit_type = ""
 
     def populate(self, log, organism_names, **kwargs):
         project = kwargs.get("project", "")
@@ -706,6 +707,8 @@ class Project:
         self.reference["organism"] = organism_names.get(self.reference["genome"], None)
         self.user_ID = proj_details.get("customer_project_reference", "")
         self.num_lanes = proj_details.get("sequence_units_ordered_(lanes)")
+        if "Universal" in proj_details.get("flowcell"):
+            self.unit_type = "Sequencing units"
         self.library_construction_method = proj_details.get(
             "library_construction_method"
         )

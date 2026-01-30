@@ -33,7 +33,10 @@ Submitted samples
 {%- endif %}
 
 {% if project.num_lanes -%}
-{% if "illumina" in project.sequencer_manufacturer or "element" in project.sequencer_manufacturer -%}
+{% if "illumina" in project.sequencer_manufacturer and project.unit_type -%}
+Ordered sequencing units
+:   {{ project.num_lanes }} unit{% if project.num_lanes > 1 %}s{% endif %}
+{% elif "illumina" in project.sequencer_manufacturer or "element" in project.sequencer_manufacturer -%}
 Ordered lanes
 :   {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}
 {% elif "ont" in project.sequencer_manufacturer -%}
