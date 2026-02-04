@@ -33,15 +33,15 @@ Submitted samples
 {%- endif %}
 
 {% if project.num_lanes -%}
-{% if "illumina" in project.sequencer_manufacturer and project.unit_type -%}
+{% if project.unit_type == "units" -%}
 Ordered sequencing units
 :   {{ project.num_lanes }} unit{% if project.num_lanes > 1 %}s{% endif %}
 {% elif "illumina" in project.sequencer_manufacturer or "element" in project.sequencer_manufacturer -%}
 Ordered lanes
 :   {{ project.num_lanes }} lane{% if project.num_lanes > 1 %}s{% endif %}
-{% elif "ont" in project.sequencer_manufacturer -%}
-Ordered Flow cells
-:   {{ project.num_lanes }} flow cell{% if project.num_lanes > 1 %}s{% endif %}
+{% elif project.unit_type == "flowcells" -%}
+Ordered flowcells
+:   {{ project.num_lanes }} flowcell{% if project.num_lanes > 1 %}s{% endif %}
 {%- endif %}
 {%- endif %}
 
