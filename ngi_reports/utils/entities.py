@@ -627,6 +627,7 @@ class Project:
         self.sequencing_setup = ""
         self.skip_fastq = False
         self.user_ID = ""
+        self.unit_type = ""
 
     def populate(self, log, organism_names, **kwargs):
         project = kwargs.get("project", "")
@@ -688,6 +689,7 @@ class Project:
         elif proj_details.get("sequencing_platform") in ["PromethION", "MinION"]:
             self.sequencer_manufacturer = "ont"
             self.skip_fastq = True
+            self.unit_type = "flowcells"
         elif proj_details.get("sequencing_platform") in ["Element AVITI"]:
             self.sequencer_manufacturer = "element"
         else:
@@ -706,6 +708,8 @@ class Project:
         self.reference["organism"] = organism_names.get(self.reference["genome"], None)
         self.user_ID = proj_details.get("customer_project_reference", "")
         self.num_lanes = proj_details.get("sequence_units_ordered_(lanes)")
+        if "Universal" in proj_details.get("flowcell"):
+            self.unit_type = "units"
         self.library_construction_method = proj_details.get(
             "library_construction_method"
         )
