@@ -106,7 +106,7 @@ class Prep:
             if self.prep_info.get("library_validation"):
                 lib_valids = self.prep_info["library_validation"]
                 keys = sorted(
-                    [k for k in lib_valids.keys() if re.match("^[\d\-]*$", k)],
+                    [k for k in lib_valids.keys() if re.match(r"^[\d\-]*$", k)],
                     key=lambda k: datetime.strptime(
                         lib_valids[k]["start_date"], "%Y-%m-%d"
                     ),
@@ -442,7 +442,9 @@ class Flowcell:
         yield_summary = final_acquisition.get("acquisition_run_info").get(
             "yield_summary"
         )
-        self.total_reads = round(float(yield_summary.get("basecalled_pass_read_count")) / 1000000, 2)
+        self.total_reads = round(
+            float(yield_summary.get("basecalled_pass_read_count")) / 1000000, 2
+        )
 
         ont_seq_versions = fc_runparameters.get("software_versions", "")
         self.seq_software = {

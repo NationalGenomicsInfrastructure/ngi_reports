@@ -1,8 +1,9 @@
-""" Load and parse configuration file
-"""
+"""Load and parse configuration file"""
+
 import configparser
 import os
 from string import Template
+
 
 def load_config(config_file=None):
     """Loads a configuration file.
@@ -11,21 +12,28 @@ def load_config(config_file=None):
     """
     try:
         if not config_file:
-            config_file = os.path.join(os.environ.get('HOME'), '.ngi_config', 'ngi_reports.conf')
+            config_file = os.path.join(
+                os.environ.get("HOME"), ".ngi_config", "ngi_reports.conf"
+            )
             if not os.path.exists(config_file):
                 config_file = os.path.join(os.environ.get("NGI_REPORTS_CONFIG"))
-        config = configparser.SafeConfigParser()
+        config = configparser.ConfigParser()
         with open(config_file) as f:
-            config.readfp(f)
+            config.read_file(f)
         return config
     except IOError:
-        raise IOError(("There was a problem loading the configuration file. "
+        raise IOError(
+            (
+                "There was a problem loading the configuration file. "
                 "Please make sure that ~/.ngi_config/ngi_reports.conf exists "
                 "or env variable 'NGI_REPORTS_CONFIG' is set with path to conf "
-                "file and set with read permissions"))
+                "file and set with read permissions"
+            )
+        )
+
 
 def expand_path(input_path, substitutions):
     """Use python's string templates to replace substitution patterns in
-        the input path for those available in the substitution dict
+    the input path for those available in the substitution dict
     """
     return Template(input_path).substitute(substitutions)

@@ -1,5 +1,8 @@
 # ngi_reports Version Log
 
+## 20260828.1
+Minor fixes to be able to run in python 3.14
+
 ## 20260518.1
 Added sample_type to Project section of report
 
