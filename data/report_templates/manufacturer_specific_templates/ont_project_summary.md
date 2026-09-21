@@ -13,9 +13,7 @@ NGI is an accredited facility. However, the workflows used for this project is n
 {%- endif %}
 
 ### Data Processing
-To ensure that all sequenced data meets our guarantee of data quality and quantity,
-a number of standardised bioinformatics quality control checks are performed before
-delivery. These include checking the yield, sequence read quality and average read length.
+Data delivery is done via the SciLifeLab Data Delivery System (DDS), from which users may download the data.
 
 
 # Sample Information
