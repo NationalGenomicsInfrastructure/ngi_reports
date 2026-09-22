@@ -1,4 +1,6 @@
 # ngi_reports Version Log
+## 20260922.1
+Changed wording in ONT report template for data processing.
 
 ## 20260828.1
 Minor fixes to be able to run in python 3.14
