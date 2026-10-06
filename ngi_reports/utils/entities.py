@@ -899,9 +899,9 @@ class Project:
             log.info(
                 "'yield_from_fc' option was given so will compute the yield from collected flowcells"
             )
-            for sample in self.samples.keys():
-                if sample not in sample_qval.keys():
-                    del self.samples[sample]
+            self.samples = OrderedDict(
+                    (key, val) for key, val in self.samples.items() if key in sample_qval
+                )
 
         # Calculate average Q30 over all lanes and flowcell
         max_total_reads = 0
